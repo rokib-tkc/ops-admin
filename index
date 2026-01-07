@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inter-Site Stock Transfers</title>
+  <style>
+    :root{
+      --bg:#f5f6f8;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --border:#d1d5db;
+
+      --accent:#2563eb;
+      --ok:#16a34a;
+      --warn:#f59e0b;
+      --ack:#60a5fa;
+
+      --shadow: 0 6px 16px rgba(0,0,0,0.08);
+      --radius: 12px;
+    }
+
+    *{ box-sizing:border-box; font-family: Arial, sans-serif; }
+    body{ margin:0; background:var(--bg); color:var(--text); }
+    header{
+      background:var(--card);
+      box-shadow:var(--shadow);
+      padding:14px 18px;
+      position:sticky; top:0; z-index:10;
+    }
+    .wrap{ max-width:1200px; margin:0 auto; }
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    h1{ font-size:18px; margin:0; }
+    .controls{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .tabs{ display:flex; gap:8px; }
+    .tab{
+      border:1px solid var(--border);
+      background:#fff;
+      padding:8px 10px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:700;
+      font-size:13px;
+    }
+    .tab.active{
+      border-color:var(--accent);
+      color:var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+    .btn{
+      border:1px solid var(--border);
+      background:#fff;
+      padding:8px 10px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:700;
+      font-size:13px;
+    }
+    .btn.primary{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:#fff;
+    }
+    .btn:disabled{ opacity:0.55; cursor:not-allowed; }
+    .pill{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#fff;
+      color:var(--muted);
+    }
+    main{ padding:18px; }
+    .grid{ display:grid; grid-template-columns: 1fr; gap:14px; }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+    .cardhead{
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .cardhead h2{ font-size:15px; margin:0; }
+    .sub{ color:var(--muted); font-size:12px; }
+    .row-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .divider{ height:1px; background:var(--border); margin:10px 0; }
+
+    table{ width:100%; border-collapse:collapse; }
+    th, td{
+      border-bottom:1px solid #eef0f3;
+      padding:8px 6px;
+      vertical-align:middle;
+      font-size:13px;
+    }
+    th{
+      text-align:left;
+      font-size:12px;
+      color:var(--muted);
+      user-select:none;
+      position:sticky;
+      top:64px;
+      background:var(--card);
+      z-index:5;
+    }
+    tr:hover td{ background:#fafafa; }
+    tr.status-ack td{ background: rgba(96,165,250,0.12); }
+    tr.status-dropped td{ background: rgba(245,158,11,0.16); }
+    tr.status-sent td{ background: rgba(22,163,74,0.12); }
+
+    .cell-input, .cell-select{
+      width:100%;
+      padding:7px 8px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      font-size:13px;
+      background:#fff;
+    }
+    .cell-input:focus, .cell-select:focus{
+      outline:none;
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+    }
+
+    .checkbox{ width:16px; height:16px; }
+    .right{ text-align:right; }
+    .small{ font-size:12px; color:var(--muted); }
+
+    /* Modal */
+    .modal-backdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,0.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:1000;
+    }
+    .modal{
+      width:min(900px, 100%);
+      background:#fff;
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      border:1px solid var(--border);
+      overflow:hidden;
+    }
+    .modal header{
+      position:unset;
+      box-shadow:none;
+      border-bottom:1px solid var(--border);
+    }
+    .modal .content{ padding:14px; }
+    textarea{
+      width:100%;
+      min-height:220px;
+      padding:10px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      resize:vertical;
+      font-size:13px;
+    }
+    .formgrid{
+      display:grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap:10px;
+    }
+    .formgrid .span2{ grid-column: span 2; }
+    .formgrid .span3{ grid-column: span 3; }
+    .formgrid .span6{ grid-column: span 6; }
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:5px; }
+    .toast{
+      position:fixed;
+      right:14px; bottom:14px;
+      background:#111827;
+      color:#fff;
+      padding:10px 12px;
+      border-radius:12px;
+      box-shadow: var(--shadow);
+      display:none;
+      max-width:360px;
+      font-size:13px;
+      z-index:2000;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap topbar">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <h1>Inter-Site Stock Transfers</h1>
+        <span id="statusPill" class="pill">Ready</span>
+      </div>
+
+      <div class="controls">
+        <div class="tabs">
+          <button class="tab active" id="tabPKY">PKY → DTN</button>
+          <button class="tab" id="tabDTN">DTN → PKY</button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="small">Date</span>
+          <input id="datePicker" type="date" class="cell-input" style="width:165px;">
+        </div>
+
+        <button class="btn" id="btnRefresh">Refresh</button>
+        <button class="btn" id="btnAddLine">Add Line</button>
+        <button class="btn primary" id="btnPasteUpload">Paste Upload</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="grid">
+      <section class="card">
+        <div class="cardhead">
+          <div>
+            <h2>Active Transfers</h2>
+            <div class="sub">Not sent yet. Use bulk actions to update multiple lines quickly.</div>
+          </div>
+          <div class="row-actions">
+            <button class="btn" id="btnBulkAck" disabled>Mark ACK</button>
+            <button class="btn" id="btnBulkDropped" disabled>Mark Dropped</button>
+            <button class="btn" id="btnBulkSent" disabled>Mark Sent</button>
+          </div>
+        </div>
+
+        <div style="overflow:auto; max-height:520px; border:1px solid #eef0f3; border-radius:12px;">
+          <table id="activeTable">
+            <thead>
+              <tr>
+                <th style="width:34px;"><input type="checkbox" id="checkAllActive" class="checkbox"></th>
+                <th style="width:90px;">TYPE</th>
+                <th style="width:160px;">PRODUCT</th>
+                <th style="width:80px;">QTY</th>
+                <th style="width:70px;">WH</th>
+                <th style="width:90px;">BIN</th>
+                <th style="width:110px;">DROPPED</th>
+                <th style="width:90px;">SENT</th>
+                <th>COMMENTS</th>
+              </tr>
+            </thead>
+            <tbody id="activeBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="cardhead">
+          <div>
+            <h2>Sent Transfers</h2>
+            <div class="sub">Completed lines (Sent = YES). Kept visible for the day for clarity.</div>
+          </div>
+          <div class="row-actions">
+            <button class="btn" id="btnToggleSent">Hide</button>
+          </div>
+        </div>
+
+        <div id="sentWrap" style="overflow:auto; max-height:420px; border:1px solid #eef0f3; border-radius:12px;">
+          <table id="sentTable">
+            <thead>
+              <tr>
+                <th style="width:90px;">TYPE</th>
+                <th style="width:160px;">PRODUCT</th>
+                <th style="width:80px;">QTY</th>
+                <th style="width:70px;">WH</th>
+                <th style="width:90px;">BIN</th>
+                <th style="width:110px;">DROPPED</th>
+                <th style="width:90px;">SENT</th>
+                <th>COMMENTS</th>
+              </tr>
+            </thead>
+            <tbody id="sentBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Paste Upload Modal -->
+  <div class="modal-backdrop" id="pasteModal">
+    <div class="modal">
+      <header>
+        <div class="wrap topbar" style="padding:12px 14px;">
+          <h1 style="font-size:16px;">Paste Upload</h1>
+          <div class="controls">
+            <button class="btn" id="btnPasteClose">Close</button>
+            <button class="btn primary" id="btnPasteSubmit">Upload</button>
+          </div>
+        </div>
+      </header>
+      <div class="content">
+        <p class="small" style="margin-top:0;">
+          Copy the range from Excel and paste here. Headers are supported (any order). If no headers, assumed columns:
+          <strong>PRODUCT, QTY, WH, BIN</strong>. TYPE defaults to SPLIT.
+        </p>
+        <textarea id="pasteBox" placeholder="Paste here..."></textarea>
+        <div class="divider"></div>
+        <div class="small" id="pastePreview">Nothing pasted yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Line Modal -->
+  <div class="modal-backdrop" id="addModal">
+    <div class="modal">
+      <header>
+        <div class="wrap topbar" style="padding:12px 14px;">
+          <h1 style="font-size:16px;">Add Line</h1>
+          <div class="controls">
+            <button class="btn" id="btnAddClose">Close</button>
+            <button class="btn primary" id="btnAddSubmit">Add</button>
+          </div>
+        </div>
+      </header>
+      <div class="content">
+        <div class="formgrid">
+          <div class="span2">
+            <label>TYPE</label>
+            <select id="addType" class="cell-select">
+              <option>SPLIT</option>
+              <option>BULK</option>
+            </select>
+          </div>
+          <div class="span2">
+            <label>PRODUCT</label>
+            <input id="addProduct" class="cell-input" placeholder="e.g. 18DR1810A" />
+          </div>
+          <div class="span2">
+            <label>QTY</label>
+            <input id="addQty" class="cell-input" type="number" min="0" step="1" placeholder="e.g. 6" />
+          </div>
+          <div class="span2">
+            <label>WH</label>
+            <input id="addWH" class="cell-input" placeholder="e.g. BB" />
+          </div>
+          <div class="span2">
+            <label>BIN</label>
+            <input id="addBin" class="cell-input" placeholder="e.g. F49E" />
+          </div>
+          <div class="span2">
+            <label>DROPPED</label>
+            <select id="addDropped" class="cell-select">
+              <option value=""></option>
+              <option value="ACK">ACK</option>
+              <option value="YES">YES</option>
+            </select>
+          </div>
+          <div class="span2">
+            <label>SENT</label>
+            <select id="addSent" class="cell-select">
+              <option value=""></option>
+              <option value="YES">YES</option>
+            </select>
+          </div>
+          <div class="span6">
+            <label>COMMENTS</label>
+            <input id="addComments" class="cell-input" placeholder="Optional notes (urgency, order ref, etc.)" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ====== EDIT THESE ======
+    const API_URL = "https://script.google.com/macros/s/AKfycbxpeOikchlafJAHPgZAyGD-5kCbRWijK1jn4zE1uZQOd1LA-DMJIf6ud3INj2HHW9yj/exec";
+    const API_KEY = "CHANGE_ME_TO_A_LONG_RANDOM_KEY";
+
+    // ====== STATE ======
+    let currentSheet = "PKY_TO_DTN";
+    let currentDate = "";
+    let rows = [];
+
+    // ====== UI ELEMENTS ======
+    const statusPill = document.getElementById("statusPill");
+    const tabPKY = document.getElementById("tabPKY");
+    const tabDTN = document.getElementById("tabDTN");
+    const datePicker = document.getElementById("datePicker");
+
+    const btnRefresh = document.getElementById("btnRefresh");
+    const btnPasteUpload = document.getElementById("btnPasteUpload");
+    const btnAddLine = document.getElementById("btnAddLine");
+
+    const activeBody = document.getElementById("activeBody");
+    const sentBody = document.getElementById("sentBody");
+    const checkAllActive = document.getElementById("checkAllActive");
+
+    const btnBulkAck = document.getElementById("btnBulkAck");
+    const btnBulkDropped = document.getElementById("btnBulkDropped");
+    const btnBulkSent = document.getElementById("btnBulkSent");
+
+    const btnToggleSent = document.getElementById("btnToggleSent");
+    const sentWrap = document.getElementById("sentWrap");
+
+    // Modals
+    const pasteModal = document.getElementById("pasteModal");
+    const pasteBox = document.getElementById("pasteBox");
+    const pastePreview = document.getElementById("pastePreview");
+    const btnPasteClose = document.getElementById("btnPasteClose");
+    const btnPasteSubmit = document.getElementById("btnPasteSubmit");
+
+    const addModal = document.getElementById("addModal");
+    const btnAddClose = document.getElementById("btnAddClose");
+    const btnAddSubmit = document.getElementById("btnAddSubmit");
+    const addType = document.getElementById("addType");
+    const addProduct = document.getElementById("addProduct");
+    const addQty = document.getElementById("addQty");
+    const addWH = document.getElementById("addWH");
+    const addBin = document.getElementById("addBin");
+    const addDropped = document.getElementById("addDropped");
+    const addSent = document.getElementById("addSent");
+    const addComments = document.getElementById("addComments");
+
+    const toast = document.getElementById("toast");
+
+    // ====== INIT ======
+    function todayISO(){
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function setStatus(text, kind=""){
+      statusPill.textContent = text;
+      statusPill.style.borderColor = "";
+      statusPill.style.color = "";
+      statusPill.style.background = "#fff";
+
+      if (kind === "ok"){
+        statusPill.style.borderColor = "rgba(22,163,74,0.4)";
+        statusPill.style.color = "#166534";
+        statusPill.style.background = "rgba(22,163,74,0.08)";
+      }
+      if (kind === "warn"){
+        statusPill.style.borderColor = "rgba(245,158,11,0.5)";
+        statusPill.style.color = "#92400e";
+        statusPill.style.background = "rgba(245,158,11,0.10)";
+      }
+      if (kind === "err"){
+        statusPill.style.borderColor = "rgba(239,68,68,0.5)";
+        statusPill.style.color = "#991b1b";
+        statusPill.style.background = "rgba(239,68,68,0.10)";
+      }
+    }
+
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => toast.style.display = "none", 2800);
+    }
+
+    function setTab(sheet){
+      currentSheet = sheet;
+      tabPKY.classList.toggle("active", sheet === "PKY_TO_DTN");
+      tabDTN.classList.toggle("active", sheet === "DTN_TO_PKY");
+      refresh();
+    }
+
+    async function apiCall(action, payload = {}, method="POST"){
+      const url = new URL(API_URL);
+      if (method === "GET") {
+        url.searchParams.set("action", action);
+        url.searchParams.set("sheet", currentSheet);
+        url.searchParams.set("date", currentDate);
+        url.searchParams.set("apiKey", API_KEY);
+        const res = await fetch(url.toString());
+        return res.json();
+      } else {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            apiKey: API_KEY,
+            action,
+            sheet: currentSheet,
+            ...payload
+          })
+        });
+        return res.json();
+      }
+    }
+
+    function rowClass(r){
+      const sent = (r.SENT || "").trim().toUpperCase() === "YES";
+      const dropped = (r.DROPPED || "").trim().toUpperCase();
+      if (sent) return "status-sent";
+      if (dropped === "YES") return "status-dropped";
+      if (dropped === "ACK") return "status-ack";
+      return "";
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function selectedActiveRowIds(){
+      const checks = [...document.querySelectorAll("input[data-rowcheck='1']:checked")];
+      return checks.map(c => Number(c.getAttribute("data-rowid")));
+    }
+
+    function updateBulkButtons(){
+      const ids = selectedActiveRowIds();
+      const has = ids.length > 0;
+      btnBulkAck.disabled = !has;
+      btnBulkDropped.disabled = !has;
+      btnBulkSent.disabled = !has;
+    }
+
+    function buildSelect(options, value){
+      const v = (value ?? "").toString();
+      return `<select class="cell-select">
+        ${options.map(o => `<option value="${escapeHtml(o)}" ${o===v ? "selected":""}>${escapeHtml(o)}</option>`).join("")}
+      </select>`;
+    }
+
+    function buildInput(value, type="text"){
+      return `<input class="cell-input" type="${type}" value="${escapeHtml(value ?? "")}">`;
+    }
+
+    function render(){
+      const active = rows.filter(r => (r.SENT || "").trim().toUpperCase() !== "YES");
+      const sent = rows.filter(r => (r.SENT || "").trim().toUpperCase() === "YES");
+
+      activeBody.innerHTML = active.map(r => {
+        return `
+          <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+            <td><input class="checkbox" type="checkbox" data-rowcheck="1" data-rowid="${r.rowId}"></td>
+            <td data-col="TYPE">${buildSelect(["SPLIT","BULK"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
+            <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
+            <td data-col="QTY">${buildInput(r.QTY, "number")}</td>
+            <td data-col="WH">${buildInput(r.WH)}</td>
+            <td data-col="BIN">${buildInput(r.BIN)}</td>
+            <td data-col="DROPPED">${buildSelect(["","ACK","YES"], (r.DROPPED || "").toString().toUpperCase())}</td>
+            <td data-col="SENT">${buildSelect(["","YES"], (r.SENT || "").toString().toUpperCase())}</td>
+            <td data-col="COMMENTS">${buildInput(r.COMMENTS)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      sentBody.innerHTML = sent.map(r => {
+        return `
+          <tr class="${rowClass(r)}">
+            <td>${escapeHtml((r.TYPE || "").toString().toUpperCase())}</td>
+            <td>${escapeHtml(r.PRODUCT)}</td>
+            <td>${escapeHtml(r.QTY)}</td>
+            <td>${escapeHtml(r.WH)}</td>
+            <td>${escapeHtml(r.BIN)}</td>
+            <td>${escapeHtml((r.DROPPED || "").toString().toUpperCase())}</td>
+            <td>${escapeHtml((r.SENT || "").toString().toUpperCase())}</td>
+            <td>${escapeHtml(r.COMMENTS)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      checkAllActive.checked = false;
+      updateBulkButtons();
+      setStatus(`Loaded ${rows.length} lines`, "ok");
+    }
+
+    async function refresh(){
+      try {
+        setStatus("Loading…", "warn");
+        const data = await apiCall("list", {}, "GET");
+        if (!data.ok) throw new Error(data.error || "API error");
+        rows = data.rows || [];
+        render();
+      } catch (e) {
+        setStatus("Error loading", "err");
+        showToast(String(e.message || e));
+      }
+    }
+
+    async function patchRow(rowId, patch){
+      const res = await apiCall("update", { rowId, patch }, "POST");
+      if (!res.ok) throw new Error(res.error || "Update failed");
+    }
+
+    async function bulkPatch(rowIds, patch){
+      const res = await apiCall("bulkUpdate", { rowIds, patch }, "POST");
+      if (!res.ok) throw new Error(res.error || "Bulk update failed");
+    }
+
+    // ====== EVENTS ======
+    tabPKY.addEventListener("click", () => setTab("PKY_TO_DTN"));
+    tabDTN.addEventListener("click", () => setTab("DTN_TO_PKY"));
+
+    btnRefresh.addEventListener("click", refresh);
+
+    datePicker.addEventListener("change", () => {
+      currentDate = datePicker.value;
+      refresh();
+    });
+
+    checkAllActive.addEventListener("change", () => {
+      const checks = [...document.querySelectorAll("input[data-rowcheck='1']")];
+      checks.forEach(c => c.checked = checkAllActive.checked);
+      updateBulkButtons();
+    });
+
+    document.addEventListener("change", async (ev) => {
+      // row checkbox selection
+      if (ev.target && ev.target.matches("input[data-rowcheck='1']")) {
+        updateBulkButtons();
+        return;
+      }
+
+      // table inline edits
+      const tr = ev.target.closest("tr[data-rowid]");
+      if (!tr) return;
+
+      const td = ev.target.closest("td[data-col]");
+      if (!td) return;
+
+      const rowId = Number(tr.getAttribute("data-rowid"));
+      const col = td.getAttribute("data-col");
+
+      let value;
+      if (ev.target.tagName === "SELECT") value = ev.target.value;
+      else value = ev.target.value;
+
+      // normalise
+      if (col === "TYPE") value = (value || "SPLIT").toUpperCase();
+      if (col === "DROPPED") value = (value || "").toUpperCase();
+      if (col === "SENT") value = (value || "").toUpperCase();
+      if (col === "PRODUCT" || col === "WH" || col === "BIN") value = (value || "").trim();
+      if (col === "QTY") value = value === "" ? "" : Number(value);
+
+      try{
+        setStatus("Saving…", "warn");
+        await patchRow(rowId, { [col]: value });
+        showToast("Saved");
+        await refresh();
+      } catch(e){
+        setStatus("Save failed", "err");
+        showToast(String(e.message || e));
+      }
+    });
+
+    // Bulk actions
+    btnBulkAck.addEventListener("click", async () => {
+      const ids = selectedActiveRowIds();
+      if (!ids.length) return;
+      try{
+        setStatus("Saving…", "warn");
+        await bulkPatch(ids, { DROPPED: "ACK" });
+        showToast("Marked ACK");
+        await refresh();
+      } catch(e){ setStatus("Bulk save failed", "err"); showToast(String(e.message || e)); }
+    });
+
+    btnBulkDropped.addEventListener("click", async () => {
+      const ids = selectedActiveRowIds();
+      if (!ids.length) return;
+      try{
+        setStatus("Saving…", "warn");
+        await bulkPatch(ids, { DROPPED: "YES" });
+        showToast("Marked Dropped");
+        await refresh();
+      } catch(e){ setStatus("Bulk save failed", "err"); showToast(String(e.message || e)); }
+    });
+
+    btnBulkSent.addEventListener("click", async () => {
+      const ids = selectedActiveRowIds();
+      if (!ids.length) return;
+      try{
+        setStatus("Saving…", "warn");
+        await bulkPatch(ids, { SENT: "YES" });
+        showToast("Marked Sent");
+        await refresh();
+      } catch(e){ setStatus("Bulk save failed", "err"); showToast(String(e.message || e)); }
+    });
+
+    // Sent toggle
+    btnToggleSent.addEventListener("click", () => {
+      const hidden = sentWrap.style.display === "none";
+      sentWrap.style.display = hidden ? "block" : "none";
+      btnToggleSent.textContent = hidden ? "Hide" : "Show";
+    });
+
+    // Paste upload modal
+    btnPasteUpload.addEventListener("click", () => {
+      pasteBox.value = "";
+      pastePreview.textContent = "Nothing pasted yet.";
+      pasteModal.style.display = "flex";
+      pasteBox.focus();
+    });
+    btnPasteClose.addEventListener("click", () => pasteModal.style.display = "none");
+
+    pasteBox.addEventListener("input", () => {
+      const parsed = parsePaste(pasteBox.value);
+      pastePreview.textContent = parsed.preview;
+    });
+
+    btnPasteSubmit.addEventListener("click", async () => {
+      const parsed = parsePaste(pasteBox.value);
+      if (!parsed.rows.length){
+        showToast("Nothing to upload");
+        return;
+      }
+      try{
+        setStatus("Uploading…", "warn");
+        const res = await apiCall("bulkAdd", { rows: parsed.rows }, "POST");
+        if (!res.ok) throw new Error(res.error || "Upload failed");
+        showToast(`Uploaded ${res.added || parsed.rows.length} lines`);
+        pasteModal.style.display = "none";
+        await refresh();
+      } catch(e){
+        setStatus("Upload failed", "err");
+        showToast(String(e.message || e));
+      }
+    });
+
+    // Add line modal
+    btnAddLine.addEventListener("click", () => {
+      addType.value = "SPLIT";
+      addProduct.value = "";
+      addQty.value = "";
+      addWH.value = "";
+      addBin.value = "";
+      addDropped.value = "";
+      addSent.value = "";
+      addComments.value = "";
+      addModal.style.display = "flex";
+      addProduct.focus();
+    });
+    btnAddClose.addEventListener("click", () => addModal.style.display = "none");
+
+    btnAddSubmit.addEventListener("click", async () => {
+      const row = {
+        DATE: currentDate || todayISO(),
+        TYPE: (addType.value || "SPLIT").toUpperCase(),
+        PRODUCT: (addProduct.value || "").trim(),
+        QTY: addQty.value === "" ? "" : Number(addQty.value),
+        WH: (addWH.value || "").trim(),
+        BIN: (addBin.value || "").trim(),
+        DROPPED: (addDropped.value || "").toUpperCase(),
+        SENT: (addSent.value || "").toUpperCase(),
+        COMMENTS: addComments.value || ""
+      };
+
+      if (!row.PRODUCT){
+        showToast("Product is required");
+        return;
+      }
+
+      try{
+        setStatus("Adding…", "warn");
+        const res = await apiCall("add", { row }, "POST");
+        if (!res.ok) throw new Error(res.error || "Add failed");
+        showToast("Added");
+        addModal.style.display = "none";
+        await refresh();
+      } catch(e){
+        setStatus("Add failed", "err");
+        showToast(String(e.message || e));
+      }
+    });
+
+    // ====== PASTE PARSING ======
+    function normaliseHeader(h){
+      return String(h || "").trim().toUpperCase()
+        .replaceAll(" ", "_")
+        .replaceAll("-", "_");
+    }
+
+    function parsePaste(text){
+      const t = (text || "").trim();
+      if (!t) return { rows: [], preview: "Nothing pasted yet." };
+
+      const lines = t.split(/\r?\n/).filter(x => x.trim() !== "");
+      const grid = lines.map(line => line.split("\t"));
+
+      // detect header row if it contains words like PRODUCT/QTY/WH/BIN
+      const first = grid[0].map(normaliseHeader);
+      const headerLike = first.includes("PRODUCT") || first.includes("PRODUCT_CODE") || first.includes("QTY") || first.includes("WH") || first.includes("BIN") || first.includes("TYPE");
+
+      let headers = [];
+      let startRow = 0;
+
+      if (headerLike) {
+        headers = first;
+        startRow = 1;
+      } else {
+        // default mapping: PRODUCT, QTY, WH, BIN
+        headers = ["PRODUCT","QTY","WH","BIN"];
+        startRow = 0;
+      }
+
+      // header synonyms
+      const mapKey = (h) => {
+        if (h === "PRODUCT_CODE" || h === "PRODUCTCODE") return "PRODUCT";
+        if (h === "PRODUCT") return "PRODUCT";
+        if (h === "QTY" || h === "QUANTITY") return "QTY";
+        if (h === "WH" || h === "WAREHOUSE") return "WH";
+        if (h === "BIN") return "BIN";
+        if (h === "TYPE") return "TYPE";
+        if (h === "DROPPED") return "DROPPED";
+        if (h === "SENT") return "SENT";
+        if (h === "COMMENTS" || h === "COMMENT") return "COMMENTS";
+        return h;
+      };
+
+      const keys = headers.map(mapKey);
+
+      const out = [];
+      for (let r = startRow; r < grid.length; r++){
+        const row = grid[r];
+        const obj = {
+          DATE: currentDate || todayISO(),
+          TYPE: "SPLIT",
+          PRODUCT: "",
+          QTY: "",
+          WH: "",
+          BIN: "",
+          DROPPED: "",
+          SENT: "",
+          COMMENTS: ""
+        };
+
+        for (let c = 0; c < row.length; c++){
+          const k = keys[c] || "";
+          const v = (row[c] ?? "").toString().trim();
+          if (!k) continue;
+
+          if (k === "TYPE") obj.TYPE = (v || "SPLIT").toUpperCase();
+          else if (k === "QTY") obj.QTY = v === "" ? "" : Number(v);
+          else if (k === "DROPPED") obj.DROPPED = v.toUpperCase();
+          else if (k === "SENT") obj.SENT = v.toUpperCase();
+          else if (k === "PRODUCT") obj.PRODUCT = v;
+          else if (k === "WH") obj.WH = v;
+          else if (k === "BIN") obj.BIN = v;
+          else if (k === "COMMENTS") obj.COMMENTS = v;
+        }
+
+        // If no header and row had 4 cols, map them in order
+        if (!headerLike && row.length >= 1) obj.PRODUCT = (row[0] ?? "").toString().trim();
+        if (!headerLike && row.length >= 2) obj.QTY = (row[1] ?? "").toString().trim() === "" ? "" : Number(row[1]);
+        if (!headerLike && row.length >= 3) obj.WH = (row[2] ?? "").toString().trim();
+        if (!headerLike && row.length >= 4) obj.BIN = (row[3] ?? "").toString().trim();
+
+        if (obj.PRODUCT) out.push(obj);
+      }
+
+      const preview = `Parsed ${out.length} line(s). First line: ` + (out[0] ? `${out[0].TYPE} ${out[0].PRODUCT} x${out[0].QTY} (${out[0].WH}/${out[0].BIN})` : "n/a");
+      return { rows: out, preview };
+    }
+
+    // ====== START ======
+    (function(){
+      currentDate = todayISO();
+      datePicker.value = currentDate;
+      refresh();
+    })();
+  </script>
+</body>
+</html>
