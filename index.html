@@ -168,7 +168,6 @@
       gap:10px;
     }
     .formgrid .span2{ grid-column: span 2; }
-    .formgrid .span3{ grid-column: span 3; }
     .formgrid .span6{ grid-column: span 6; }
     label{ display:block; font-size:12px; color:var(--muted); margin-bottom:5px; }
     .toast{
@@ -340,21 +339,6 @@
             <label>BIN</label>
             <input id="addBin" class="cell-input" placeholder="e.g. F49E" />
           </div>
-          <div class="span2">
-            <label>DROPPED</label>
-            <select id="addDropped" class="cell-select">
-              <option value=""></option>
-              <option value="ACK">ACK</option>
-              <option value="YES">YES</option>
-            </select>
-          </div>
-          <div class="span2">
-            <label>SENT</label>
-            <select id="addSent" class="cell-select">
-              <option value=""></option>
-              <option value="YES">YES</option>
-            </select>
-          </div>
           <div class="span6">
             <label>COMMENTS</label>
             <input id="addComments" class="cell-input" placeholder="Optional notes (urgency, order ref, etc.)" />
@@ -369,7 +353,7 @@
   <script>
     // ====== EDIT THESE ======
     const API_URL = "https://script.google.com/macros/s/AKfycbxpeOikchlafJAHPgZAyGD-5kCbRWijK1jn4zE1uZQOd1LA-DMJIf6ud3INj2HHW9yj/exec";
-    const API_KEY = "Lthdn637H7shdbs8987jnsm72GtsFh";
+    const API_KEY = "Lthdn637H7shdbs8987jnsm72GtsFh"; 
 
     // ====== STATE ======
     let currentSheet = "PKY_TO_DTN";
@@ -407,18 +391,17 @@
     const addModal = document.getElementById("addModal");
     const btnAddClose = document.getElementById("btnAddClose");
     const btnAddSubmit = document.getElementById("btnAddSubmit");
+
     const addType = document.getElementById("addType");
     const addProduct = document.getElementById("addProduct");
     const addQty = document.getElementById("addQty");
     const addWH = document.getElementById("addWH");
     const addBin = document.getElementById("addBin");
-    const addDropped = document.getElementById("addDropped");
-    const addSent = document.getElementById("addSent");
     const addComments = document.getElementById("addComments");
 
     const toast = document.getElementById("toast");
 
-    // ====== INIT ======
+    // ====== HELPERS ======
     function todayISO(){
       const d = new Date();
       const yyyy = d.getFullYear();
@@ -457,35 +440,80 @@
       window.__toastTimer = setTimeout(() => toast.style.display = "none", 2800);
     }
 
-    function setTab(sheet){
-      currentSheet = sheet;
-      tabPKY.classList.toggle("active", sheet === "PKY_TO_DTN");
-      tabDTN.classList.toggle("active", sheet === "DTN_TO_PKY");
-      refresh();
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
 
-    async function apiCall(action, payload = {}, method="POST"){
+    // ====== JSONP API (CORS-safe for GitHub Pages) ======
+    function jsonp(url){
+      return new Promise((resolve, reject) => {
+        const cb = "cb_" + Math.random().toString(16).slice(2);
+        const u = new URL(url);
+        u.searchParams.set("callback", cb);
+
+        const script = document.createElement("script");
+        script.src = u.toString();
+        script.async = true;
+
+        window[cb] = (data) => {
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error("Failed to fetch (JSONP)"));
+        };
+
+        function cleanup(){
+          try { delete window[cb]; } catch(e){}
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        document.body.appendChild(script);
+      });
+    }
+
+    async function apiCall(action, payload = {}){
       const url = new URL(API_URL);
-      if (method === "GET") {
-        url.searchParams.set("action", action);
-        url.searchParams.set("sheet", currentSheet);
-        url.searchParams.set("date", currentDate);
-        url.searchParams.set("apiKey", API_KEY);
-        const res = await fetch(url.toString());
-        return res.json();
-      } else {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            apiKey: API_KEY,
-            action,
-            sheet: currentSheet,
-            ...payload
-          })
-        });
-        return res.json();
+      url.searchParams.set("action", action);
+      url.searchParams.set("sheet", currentSheet);
+      url.searchParams.set("date", currentDate);
+      url.searchParams.set("apiKey", API_KEY);
+
+      if (action === "add") {
+        const row = payload.row || {};
+        url.searchParams.set("DATE", row.DATE || currentDate || todayISO());
+        url.searchParams.set("TYPE", row.TYPE || "SPLIT");
+        url.searchParams.set("PRODUCT", row.PRODUCT || "");
+        url.searchParams.set("QTY", (row.QTY === "" || row.QTY == null) ? "" : String(row.QTY));
+        url.searchParams.set("WH", row.WH || "");
+        url.searchParams.set("BIN", row.BIN || "");
+        url.searchParams.set("DROPPED", row.DROPPED || "");
+        url.searchParams.set("SENT", row.SENT || "");
+        url.searchParams.set("COMMENTS", row.COMMENTS || "");
       }
+
+      if (action === "update") {
+        url.searchParams.set("rowId", String(payload.rowId || ""));
+        url.searchParams.set("patch", JSON.stringify(payload.patch || {}));
+      }
+
+      if (action === "bulkAdd") {
+        url.searchParams.set("rows", JSON.stringify(payload.rows || []));
+      }
+
+      if (action === "bulkUpdate") {
+        url.searchParams.set("rowIds", JSON.stringify(payload.rowIds || []));
+        url.searchParams.set("patch", JSON.stringify(payload.patch || {}));
+      }
+
+      return await jsonp(url.toString());
     }
 
     function rowClass(r){
@@ -497,13 +525,15 @@
       return "";
     }
 
-    function escapeHtml(s){
-      return String(s ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
+    function buildSelect(options, value){
+      const v = (value ?? "").toString();
+      return `<select class="cell-select">
+        ${options.map(o => `<option value="${escapeHtml(o)}" ${o===v ? "selected":""}>${escapeHtml(o)}</option>`).join("")}
+      </select>`;
+    }
+
+    function buildInput(value, type="text"){
+      return `<input class="cell-input" type="${type}" value="${escapeHtml(value ?? "")}">`;
     }
 
     function selectedActiveRowIds(){
@@ -519,51 +549,37 @@
       btnBulkSent.disabled = !has;
     }
 
-    function buildSelect(options, value){
-      const v = (value ?? "").toString();
-      return `<select class="cell-select">
-        ${options.map(o => `<option value="${escapeHtml(o)}" ${o===v ? "selected":""}>${escapeHtml(o)}</option>`).join("")}
-      </select>`;
-    }
-
-    function buildInput(value, type="text"){
-      return `<input class="cell-input" type="${type}" value="${escapeHtml(value ?? "")}">`;
-    }
-
+    // ====== RENDER ======
     function render(){
       const active = rows.filter(r => (r.SENT || "").trim().toUpperCase() !== "YES");
       const sent = rows.filter(r => (r.SENT || "").trim().toUpperCase() === "YES");
 
-      activeBody.innerHTML = active.map(r => {
-        return `
-          <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-            <td><input class="checkbox" type="checkbox" data-rowcheck="1" data-rowid="${r.rowId}"></td>
-            <td data-col="TYPE">${buildSelect(["SPLIT","BULK"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
-            <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
-            <td data-col="QTY">${buildInput(r.QTY, "number")}</td>
-            <td data-col="WH">${buildInput(r.WH)}</td>
-            <td data-col="BIN">${buildInput(r.BIN)}</td>
-            <td data-col="DROPPED">${buildSelect(["","ACK","YES"], (r.DROPPED || "").toString().toUpperCase())}</td>
-            <td data-col="SENT">${buildSelect(["","YES"], (r.SENT || "").toString().toUpperCase())}</td>
-            <td data-col="COMMENTS">${buildInput(r.COMMENTS)}</td>
-          </tr>
-        `;
-      }).join("");
+      activeBody.innerHTML = active.map(r => `
+        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+          <td><input class="checkbox" type="checkbox" data-rowcheck="1" data-rowid="${r.rowId}"></td>
+          <td data-col="TYPE">${buildSelect(["SPLIT","BULK"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
+          <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
+          <td data-col="QTY">${buildInput(r.QTY, "number")}</td>
+          <td data-col="WH">${buildInput(r.WH)}</td>
+          <td data-col="BIN">${buildInput(r.BIN)}</td>
+          <td data-col="DROPPED">${buildSelect(["","ACK","YES"], (r.DROPPED || "").toString().toUpperCase())}</td>
+          <td data-col="SENT">${buildSelect(["","YES"], (r.SENT || "").toString().toUpperCase())}</td>
+          <td data-col="COMMENTS">${buildInput(r.COMMENTS)}</td>
+        </tr>
+      `).join("");
 
-      sentBody.innerHTML = sent.map(r => {
-        return `
-          <tr class="${rowClass(r)}">
-            <td>${escapeHtml((r.TYPE || "").toString().toUpperCase())}</td>
-            <td>${escapeHtml(r.PRODUCT)}</td>
-            <td>${escapeHtml(r.QTY)}</td>
-            <td>${escapeHtml(r.WH)}</td>
-            <td>${escapeHtml(r.BIN)}</td>
-            <td>${escapeHtml((r.DROPPED || "").toString().toUpperCase())}</td>
-            <td>${escapeHtml((r.SENT || "").toString().toUpperCase())}</td>
-            <td>${escapeHtml(r.COMMENTS)}</td>
-          </tr>
-        `;
-      }).join("");
+      sentBody.innerHTML = sent.map(r => `
+        <tr class="${rowClass(r)}">
+          <td>${escapeHtml((r.TYPE || "").toString().toUpperCase())}</td>
+          <td>${escapeHtml(r.PRODUCT)}</td>
+          <td>${escapeHtml(r.QTY)}</td>
+          <td>${escapeHtml(r.WH)}</td>
+          <td>${escapeHtml(r.BIN)}</td>
+          <td>${escapeHtml((r.DROPPED || "").toString().toUpperCase())}</td>
+          <td>${escapeHtml((r.SENT || "").toString().toUpperCase())}</td>
+          <td>${escapeHtml(r.COMMENTS)}</td>
+        </tr>
+      `).join("");
 
       checkAllActive.checked = false;
       updateBulkButtons();
@@ -573,7 +589,7 @@
     async function refresh(){
       try {
         setStatus("Loading…", "warn");
-        const data = await apiCall("list", {}, "GET");
+        const data = await apiCall("list");
         if (!data.ok) throw new Error(data.error || "API error");
         rows = data.rows || [];
         render();
@@ -584,25 +600,22 @@
     }
 
     async function patchRow(rowId, patch){
-      const res = await apiCall("update", { rowId, patch }, "POST");
+      const res = await apiCall("update", { rowId, patch });
       if (!res.ok) throw new Error(res.error || "Update failed");
     }
 
     async function bulkPatch(rowIds, patch){
-      const res = await apiCall("bulkUpdate", { rowIds, patch }, "POST");
+      const res = await apiCall("bulkUpdate", { rowIds, patch });
       if (!res.ok) throw new Error(res.error || "Bulk update failed");
     }
 
     // ====== EVENTS ======
-    tabPKY.addEventListener("click", () => setTab("PKY_TO_DTN"));
-    tabDTN.addEventListener("click", () => setTab("DTN_TO_PKY"));
+    tabPKY.addEventListener("click", () => { currentSheet = "PKY_TO_DTN"; tabPKY.classList.add("active"); tabDTN.classList.remove("active"); refresh(); });
+    tabDTN.addEventListener("click", () => { currentSheet = "DTN_TO_PKY"; tabDTN.classList.add("active"); tabPKY.classList.remove("active"); refresh(); });
 
     btnRefresh.addEventListener("click", refresh);
 
-    datePicker.addEventListener("change", () => {
-      currentDate = datePicker.value;
-      refresh();
-    });
+    datePicker.addEventListener("change", () => { currentDate = datePicker.value; refresh(); });
 
     checkAllActive.addEventListener("change", () => {
       const checks = [...document.querySelectorAll("input[data-rowcheck='1']")];
@@ -611,13 +624,11 @@
     });
 
     document.addEventListener("change", async (ev) => {
-      // row checkbox selection
       if (ev.target && ev.target.matches("input[data-rowcheck='1']")) {
         updateBulkButtons();
         return;
       }
 
-      // table inline edits
       const tr = ev.target.closest("tr[data-rowid]");
       if (!tr) return;
 
@@ -627,11 +638,8 @@
       const rowId = Number(tr.getAttribute("data-rowid"));
       const col = td.getAttribute("data-col");
 
-      let value;
-      if (ev.target.tagName === "SELECT") value = ev.target.value;
-      else value = ev.target.value;
+      let value = (ev.target.tagName === "SELECT") ? ev.target.value : ev.target.value;
 
-      // normalise
       if (col === "TYPE") value = (value || "SPLIT").toUpperCase();
       if (col === "DROPPED") value = (value || "").toUpperCase();
       if (col === "SENT") value = (value || "").toUpperCase();
@@ -649,7 +657,6 @@
       }
     });
 
-    // Bulk actions
     btnBulkAck.addEventListener("click", async () => {
       const ids = selectedActiveRowIds();
       if (!ids.length) return;
@@ -683,14 +690,13 @@
       } catch(e){ setStatus("Bulk save failed", "err"); showToast(String(e.message || e)); }
     });
 
-    // Sent toggle
     btnToggleSent.addEventListener("click", () => {
       const hidden = sentWrap.style.display === "none";
       sentWrap.style.display = hidden ? "block" : "none";
       btnToggleSent.textContent = hidden ? "Hide" : "Show";
     });
 
-    // Paste upload modal
+    // Paste Upload modal (unchanged behaviour)
     btnPasteUpload.addEventListener("click", () => {
       pasteBox.value = "";
       pastePreview.textContent = "Nothing pasted yet.";
@@ -699,81 +705,8 @@
     });
     btnPasteClose.addEventListener("click", () => pasteModal.style.display = "none");
 
-    pasteBox.addEventListener("input", () => {
-      const parsed = parsePaste(pasteBox.value);
-      pastePreview.textContent = parsed.preview;
-    });
-
-    btnPasteSubmit.addEventListener("click", async () => {
-      const parsed = parsePaste(pasteBox.value);
-      if (!parsed.rows.length){
-        showToast("Nothing to upload");
-        return;
-      }
-      try{
-        setStatus("Uploading…", "warn");
-        const res = await apiCall("bulkAdd", { rows: parsed.rows }, "POST");
-        if (!res.ok) throw new Error(res.error || "Upload failed");
-        showToast(`Uploaded ${res.added || parsed.rows.length} lines`);
-        pasteModal.style.display = "none";
-        await refresh();
-      } catch(e){
-        setStatus("Upload failed", "err");
-        showToast(String(e.message || e));
-      }
-    });
-
-    // Add line modal
-    btnAddLine.addEventListener("click", () => {
-      addType.value = "SPLIT";
-      addProduct.value = "";
-      addQty.value = "";
-      addWH.value = "";
-      addBin.value = "";
-      addDropped.value = "";
-      addSent.value = "";
-      addComments.value = "";
-      addModal.style.display = "flex";
-      addProduct.focus();
-    });
-    btnAddClose.addEventListener("click", () => addModal.style.display = "none");
-
-    btnAddSubmit.addEventListener("click", async () => {
-      const row = {
-        DATE: currentDate || todayISO(),
-        TYPE: (addType.value || "SPLIT").toUpperCase(),
-        PRODUCT: (addProduct.value || "").trim(),
-        QTY: addQty.value === "" ? "" : Number(addQty.value),
-        WH: (addWH.value || "").trim(),
-        BIN: (addBin.value || "").trim(),
-        DROPPED: (addDropped.value || "").toUpperCase(),
-        SENT: (addSent.value || "").toUpperCase(),
-        COMMENTS: addComments.value || ""
-      };
-
-      if (!row.PRODUCT){
-        showToast("Product is required");
-        return;
-      }
-
-      try{
-        setStatus("Adding…", "warn");
-        const res = await apiCall("add", { row }, "POST");
-        if (!res.ok) throw new Error(res.error || "Add failed");
-        showToast("Added");
-        addModal.style.display = "none";
-        await refresh();
-      } catch(e){
-        setStatus("Add failed", "err");
-        showToast(String(e.message || e));
-      }
-    });
-
-    // ====== PASTE PARSING ======
     function normaliseHeader(h){
-      return String(h || "").trim().toUpperCase()
-        .replaceAll(" ", "_")
-        .replaceAll("-", "_");
+      return String(h || "").trim().toUpperCase().replaceAll(" ", "_").replaceAll("-", "_");
     }
 
     function parsePaste(text){
@@ -783,23 +716,15 @@
       const lines = t.split(/\r?\n/).filter(x => x.trim() !== "");
       const grid = lines.map(line => line.split("\t"));
 
-      // detect header row if it contains words like PRODUCT/QTY/WH/BIN
       const first = grid[0].map(normaliseHeader);
       const headerLike = first.includes("PRODUCT") || first.includes("PRODUCT_CODE") || first.includes("QTY") || first.includes("WH") || first.includes("BIN") || first.includes("TYPE");
 
       let headers = [];
       let startRow = 0;
 
-      if (headerLike) {
-        headers = first;
-        startRow = 1;
-      } else {
-        // default mapping: PRODUCT, QTY, WH, BIN
-        headers = ["PRODUCT","QTY","WH","BIN"];
-        startRow = 0;
-      }
+      if (headerLike) { headers = first; startRow = 1; }
+      else { headers = ["PRODUCT","QTY","WH","BIN"]; startRow = 0; }
 
-      // header synonyms
       const mapKey = (h) => {
         if (h === "PRODUCT_CODE" || h === "PRODUCTCODE") return "PRODUCT";
         if (h === "PRODUCT") return "PRODUCT";
@@ -845,7 +770,6 @@
           else if (k === "COMMENTS") obj.COMMENTS = v;
         }
 
-        // If no header and row had 4 cols, map them in order
         if (!headerLike && row.length >= 1) obj.PRODUCT = (row[0] ?? "").toString().trim();
         if (!headerLike && row.length >= 2) obj.QTY = (row[1] ?? "").toString().trim() === "" ? "" : Number(row[1]);
         if (!headerLike && row.length >= 3) obj.WH = (row[2] ?? "").toString().trim();
@@ -857,6 +781,74 @@
       const preview = `Parsed ${out.length} line(s). First line: ` + (out[0] ? `${out[0].TYPE} ${out[0].PRODUCT} x${out[0].QTY} (${out[0].WH}/${out[0].BIN})` : "n/a");
       return { rows: out, preview };
     }
+
+    pasteBox.addEventListener("input", () => {
+      const parsed = parsePaste(pasteBox.value);
+      pastePreview.textContent = parsed.preview;
+    });
+
+    btnPasteSubmit.addEventListener("click", async () => {
+      const parsed = parsePaste(pasteBox.value);
+      if (!parsed.rows.length){
+        showToast("Nothing to upload");
+        return;
+      }
+      try{
+        setStatus("Uploading…", "warn");
+        const res = await apiCall("bulkAdd", { rows: parsed.rows });
+        if (!res.ok) throw new Error(res.error || "Upload failed");
+        showToast(`Uploaded ${res.added || parsed.rows.length} lines`);
+        pasteModal.style.display = "none";
+        await refresh();
+      } catch(e){
+        setStatus("Upload failed", "err");
+        showToast(String(e.message || e));
+      }
+    });
+
+    // Add line modal
+    btnAddLine.addEventListener("click", () => {
+      addType.value = "SPLIT";
+      addProduct.value = "";
+      addQty.value = "";
+      addWH.value = "";
+      addBin.value = "";
+      addComments.value = "";
+      addModal.style.display = "flex";
+      addProduct.focus();
+    });
+    btnAddClose.addEventListener("click", () => addModal.style.display = "none");
+
+    btnAddSubmit.addEventListener("click", async () => {
+      const row = {
+        DATE: currentDate || todayISO(),
+        TYPE: (addType.value || "SPLIT").toUpperCase(),
+        PRODUCT: (addProduct.value || "").trim(),
+        QTY: addQty.value === "" ? "" : Number(addQty.value),
+        WH: (addWH.value || "").trim(),
+        BIN: (addBin.value || "").trim(),
+        DROPPED: "",
+        SENT: "",
+        COMMENTS: addComments.value || ""
+      };
+
+      if (!row.PRODUCT){
+        showToast("Product is required");
+        return;
+      }
+
+      try{
+        setStatus("Adding…", "warn");
+        const res = await apiCall("add", { row });
+        if (!res.ok) throw new Error(res.error || "Add failed");
+        showToast("Added");
+        addModal.style.display = "none";
+        await refresh();
+      } catch(e){
+        setStatus("Add failed", "err");
+        showToast(String(e.message || e));
+      }
+    });
 
     // ====== START ======
     (function(){
