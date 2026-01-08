@@ -237,7 +237,7 @@
     }
     @keyframes spin{ to { transform: rotate(360deg); } }
     .loading-text{ display:flex; flex-direction:column; gap:4px; }
-    .loading-title{ font-weight:800; font-size:14px; color:#111827; }
+    .loading-title{ font-weight:700; font-size:14px; color:#111827; }
     .loading-sub{ font-size:12px; color: var(--muted); line-height:1.35; }
   </style>
 </head>
@@ -481,7 +481,7 @@
       <div class="spinner" aria-hidden="true"></div>
       <div class="loading-text">
         <div class="loading-title" id="loadingTitle">Working…</div>
-        <div class="loading-sub" id="loadingSub">Talking to Google Sheets. Please wait…</div>
+        <div class="loading-sub" id="loadingSub">Please wait…</div>
       </div>
     </div>
   </div>
@@ -565,7 +565,7 @@
 
     function isBusy(){ return __busyCount > 0; }
 
-    function showLoading(title="Working…", sub="Talking to Google Sheets. Please wait…"){
+    function showLoading(title="Working…", sub="Please wait…"){
       __busyCount++;
       loadingTitle.textContent = title;
       loadingSub.textContent = sub;
@@ -583,7 +583,7 @@
     }
 
     async function withLoading(title, fn, sub){
-      showLoading(title, sub || "Talking to Google Sheets. Please wait…");
+      showLoading(title, sub || "Please wait…");
       try{
         return await fn();
       } finally {
@@ -952,7 +952,7 @@
       };
 
       if (showOverlay){
-        await withLoading("Loading transfers…", doWork, "Fetching the latest lines from Google Sheets…");
+        await withLoading("Loading transfers…", doWork, "Fetching the latest lines…");
       } else {
         await doWork();
       }
@@ -1058,7 +1058,7 @@
           setStatus("Save failed", "err");
           showToast(String(e.message || e));
         }
-      }, "Updating Google Sheets and refreshing the page…");
+      }, "Updating and refreshing the page…");
     });
 
     // ====== NEW ACTIONS ======
@@ -1102,7 +1102,7 @@
           setStatus("Cancel failed", "err");
           showToast(String(e.message || e));
         }
-      }, "Updating Google Sheets and refreshing the page…");
+      }, "Updating and refreshing the page…");
     });
 
     // ====== ACTIVE ACTIONS ======
@@ -1164,7 +1164,7 @@
           setStatus("Cancel failed", "err");
           showToast(String(e.message || e));
         }
-      }, "Updating Google Sheets and refreshing the page…");
+      }, "Updating and refreshing the page…");
     });
 
     // ====== SENT ACTIONS ======
@@ -1334,7 +1334,7 @@
           setStatus("Upload failed", "err");
           showToast(String(e.message || e));
         }
-      }, "Sending pasted lines to Google Sheets and refreshing…");
+      }, "Saving pasted lines and refreshing…");
     });
 
     // ====== ADD LINE ======
@@ -1383,7 +1383,7 @@
           setStatus("Add failed", "err");
           showToast(String(e.message || e));
         }
-      }, "Saving the new line to Google Sheets and refreshing…");
+      }, "Saving the new line and refreshing…");
     });
 
     // ====== AUTO REFRESH ======
