@@ -15,7 +15,10 @@
       --accent:#2563eb;
       --ok:#16a34a;
       --warn:#f59e0b;
-      --ack:#60a5fa;
+
+      --sent:#16a34a;
+      --dropped:#f59e0b;
+      --cancel:#ef4444;
 
       --shadow: 0 6px 16px rgba(0,0,0,0.08);
       --radius: 12px;
@@ -23,15 +26,17 @@
 
     *{ box-sizing:border-box; font-family: Arial, sans-serif; }
     body{ margin:0; background:var(--bg); color:var(--text); }
+
     header{
       background:var(--card);
       box-shadow:var(--shadow);
       padding:14px 18px;
-      position:sticky; top:0; z-index:10;
+      position:sticky; top:0; z-index:20;
     }
     .wrap{ max-width:1200px; margin:0 auto; }
     .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
     h1{ font-size:18px; margin:0; }
+
     .controls{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .tabs{ display:flex; gap:8px; }
     .tab{
@@ -48,6 +53,7 @@
       color:var(--accent);
       box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
     }
+
     .btn{
       border:1px solid var(--border);
       background:#fff;
@@ -62,7 +68,13 @@
       border-color:var(--accent);
       color:#fff;
     }
+    .btn.danger{
+      background:var(--cancel);
+      border-color:var(--cancel);
+      color:#fff;
+    }
     .btn:disabled{ opacity:0.55; cursor:not-allowed; }
+
     .pill{
       font-size:12px;
       padding:6px 10px;
@@ -71,8 +83,10 @@
       background:#fff;
       color:var(--muted);
     }
+
     main{ padding:18px; }
     .grid{ display:grid; grid-template-columns: 1fr; gap:14px; }
+
     .card{
       background:var(--card);
       border:1px solid var(--border);
@@ -87,6 +101,7 @@
     .cardhead h2{ font-size:15px; margin:0; }
     .sub{ color:var(--muted); font-size:12px; }
     .row-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
     .divider{ height:1px; background:var(--border); margin:10px 0; }
 
     table{ width:100%; border-collapse:collapse; }
@@ -108,9 +123,10 @@
     }
 
     tr:hover td{ background:#fafafa; }
-    tr.status-ack td{ background: rgba(96,165,250,0.12); }
+
     tr.status-dropped td{ background: rgba(245,158,11,0.16); }
     tr.status-sent td{ background: rgba(22,163,74,0.12); }
+    tr.status-cancel td{ background: rgba(239,68,68,0.12); }
 
     .cell-input, .cell-select{
       width:100%;
@@ -127,7 +143,6 @@
     }
 
     .checkbox{ width:16px; height:16px; }
-    .right{ text-align:right; }
     .small{ font-size:12px; color:var(--muted); }
 
     /* Modal */
@@ -154,6 +169,7 @@
       border-bottom:1px solid var(--border);
     }
     .modal .content{ padding:14px; }
+
     textarea{
       width:100%;
       min-height:220px;
@@ -171,6 +187,7 @@
     .formgrid .span2{ grid-column: span 2; }
     .formgrid .span6{ grid-column: span 6; }
     label{ display:block; font-size:12px; color:var(--muted); margin-bottom:5px; }
+
     .toast{
       position:fixed;
       right:14px; bottom:14px;
@@ -180,10 +197,12 @@
       border-radius:12px;
       box-shadow: var(--shadow);
       display:none;
-      max-width:360px;
+      max-width:420px;
       font-size:13px;
       z-index:2000;
     }
+
+    .hidden{ display:none !important; }
   </style>
 </head>
 <body>
@@ -214,16 +233,51 @@
 
   <main class="wrap">
     <div class="grid">
+
+      <!-- NEW REQUESTS (conditionally shown) -->
+      <section class="card hidden" id="newCard">
+        <div class="cardhead">
+          <div>
+            <h2>New Transfer Requests</h2>
+            <div class="sub">New requests waiting to be accepted by the team managing transfers.</div>
+          </div>
+          <div class="row-actions">
+            <button class="btn primary" id="btnAcceptNew" disabled>Accept Request(s)</button>
+            <button class="btn" id="btnPrintNew" disabled>Print</button>
+            <button class="btn danger" id="btnCancelNew" disabled>Cancel Request(s)</button>
+          </div>
+        </div>
+
+        <div style="position:relative; overflow:auto; max-height:320px; border:1px solid #eef0f3; border-radius:12px;">
+          <table id="newTable">
+            <thead>
+              <tr>
+                <th style="width:34px;"><input type="checkbox" id="checkAllNew" class="checkbox"></th>
+                <th style="width:90px;">TYPE</th>
+                <th style="width:160px;">PRODUCT</th>
+                <th style="width:80px;">QTY</th>
+                <th style="width:70px;">WH</th>
+                <th style="width:90px;">BIN</th>
+                <th>COMMENTS</th>
+              </tr>
+            </thead>
+            <tbody id="newBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ACTIVE -->
       <section class="card">
         <div class="cardhead">
           <div>
             <h2>Active Transfers</h2>
-            <div class="sub">Not sent yet. Use bulk actions to update multiple lines quickly.</div>
+            <div class="sub">Accepted requests being worked. Mark Dropped and Sent as items are prepared and dispatched.</div>
           </div>
           <div class="row-actions">
-            <button class="btn" id="btnBulkAck" disabled>Mark ACK</button>
+            <button class="btn" id="btnPrintActive" disabled>Print</button>
             <button class="btn" id="btnBulkDropped" disabled>Mark Dropped</button>
             <button class="btn" id="btnBulkSent" disabled>Mark Sent</button>
+            <button class="btn danger" id="btnCancelActive" disabled>Cancel Request(s)</button>
           </div>
         </div>
 
@@ -247,13 +301,16 @@
         </div>
       </section>
 
+      <!-- SENT -->
       <section class="card">
         <div class="cardhead">
           <div>
             <h2>Sent Transfers</h2>
-            <div class="sub">Completed lines (Sent = YES). Kept visible for the day for clarity.</div>
+            <div class="sub">Completed lines for the day (Sent = YES). You can reverse Sent if a line was marked by mistake.</div>
           </div>
           <div class="row-actions">
+            <button class="btn" id="btnPrintSent" disabled>Print</button>
+            <button class="btn" id="btnReverseSent" disabled>Reverse Sent</button>
             <button class="btn" id="btnToggleSent">Hide</button>
           </div>
         </div>
@@ -262,6 +319,7 @@
           <table id="sentTable">
             <thead>
               <tr>
+                <th style="width:34px;"><input type="checkbox" id="checkAllSent" class="checkbox"></th>
                 <th style="width:90px;">TYPE</th>
                 <th style="width:160px;">PRODUCT</th>
                 <th style="width:80px;">QTY</th>
@@ -276,6 +334,39 @@
           </table>
         </div>
       </section>
+
+      <!-- CANCELLED (conditionally shown) -->
+      <section class="card hidden" id="cancelCard">
+        <div class="cardhead">
+          <div>
+            <h2>Cancellations</h2>
+            <div class="sub">Cancelled requests for the day. You can reverse a cancellation if needed.</div>
+          </div>
+          <div class="row-actions">
+            <button class="btn" id="btnReverseCancel" disabled>Reverse Cancellation</button>
+          </div>
+        </div>
+
+        <div style="position:relative; overflow:auto; max-height:320px; border:1px solid #eef0f3; border-radius:12px;">
+          <table id="cancelTable">
+            <thead>
+              <tr>
+                <th style="width:34px;"><input type="checkbox" id="checkAllCancel" class="checkbox"></th>
+                <th style="width:90px;">TYPE</th>
+                <th style="width:160px;">PRODUCT</th>
+                <th style="width:80px;">QTY</th>
+                <th style="width:70px;">WH</th>
+                <th style="width:90px;">BIN</th>
+                <th style="width:110px;">DROPPED</th>
+                <th style="width:90px;">SENT</th>
+                <th>COMMENTS</th>
+              </tr>
+            </thead>
+            <tbody id="cancelBody"></tbody>
+          </table>
+        </div>
+      </section>
+
     </div>
   </main>
 
@@ -294,7 +385,7 @@
       <div class="content">
         <p class="small" style="margin-top:0;">
           Copy the range from Excel and paste here. Headers are supported (any order). If no headers, assumed columns:
-          <strong>PRODUCT, QTY, WH, BIN</strong>. TYPE defaults to BULK for paste uploads.
+          <strong>PRODUCT, QTY, WH, BIN</strong>. TYPE defaults to BULK for paste uploads. These lines enter as <strong>New</strong>.
         </p>
         <textarea id="pasteBox" placeholder="Paste here..."></textarea>
         <div class="divider"></div>
@@ -345,6 +436,9 @@
             <input id="addComments" class="cell-input" placeholder="Optional notes (urgency, order ref, etc.)" />
           </div>
         </div>
+        <div class="small" style="margin-top:10px;">
+          Note: New lines enter as <strong>New Transfer Requests</strong> until accepted.
+        </div>
       </div>
     </div>
   </div>
@@ -353,16 +447,20 @@
 
   <script>
     // ====== EDIT THESE ======
-    const API_URL = "https://script.google.com/macros/s/AKfycbxpeOikchlafJAHPgZAyGD-5kCbRWijK1jn4zE1uZQOd1LA-DMJIf6ud3INj2HHW9yj/exec";
-    const API_KEY = "Lthdn637H7shdbs8987jnsm72GtsFh"; 
+    const API_URL = "PASTE_YOUR_SCRIPT_EXEC_URL_HERE";
+    const API_KEY = "Lthdn637H7shdbs8987jnsm72GtsFh";
+
+    // ====== SETTINGS ======
+    const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
 
     // ====== STATE ======
-    let currentSheet = "PKY_TO_DTN";
+    let currentSheet = "PKY_TO_DTN"; // BASE sheet name (Script routes to LIVE/ARCHIVE)
     let currentDate = "";
     let rows = [];
 
     // ====== UI ELEMENTS ======
     const statusPill = document.getElementById("statusPill");
+
     const tabPKY = document.getElementById("tabPKY");
     const tabDTN = document.getElementById("tabDTN");
     const datePicker = document.getElementById("datePicker");
@@ -371,16 +469,35 @@
     const btnPasteUpload = document.getElementById("btnPasteUpload");
     const btnAddLine = document.getElementById("btnAddLine");
 
-    const activeBody = document.getElementById("activeBody");
-    const sentBody = document.getElementById("sentBody");
-    const checkAllActive = document.getElementById("checkAllActive");
+    // New Requests
+    const newCard = document.getElementById("newCard");
+    const newBody = document.getElementById("newBody");
+    const checkAllNew = document.getElementById("checkAllNew");
+    const btnAcceptNew = document.getElementById("btnAcceptNew");
+    const btnPrintNew = document.getElementById("btnPrintNew");
+    const btnCancelNew = document.getElementById("btnCancelNew");
 
-    const btnBulkAck = document.getElementById("btnBulkAck");
+    // Active
+    const activeBody = document.getElementById("activeBody");
+    const checkAllActive = document.getElementById("checkAllActive");
+    const btnPrintActive = document.getElementById("btnPrintActive");
     const btnBulkDropped = document.getElementById("btnBulkDropped");
     const btnBulkSent = document.getElementById("btnBulkSent");
+    const btnCancelActive = document.getElementById("btnCancelActive");
 
-    const btnToggleSent = document.getElementById("btnToggleSent");
+    // Sent
     const sentWrap = document.getElementById("sentWrap");
+    const sentBody = document.getElementById("sentBody");
+    const checkAllSent = document.getElementById("checkAllSent");
+    const btnPrintSent = document.getElementById("btnPrintSent");
+    const btnReverseSent = document.getElementById("btnReverseSent");
+    const btnToggleSent = document.getElementById("btnToggleSent");
+
+    // Cancelled
+    const cancelCard = document.getElementById("cancelCard");
+    const cancelBody = document.getElementById("cancelBody");
+    const checkAllCancel = document.getElementById("checkAllCancel");
+    const btnReverseCancel = document.getElementById("btnReverseCancel");
 
     // Modals
     const pasteModal = document.getElementById("pasteModal");
@@ -392,7 +509,6 @@
     const addModal = document.getElementById("addModal");
     const btnAddClose = document.getElementById("btnAddClose");
     const btnAddSubmit = document.getElementById("btnAddSubmit");
-
     const addType = document.getElementById("addType");
     const addProduct = document.getElementById("addProduct");
     const addQty = document.getElementById("addQty");
@@ -438,7 +554,7 @@
       toast.textContent = msg;
       toast.style.display = "block";
       clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => toast.style.display = "none", 2800);
+      window.__toastTimer = setTimeout(() => toast.style.display = "none", 3000);
     }
 
     function escapeHtml(s){
@@ -450,7 +566,7 @@
         .replaceAll("'","&#039;");
     }
 
-    // ====== JSONP API (CORS-safe for GitHub Pages) ======
+    // ====== JSONP (CORS-safe) ======
     function jsonp(url){
       return new Promise((resolve, reject) => {
         const cb = "cb_" + Math.random().toString(16).slice(2);
@@ -483,7 +599,7 @@
     async function apiCall(action, payload = {}){
       const url = new URL(API_URL);
       url.searchParams.set("action", action);
-      url.searchParams.set("sheet", currentSheet);
+      url.searchParams.set("sheet", currentSheet); // base name
       url.searchParams.set("date", currentDate);
       url.searchParams.set("apiKey", API_KEY);
 
@@ -498,17 +614,14 @@
         url.searchParams.set("DROPPED", row.DROPPED || "");
         url.searchParams.set("SENT", row.SENT || "");
         url.searchParams.set("COMMENTS", row.COMMENTS || "");
+        url.searchParams.set("STATUS", row.STATUS || "NEW");
       }
 
+      if (action === "bulkAdd") url.searchParams.set("rows", JSON.stringify(payload.rows || []));
       if (action === "update") {
         url.searchParams.set("rowId", String(payload.rowId || ""));
         url.searchParams.set("patch", JSON.stringify(payload.patch || {}));
       }
-
-      if (action === "bulkAdd") {
-        url.searchParams.set("rows", JSON.stringify(payload.rows || []));
-      }
-
       if (action === "bulkUpdate") {
         url.searchParams.set("rowIds", JSON.stringify(payload.rowIds || []));
         url.searchParams.set("patch", JSON.stringify(payload.patch || {}));
@@ -517,12 +630,97 @@
       return await jsonp(url.toString());
     }
 
+    // ====== SELECTION HELPERS ======
+    function selectedRowIds(selector){
+      return [...document.querySelectorAll(selector)]
+        .filter(x => x.checked)
+        .map(x => Number(x.getAttribute("data-rowid")));
+    }
+    function selectedRowsByIds(ids){
+      const set = new Set(ids);
+      return rows.filter(r => set.has(Number(r.rowId)));
+    }
+
+    function updateButtons(){
+      const newIds = selectedRowIds("input[data-rowcheck='new']:checked");
+      btnAcceptNew.disabled = newIds.length === 0;
+      btnPrintNew.disabled = newIds.length === 0;
+      btnCancelNew.disabled = newIds.length === 0;
+
+      const activeIds = selectedRowIds("input[data-rowcheck='active']:checked");
+      btnPrintActive.disabled = activeIds.length === 0;
+      btnBulkDropped.disabled = activeIds.length === 0;
+      btnBulkSent.disabled = activeIds.length === 0;
+      btnCancelActive.disabled = activeIds.length === 0;
+
+      const sentIds = selectedRowIds("input[data-rowcheck='sent']:checked");
+      btnPrintSent.disabled = sentIds.length === 0;
+      btnReverseSent.disabled = sentIds.length === 0;
+
+      const cancelIds = selectedRowIds("input[data-rowcheck='cancel']:checked");
+      btnReverseCancel.disabled = cancelIds.length === 0;
+    }
+
+    // ====== PRINTING ======
+    function printLines(title, lines){
+      const w = window.open("", "_blank");
+      const safeTitle = escapeHtml(title);
+      const dateTxt = escapeHtml(currentDate);
+
+      const rowsHtml = lines.map(r => `
+        <tr>
+          <td>${escapeHtml((r.TYPE||"").toUpperCase())}</td>
+          <td>${escapeHtml(r.PRODUCT)}</td>
+          <td>${escapeHtml(r.QTY)}</td>
+          <td>${escapeHtml(r.WH)}</td>
+          <td>${escapeHtml(r.BIN)}</td>
+          <td>${escapeHtml(r.COMMENTS)}</td>
+        </tr>
+      `).join("");
+
+      w.document.write(`
+        <html>
+        <head>
+          <title>${safeTitle}</title>
+          <meta charset="utf-8">
+          <style>
+            body{ font-family: Arial, sans-serif; padding:16px; }
+            h1{ margin:0 0 6px 0; font-size:18px; }
+            .meta{ margin:0 0 12px 0; color:#555; font-size:12px; }
+            table{ width:100%; border-collapse:collapse; }
+            th, td{ border:1px solid #ddd; padding:8px; font-size:12px; text-align:left; }
+            th{ background:#f3f4f6; }
+          </style>
+        </head>
+        <body>
+          <h1>${safeTitle}</h1>
+          <p class="meta">Date: ${dateTxt} • Direction: ${escapeHtml(currentSheet)}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>TYPE</th><th>PRODUCT</th><th>QTY</th><th>WH</th><th>BIN</th><th>COMMENTS</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+          <script>
+            window.onload = () => { window.print(); };
+          </script>
+        </body>
+        </html>
+      `);
+      w.document.close();
+    }
+
+    // ====== RENDERING ======
     function rowClass(r){
-      const sent = (r.SENT || "").trim().toUpperCase() === "YES";
-      const dropped = (r.DROPPED || "").trim().toUpperCase();
+      const status = (r.STATUS || "").toString().trim().toUpperCase();
+      const sent = (r.SENT || "").toString().trim().toUpperCase() === "YES";
+      const dropped = (r.DROPPED || "").toString().trim().toUpperCase() === "YES";
+
+      if (status === "CANCELLED") return "status-cancel";
       if (sent) return "status-sent";
-      if (dropped === "YES") return "status-dropped";
-      if (dropped === "ACK") return "status-ack";
+      if (dropped) return "status-dropped";
       return "";
     }
 
@@ -532,58 +730,88 @@
         ${options.map(o => `<option value="${escapeHtml(o)}" ${o===v ? "selected":""}>${escapeHtml(o)}</option>`).join("")}
       </select>`;
     }
-
     function buildInput(value, type="text"){
       return `<input class="cell-input" type="${type}" value="${escapeHtml(value ?? "")}">`;
     }
 
-    function selectedActiveRowIds(){
-      const checks = [...document.querySelectorAll("input[data-rowcheck='1']:checked")];
-      return checks.map(c => Number(c.getAttribute("data-rowid")));
-    }
-
-    function updateBulkButtons(){
-      const ids = selectedActiveRowIds();
-      const has = ids.length > 0;
-      btnBulkAck.disabled = !has;
-      btnBulkDropped.disabled = !has;
-      btnBulkSent.disabled = !has;
-    }
-
-    // ====== RENDER ======
     function render(){
-      const active = rows.filter(r => (r.SENT || "").trim().toUpperCase() !== "YES");
-      const sent = rows.filter(r => (r.SENT || "").trim().toUpperCase() === "YES");
+      const status = (x) => (x.STATUS || "").toString().trim().toUpperCase();
+      const isSent = (x) => (x.SENT || "").toString().trim().toUpperCase() === "YES";
 
+      const newReq = rows.filter(r => !isSent(r) && status(r) === "NEW");
+      const active = rows.filter(r => !isSent(r) && status(r) === "ACTIVE");
+      const sent = rows.filter(r => isSent(r) && status(r) !== "CANCELLED");
+      const cancelled = rows.filter(r => status(r) === "CANCELLED");
+
+      // Toggle cards visibility
+      newCard.classList.toggle("hidden", newReq.length === 0);
+      cancelCard.classList.toggle("hidden", cancelled.length === 0);
+
+      // NEW REQUESTS
+      newBody.innerHTML = newReq.map(r => `
+        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+          <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
+          <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
+          <td>${escapeHtml(r.PRODUCT)}</td>
+          <td>${escapeHtml(r.QTY)}</td>
+          <td>${escapeHtml(r.WH)}</td>
+          <td>${escapeHtml(r.BIN)}</td>
+          <td>${escapeHtml(r.COMMENTS)}</td>
+        </tr>
+      `).join("");
+
+      // ACTIVE (editable)
       activeBody.innerHTML = active.map(r => `
         <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-          <td><input class="checkbox" type="checkbox" data-rowcheck="1" data-rowid="${r.rowId}"></td>
+          <td><input class="checkbox" type="checkbox" data-rowcheck="active" data-rowid="${r.rowId}"></td>
           <td data-col="TYPE">${buildSelect(["SPLIT","BULK"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
           <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
           <td data-col="QTY">${buildInput(r.QTY, "number")}</td>
           <td data-col="WH">${buildInput(r.WH)}</td>
           <td data-col="BIN">${buildInput(r.BIN)}</td>
-          <td data-col="DROPPED">${buildSelect(["","ACK","YES"], (r.DROPPED || "").toString().toUpperCase())}</td>
+          <td data-col="DROPPED">${buildSelect(["","YES"], (r.DROPPED || "").toString().toUpperCase())}</td>
           <td data-col="SENT">${buildSelect(["","YES"], (r.SENT || "").toString().toUpperCase())}</td>
           <td data-col="COMMENTS">${buildInput(r.COMMENTS)}</td>
         </tr>
       `).join("");
 
+      // SENT (selectable + reversible)
       sentBody.innerHTML = sent.map(r => `
-        <tr class="${rowClass(r)}">
-          <td>${escapeHtml((r.TYPE || "").toString().toUpperCase())}</td>
+        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+          <td><input class="checkbox" type="checkbox" data-rowcheck="sent" data-rowid="${r.rowId}"></td>
+          <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
           <td>${escapeHtml(r.PRODUCT)}</td>
           <td>${escapeHtml(r.QTY)}</td>
           <td>${escapeHtml(r.WH)}</td>
           <td>${escapeHtml(r.BIN)}</td>
-          <td>${escapeHtml((r.DROPPED || "").toString().toUpperCase())}</td>
-          <td>${escapeHtml((r.SENT || "").toString().toUpperCase())}</td>
+          <td>${escapeHtml((r.DROPPED || "").toUpperCase())}</td>
+          <td>${escapeHtml((r.SENT || "").toUpperCase())}</td>
           <td>${escapeHtml(r.COMMENTS)}</td>
         </tr>
       `).join("");
 
+      // CANCELLED (selectable + reversible)
+      cancelBody.innerHTML = cancelled.map(r => `
+        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+          <td><input class="checkbox" type="checkbox" data-rowcheck="cancel" data-rowid="${r.rowId}"></td>
+          <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
+          <td>${escapeHtml(r.PRODUCT)}</td>
+          <td>${escapeHtml(r.QTY)}</td>
+          <td>${escapeHtml(r.WH)}</td>
+          <td>${escapeHtml(r.BIN)}</td>
+          <td>${escapeHtml((r.DROPPED || "").toUpperCase())}</td>
+          <td>${escapeHtml((r.SENT || "").toUpperCase())}</td>
+          <td>${escapeHtml(r.COMMENTS)}</td>
+        </tr>
+      `).join("");
+
+      // Reset select-alls
+      checkAllNew.checked = false;
       checkAllActive.checked = false;
-      updateBulkButtons();
+      checkAllSent.checked = false;
+      checkAllCancel.checked = false;
+
+      updateButtons();
       setStatus(`Loaded ${rows.length} lines`, "ok");
     }
 
@@ -610,6 +838,23 @@
       if (!res.ok) throw new Error(res.error || "Bulk update failed");
     }
 
+    // ====== INPUT NORMALISATION ======
+    // Live uppercase on typing (PRODUCT/WH/BIN/COMMENTS)
+    document.addEventListener("input", (ev) => {
+      const input = ev.target;
+      if (!input.classList.contains("cell-input")) return;
+
+      const td = input.closest("td[data-col]");
+      if (!td) return;
+
+      const col = td.getAttribute("data-col");
+      if (["PRODUCT","WH","BIN","COMMENTS"].includes(col)) {
+        const pos = input.selectionStart;
+        input.value = input.value.toUpperCase();
+        try { input.setSelectionRange(pos, pos); } catch(e){}
+      }
+    });
+
     // ====== EVENTS ======
     tabPKY.addEventListener("click", () => {
       currentSheet = "PKY_TO_DTN";
@@ -617,7 +862,6 @@
       tabDTN.classList.remove("active");
       refresh();
     });
-
     tabDTN.addEventListener("click", () => {
       currentSheet = "DTN_TO_PKY";
       tabDTN.classList.add("active");
@@ -628,90 +872,58 @@
     btnRefresh.addEventListener("click", refresh);
 
     datePicker.addEventListener("change", () => {
-      currentDate = datePicker.value;
+      currentDate = datePicker.value || todayISO();
       refresh();
     });
 
-    checkAllActive.addEventListener("change", () => {
-      const checks = [...document.querySelectorAll("input[data-rowcheck='1']")];
-      checks.forEach(c => c.checked = checkAllActive.checked);
-      updateBulkButtons();
-    });
+    // Select-all checkboxes
+    function setAll(which, checked){
+      document.querySelectorAll(`input[data-rowcheck='${which}']`).forEach(c => c.checked = checked);
+      updateButtons();
+    }
+    checkAllNew.addEventListener("change", () => setAll("new", checkAllNew.checked));
+    checkAllActive.addEventListener("change", () => setAll("active", checkAllActive.checked));
+    checkAllSent.addEventListener("change", () => setAll("sent", checkAllSent.checked));
+    checkAllCancel.addEventListener("change", () => setAll("cancel", checkAllCancel.checked));
 
-    // Auto-uppercase while typing (do NOT trim here; trimming happens on save)
-    document.addEventListener("input", (ev) => {
-      const input = ev.target;
-      if (!input.classList.contains("cell-input")) return;
-
-      const td = input.closest("td[data-col]");
-      if (!td) return;
-
-      const col = td.getAttribute("data-col");
-
-      if (["PRODUCT", "WH", "BIN", "COMMENTS"].includes(col)) {
-        const pos = input.selectionStart;
-        input.value = input.value.toUpperCase();
-        try { input.setSelectionRange(pos, pos); } catch(e){}
+    // Any checkbox change updates buttons
+    document.addEventListener("change", (ev) => {
+      if (ev.target && ev.target.matches("input[type='checkbox'][data-rowcheck]")) {
+        updateButtons();
       }
     });
 
-    // Save changes (on blur / select change)
+    // Inline edits for ACTIVE only
     document.addEventListener("change", async (ev) => {
-      // Row checkbox selection
-      if (ev.target && ev.target.matches("input[data-rowcheck='1']")) {
-        updateBulkButtons();
-        return;
-      }
-
-      // Table inline edits
       const tr = ev.target.closest("tr[data-rowid]");
       if (!tr) return;
 
       const td = ev.target.closest("td[data-col]");
       if (!td) return;
 
+      // Only allow edits in Active table rows (they have data-col)
       const rowId = Number(tr.getAttribute("data-rowid"));
       const col = td.getAttribute("data-col");
 
       let value = (ev.target.tagName === "SELECT") ? ev.target.value : ev.target.value;
 
-      // Normalise selects
+      // Normalise
       if (col === "TYPE") value = (value || "SPLIT").toUpperCase();
       if (col === "DROPPED") value = (value || "").toUpperCase();
       if (col === "SENT") value = (value || "").toUpperCase();
 
-      // PRODUCT/WH/BIN: trim + uppercase
       if (col === "PRODUCT" || col === "WH" || col === "BIN") {
         value = (value || "").toString().trim().toUpperCase();
       }
-
-      // COMMENTS: uppercase only, do NOT trim (preserve spacing)
       if (col === "COMMENTS") {
-        value = (value || "").toString().toUpperCase();
+        value = (value || "").toString().toUpperCase(); // do not trim comments
       }
-
-      // QTY: number
       if (col === "QTY") value = value === "" ? "" : Number(value);
 
-      // Prevent saving empty required fields
-      if (col === "PRODUCT" && value === "") {
-        setStatus("Not saved", "warn");
-        showToast("Product cannot be blank");
-        await refresh(); // revert UI to sheet values
-        return;
-      }
-      if (col === "WH" && value === "") {
-        setStatus("Not saved", "warn");
-        showToast("WH cannot be blank");
-        await refresh();
-        return;
-      }
-      if (col === "BIN" && value === "") {
-        setStatus("Not saved", "warn");
-        showToast("BIN cannot be blank");
-        await refresh();
-        return;
-      }
+      // Prevent blank required fields
+      if (col === "PRODUCT" && value === "") { showToast("Product cannot be blank"); await refresh(); return; }
+      if (col === "WH" && value === "") { showToast("WH cannot be blank"); await refresh(); return; }
+      if (col === "BIN" && value === "") { showToast("BIN cannot be blank"); await refresh(); return; }
 
       try{
         setStatus("Saving…", "warn");
@@ -724,20 +936,60 @@
       }
     });
 
-    // Bulk actions
-    btnBulkAck.addEventListener("click", async () => {
-      const ids = selectedActiveRowIds();
+    // ====== NEW REQUESTS ACTIONS ======
+    btnAcceptNew.addEventListener("click", async () => {
+      const ids = selectedRowIds("input[data-rowcheck='new']:checked");
       if (!ids.length) return;
+
       try{
-        setStatus("Saving…", "warn");
-        await bulkPatch(ids, { DROPPED: "ACK" });
-        showToast("Marked ACK");
+        setStatus("Accepting…", "warn");
+        await bulkPatch(ids, { STATUS: "ACTIVE" });
+        showToast("Accepted");
+
+        const doPrint = confirm("Requests accepted. Print the selected lines now?");
+        if (doPrint) {
+          const lines = selectedRowsByIds(ids);
+          printLines("Accepted Transfer Requests", lines);
+        }
+
         await refresh();
-      } catch(e){ setStatus("Bulk save failed", "err"); showToast(String(e.message || e)); }
+      } catch(e){
+        setStatus("Accept failed", "err");
+        showToast(String(e.message || e));
+      }
+    });
+
+    btnPrintNew.addEventListener("click", () => {
+      const ids = selectedRowIds("input[data-rowcheck='new']:checked");
+      if (!ids.length) return;
+      printLines("New Transfer Requests", selectedRowsByIds(ids));
+    });
+
+    btnCancelNew.addEventListener("click", async () => {
+      const ids = selectedRowIds("input[data-rowcheck='new']:checked");
+      if (!ids.length) return;
+      if (!confirm("Cancel the selected request(s)?")) return;
+
+      try{
+        setStatus("Cancelling…", "warn");
+        await bulkPatch(ids, { STATUS: "CANCELLED" });
+        showToast("Cancelled");
+        await refresh();
+      } catch(e){
+        setStatus("Cancel failed", "err");
+        showToast(String(e.message || e));
+      }
+    });
+
+    // ====== ACTIVE ACTIONS ======
+    btnPrintActive.addEventListener("click", () => {
+      const ids = selectedRowIds("input[data-rowcheck='active']:checked");
+      if (!ids.length) return;
+      printLines("Active Transfers", selectedRowsByIds(ids));
     });
 
     btnBulkDropped.addEventListener("click", async () => {
-      const ids = selectedActiveRowIds();
+      const ids = selectedRowIds("input[data-rowcheck='active']:checked");
       if (!ids.length) return;
       try{
         setStatus("Saving…", "warn");
@@ -748,7 +1000,7 @@
     });
 
     btnBulkSent.addEventListener("click", async () => {
-      const ids = selectedActiveRowIds();
+      const ids = selectedRowIds("input[data-rowcheck='active']:checked");
       if (!ids.length) return;
       try{
         setStatus("Saving…", "warn");
@@ -758,14 +1010,69 @@
       } catch(e){ setStatus("Bulk save failed", "err"); showToast(String(e.message || e)); }
     });
 
-    // Sent toggle
+    btnCancelActive.addEventListener("click", async () => {
+      const ids = selectedRowIds("input[data-rowcheck='active']:checked");
+      if (!ids.length) return;
+      if (!confirm("Cancel the selected active transfer(s)?")) return;
+
+      try{
+        setStatus("Cancelling…", "warn");
+        await bulkPatch(ids, { STATUS: "CANCELLED" });
+        showToast("Cancelled");
+        await refresh();
+      } catch(e){
+        setStatus("Cancel failed", "err");
+        showToast(String(e.message || e));
+      }
+    });
+
+    // ====== SENT ACTIONS ======
+    btnPrintSent.addEventListener("click", () => {
+      const ids = selectedRowIds("input[data-rowcheck='sent']:checked");
+      if (!ids.length) return;
+      printLines("Sent Transfers", selectedRowsByIds(ids));
+    });
+
+    btnReverseSent.addEventListener("click", async () => {
+      const ids = selectedRowIds("input[data-rowcheck='sent']:checked");
+      if (!ids.length) return;
+      if (!confirm("Reverse 'Sent' for the selected line(s)? They will return to Active Transfers.")) return;
+
+      try{
+        setStatus("Reversing…", "warn");
+        await bulkPatch(ids, { SENT: "", STATUS: "ACTIVE" });
+        showToast("Reversed Sent");
+        await refresh();
+      } catch(e){
+        setStatus("Reverse failed", "err");
+        showToast(String(e.message || e));
+      }
+    });
+
     btnToggleSent.addEventListener("click", () => {
       const hidden = sentWrap.style.display === "none";
       sentWrap.style.display = hidden ? "block" : "none";
       btnToggleSent.textContent = hidden ? "Hide" : "Show";
     });
 
-    // Paste Upload modal
+    // ====== CANCELLED ACTIONS ======
+    btnReverseCancel.addEventListener("click", async () => {
+      const ids = selectedRowIds("input[data-rowcheck='cancel']:checked");
+      if (!ids.length) return;
+      if (!confirm("Reverse cancellation for the selected line(s)? They will return to Active Transfers.")) return;
+
+      try{
+        setStatus("Reversing…", "warn");
+        await bulkPatch(ids, { STATUS: "ACTIVE" });
+        showToast("Reversed Cancellation");
+        await refresh();
+      } catch(e){
+        setStatus("Reverse failed", "err");
+        showToast(String(e.message || e));
+      }
+    });
+
+    // ====== PASTE UPLOAD MODAL ======
     btnPasteUpload.addEventListener("click", () => {
       pasteBox.value = "";
       pastePreview.textContent = "Nothing pasted yet.";
@@ -804,8 +1111,6 @@
         if (h === "WH" || h === "WAREHOUSE") return "WH";
         if (h === "BIN") return "BIN";
         if (h === "TYPE") return "TYPE";
-        if (h === "DROPPED") return "DROPPED";
-        if (h === "SENT") return "SENT";
         if (h === "COMMENTS" || h === "COMMENT") return "COMMENTS";
         return h;
       };
@@ -824,7 +1129,8 @@
           BIN: "",
           DROPPED: "",
           SENT: "",
-          COMMENTS: ""
+          COMMENTS: "",
+          STATUS: "NEW"
         };
 
         for (let c = 0; c < row.length; c++){
@@ -835,21 +1141,19 @@
 
           if (k === "TYPE") obj.TYPE = (v || "BULK").toUpperCase();
           else if (k === "QTY") obj.QTY = v === "" ? "" : Number(v);
-          else if (k === "DROPPED") obj.DROPPED = v.toUpperCase();
-          else if (k === "SENT") obj.SENT = v.toUpperCase();
           else if (k === "PRODUCT") obj.PRODUCT = v.toUpperCase();
           else if (k === "WH") obj.WH = v.toUpperCase();
           else if (k === "BIN") obj.BIN = v.toUpperCase();
-          else if (k === "COMMENTS") obj.COMMENTS = vRaw.toString().toUpperCase(); // preserve spaces more than trim would
+          else if (k === "COMMENTS") obj.COMMENTS = vRaw.toUpperCase(); // keep spacing more than trim
         }
 
-        // If no header and row had 4 cols, map them in order
         if (!headerLike && row.length >= 1) obj.PRODUCT = (row[0] ?? "").toString().trim().toUpperCase();
         if (!headerLike && row.length >= 2) obj.QTY = (row[1] ?? "").toString().trim() === "" ? "" : Number(row[1]);
         if (!headerLike && row.length >= 3) obj.WH = (row[2] ?? "").toString().trim().toUpperCase();
         if (!headerLike && row.length >= 4) obj.BIN = (row[3] ?? "").toString().trim().toUpperCase();
 
-        if (obj.PRODUCT) out.push(obj);
+        // Require PRODUCT/WH/BIN
+        if (obj.PRODUCT && obj.WH && obj.BIN) out.push(obj);
       }
 
       const preview =
@@ -867,7 +1171,7 @@
     btnPasteSubmit.addEventListener("click", async () => {
       const parsed = parsePaste(pasteBox.value);
       if (!parsed.rows.length){
-        showToast("Nothing to upload");
+        showToast("Nothing valid to upload (requires PRODUCT, WH, BIN)");
         return;
       }
       try{
@@ -883,7 +1187,7 @@
       }
     });
 
-    // Add line modal
+    // ====== ADD LINE MODAL ======
     btnAddLine.addEventListener("click", () => {
       addType.value = "SPLIT";
       addProduct.value = "";
@@ -906,28 +1210,19 @@
         BIN: (addBin.value || "").trim().toUpperCase(),
         DROPPED: "",
         SENT: "",
-        COMMENTS: (addComments.value || "").toString().toUpperCase()
+        COMMENTS: (addComments.value || "").toString().toUpperCase(),
+        STATUS: "NEW"
       };
 
-      // Required fields for Add Line
-      if (!row.PRODUCT){
-        showToast("Product is required");
-        return;
-      }
-      if (!row.WH){
-        showToast("WH is required");
-        return;
-      }
-      if (!row.BIN){
-        showToast("BIN is required");
-        return;
-      }
+      if (!row.PRODUCT){ showToast("Product is required"); return; }
+      if (!row.WH){ showToast("WH is required"); return; }
+      if (!row.BIN){ showToast("BIN is required"); return; }
 
       try{
         setStatus("Adding…", "warn");
         const res = await apiCall("add", { row });
         if (!res.ok) throw new Error(res.error || "Add failed");
-        showToast("Added");
+        showToast("Added to New Requests");
         addModal.style.display = "none";
         await refresh();
       } catch(e){
@@ -935,6 +1230,13 @@
         showToast(String(e.message || e));
       }
     });
+
+    // ====== AUTO REFRESH (resets date to today) ======
+    setInterval(() => {
+      currentDate = todayISO();
+      datePicker.value = currentDate;
+      refresh();
+    }, AUTO_REFRESH_MS);
 
     // ====== START ======
     (function(){
