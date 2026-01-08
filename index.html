@@ -97,14 +97,14 @@
       font-size:13px;
     }
     th{
-    text-align:left;
-    font-size:12px;
-    color:var(--muted);
-    user-select:none;
-    position:sticky;
-    top:0;                
-    background:var(--card);
-    z-index:10;
+      text-align:left;
+      font-size:12px;
+      color:var(--muted);
+      user-select:none;
+      position:sticky;
+      top:0;
+      background:var(--card);
+      z-index:10;
     }
 
     tr:hover td{ background:#fafafa; }
@@ -294,7 +294,7 @@
       <div class="content">
         <p class="small" style="margin-top:0;">
           Copy the range from Excel and paste here. Headers are supported (any order). If no headers, assumed columns:
-          <strong>PRODUCT, QTY, WH, BIN</strong>. TYPE defaults to SPLIT.
+          <strong>PRODUCT, QTY, WH, BIN</strong>. TYPE defaults to BULK for paste uploads.
         </p>
         <textarea id="pasteBox" placeholder="Paste here..."></textarea>
         <div class="divider"></div>
@@ -611,12 +611,26 @@
     }
 
     // ====== EVENTS ======
-    tabPKY.addEventListener("click", () => { currentSheet = "PKY_TO_DTN"; tabPKY.classList.add("active"); tabDTN.classList.remove("active"); refresh(); });
-    tabDTN.addEventListener("click", () => { currentSheet = "DTN_TO_PKY"; tabDTN.classList.add("active"); tabPKY.classList.remove("active"); refresh(); });
+    tabPKY.addEventListener("click", () => {
+      currentSheet = "PKY_TO_DTN";
+      tabPKY.classList.add("active");
+      tabDTN.classList.remove("active");
+      refresh();
+    });
+
+    tabDTN.addEventListener("click", () => {
+      currentSheet = "DTN_TO_PKY";
+      tabDTN.classList.add("active");
+      tabPKY.classList.remove("active");
+      refresh();
+    });
 
     btnRefresh.addEventListener("click", refresh);
 
-    datePicker.addEventListener("change", () => { currentDate = datePicker.value; refresh(); });
+    datePicker.addEventListener("change", () => {
+      currentDate = datePicker.value;
+      refresh();
+    });
 
     checkAllActive.addEventListener("change", () => {
       const checks = [...document.querySelectorAll("input[data-rowcheck='1']")];
@@ -624,12 +638,32 @@
       updateBulkButtons();
     });
 
+    // Auto-uppercase while typing (do NOT trim here; trimming happens on save)
+    document.addEventListener("input", (ev) => {
+      const input = ev.target;
+      if (!input.classList.contains("cell-input")) return;
+
+      const td = input.closest("td[data-col]");
+      if (!td) return;
+
+      const col = td.getAttribute("data-col");
+
+      if (["PRODUCT", "WH", "BIN", "COMMENTS"].includes(col)) {
+        const pos = input.selectionStart;
+        input.value = input.value.toUpperCase();
+        try { input.setSelectionRange(pos, pos); } catch(e){}
+      }
+    });
+
+    // Save changes (on blur / select change)
     document.addEventListener("change", async (ev) => {
+      // Row checkbox selection
       if (ev.target && ev.target.matches("input[data-rowcheck='1']")) {
         updateBulkButtons();
         return;
       }
 
+      // Table inline edits
       const tr = ev.target.closest("tr[data-rowid]");
       if (!tr) return;
 
@@ -641,11 +675,43 @@
 
       let value = (ev.target.tagName === "SELECT") ? ev.target.value : ev.target.value;
 
+      // Normalise selects
       if (col === "TYPE") value = (value || "SPLIT").toUpperCase();
       if (col === "DROPPED") value = (value || "").toUpperCase();
       if (col === "SENT") value = (value || "").toUpperCase();
-      if (col === "PRODUCT" || col === "WH" || col === "BIN") value = (value || "").trim();
+
+      // PRODUCT/WH/BIN: trim + uppercase
+      if (col === "PRODUCT" || col === "WH" || col === "BIN") {
+        value = (value || "").toString().trim().toUpperCase();
+      }
+
+      // COMMENTS: uppercase only, do NOT trim (preserve spacing)
+      if (col === "COMMENTS") {
+        value = (value || "").toString().toUpperCase();
+      }
+
+      // QTY: number
       if (col === "QTY") value = value === "" ? "" : Number(value);
+
+      // Prevent saving empty required fields
+      if (col === "PRODUCT" && value === "") {
+        setStatus("Not saved", "warn");
+        showToast("Product cannot be blank");
+        await refresh(); // revert UI to sheet values
+        return;
+      }
+      if (col === "WH" && value === "") {
+        setStatus("Not saved", "warn");
+        showToast("WH cannot be blank");
+        await refresh();
+        return;
+      }
+      if (col === "BIN" && value === "") {
+        setStatus("Not saved", "warn");
+        showToast("BIN cannot be blank");
+        await refresh();
+        return;
+      }
 
       try{
         setStatus("Saving…", "warn");
@@ -658,6 +724,7 @@
       }
     });
 
+    // Bulk actions
     btnBulkAck.addEventListener("click", async () => {
       const ids = selectedActiveRowIds();
       if (!ids.length) return;
@@ -691,13 +758,14 @@
       } catch(e){ setStatus("Bulk save failed", "err"); showToast(String(e.message || e)); }
     });
 
+    // Sent toggle
     btnToggleSent.addEventListener("click", () => {
       const hidden = sentWrap.style.display === "none";
       sentWrap.style.display = hidden ? "block" : "none";
       btnToggleSent.textContent = hidden ? "Hide" : "Show";
     });
 
-    // Paste Upload modal (unchanged behaviour)
+    // Paste Upload modal
     btnPasteUpload.addEventListener("click", () => {
       pasteBox.value = "";
       pastePreview.textContent = "Nothing pasted yet.";
@@ -718,7 +786,10 @@
       const grid = lines.map(line => line.split("\t"));
 
       const first = grid[0].map(normaliseHeader);
-      const headerLike = first.includes("PRODUCT") || first.includes("PRODUCT_CODE") || first.includes("QTY") || first.includes("WH") || first.includes("BIN") || first.includes("TYPE");
+      const headerLike =
+        first.includes("PRODUCT") || first.includes("PRODUCT_CODE") ||
+        first.includes("QTY") || first.includes("WH") ||
+        first.includes("BIN") || first.includes("TYPE");
 
       let headers = [];
       let startRow = 0;
@@ -746,7 +817,7 @@
         const row = grid[r];
         const obj = {
           DATE: currentDate || todayISO(),
-          TYPE: "SPLIT",
+          TYPE: "BULK",
           PRODUCT: "",
           QTY: "",
           WH: "",
@@ -758,28 +829,33 @@
 
         for (let c = 0; c < row.length; c++){
           const k = keys[c] || "";
-          const v = (row[c] ?? "").toString().trim();
+          const vRaw = (row[c] ?? "").toString();
+          const v = vRaw.trim();
           if (!k) continue;
 
-          if (k === "TYPE") obj.TYPE = (v || "SPLIT").toUpperCase();
+          if (k === "TYPE") obj.TYPE = (v || "BULK").toUpperCase();
           else if (k === "QTY") obj.QTY = v === "" ? "" : Number(v);
           else if (k === "DROPPED") obj.DROPPED = v.toUpperCase();
           else if (k === "SENT") obj.SENT = v.toUpperCase();
-          else if (k === "PRODUCT") obj.PRODUCT = v;
-          else if (k === "WH") obj.WH = v;
-          else if (k === "BIN") obj.BIN = v;
-          else if (k === "COMMENTS") obj.COMMENTS = v;
+          else if (k === "PRODUCT") obj.PRODUCT = v.toUpperCase();
+          else if (k === "WH") obj.WH = v.toUpperCase();
+          else if (k === "BIN") obj.BIN = v.toUpperCase();
+          else if (k === "COMMENTS") obj.COMMENTS = vRaw.toString().toUpperCase(); // preserve spaces more than trim would
         }
 
-        if (!headerLike && row.length >= 1) obj.PRODUCT = (row[0] ?? "").toString().trim();
+        // If no header and row had 4 cols, map them in order
+        if (!headerLike && row.length >= 1) obj.PRODUCT = (row[0] ?? "").toString().trim().toUpperCase();
         if (!headerLike && row.length >= 2) obj.QTY = (row[1] ?? "").toString().trim() === "" ? "" : Number(row[1]);
-        if (!headerLike && row.length >= 3) obj.WH = (row[2] ?? "").toString().trim();
-        if (!headerLike && row.length >= 4) obj.BIN = (row[3] ?? "").toString().trim();
+        if (!headerLike && row.length >= 3) obj.WH = (row[2] ?? "").toString().trim().toUpperCase();
+        if (!headerLike && row.length >= 4) obj.BIN = (row[3] ?? "").toString().trim().toUpperCase();
 
         if (obj.PRODUCT) out.push(obj);
       }
 
-      const preview = `Parsed ${out.length} line(s). First line: ` + (out[0] ? `${out[0].TYPE} ${out[0].PRODUCT} x${out[0].QTY} (${out[0].WH}/${out[0].BIN})` : "n/a");
+      const preview =
+        `Parsed ${out.length} line(s). First line: ` +
+        (out[0] ? `${out[0].TYPE} ${out[0].PRODUCT} x${out[0].QTY} (${out[0].WH}/${out[0].BIN})` : "n/a");
+
       return { rows: out, preview };
     }
 
@@ -824,17 +900,26 @@
       const row = {
         DATE: currentDate || todayISO(),
         TYPE: (addType.value || "SPLIT").toUpperCase(),
-        PRODUCT: (addProduct.value || "").trim(),
+        PRODUCT: (addProduct.value || "").trim().toUpperCase(),
         QTY: addQty.value === "" ? "" : Number(addQty.value),
-        WH: (addWH.value || "").trim(),
-        BIN: (addBin.value || "").trim(),
+        WH: (addWH.value || "").trim().toUpperCase(),
+        BIN: (addBin.value || "").trim().toUpperCase(),
         DROPPED: "",
         SENT: "",
-        COMMENTS: addComments.value || ""
+        COMMENTS: (addComments.value || "").toString().toUpperCase()
       };
 
+      // Required fields for Add Line
       if (!row.PRODUCT){
         showToast("Product is required");
+        return;
+      }
+      if (!row.WH){
+        showToast("WH is required");
+        return;
+      }
+      if (!row.BIN){
+        showToast("BIN is required");
         return;
       }
 
