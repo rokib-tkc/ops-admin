@@ -122,7 +122,10 @@
 
     tr:hover td{ background:#fafafa; }
 
-    tr.status-new td{ background: rgba(96,165,250,0.18); }
+    /* ✅ NEW = blue highlight ONLY in the New table */
+    #newTable tr.status-new td{ background: rgba(96,165,250,0.18); }
+
+    /* Other statuses (global) */
     tr.status-dropped td{ background: rgba(245,158,11,0.16); }
     tr.status-sent td{ background: rgba(22,163,74,0.12); }
     tr.status-cancel td{ background: rgba(239,68,68,0.12); }
@@ -233,7 +236,7 @@
   <main class="wrap">
     <div class="grid">
 
-      <!-- NEW REQUESTS (conditionally shown) -->
+      <!-- NEW REQUESTS -->
       <section class="card hidden" id="newCard">
         <div class="cardhead">
           <div>
@@ -334,7 +337,7 @@
         </div>
       </section>
 
-      <!-- CANCELLED (conditionally shown) -->
+      <!-- CANCELLED -->
       <section class="card hidden" id="cancelCard">
         <div class="cardhead">
           <div>
@@ -453,7 +456,7 @@
     const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
 
     // ====== STATE ======
-    let currentSheet = "PKY_TO_DTN"; // BASE sheet name (Script routes to LIVE/ARCHIVE)
+    let currentSheet = "PKY_TO_DTN";
     let currentDate = "";
     let rows = [];
 
@@ -468,7 +471,7 @@
     const btnPasteUpload = document.getElementById("btnPasteUpload");
     const btnAddLine = document.getElementById("btnAddLine");
 
-    // New Requests
+    // New
     const newCard = document.getElementById("newCard");
     const newBody = document.getElementById("newBody");
     const checkAllNew = document.getElementById("checkAllNew");
@@ -492,7 +495,7 @@
     const btnReverseSent = document.getElementById("btnReverseSent");
     const btnToggleSent = document.getElementById("btnToggleSent");
 
-    // Cancelled
+    // Cancel
     const cancelCard = document.getElementById("cancelCard");
     const cancelBody = document.getElementById("cancelBody");
     const checkAllCancel = document.getElementById("checkAllCancel");
@@ -565,7 +568,7 @@
         .replaceAll("'","&#039;");
     }
 
-    // ====== JSONP (CORS-safe) ======
+    // ====== JSONP ======
     function jsonp(url){
       return new Promise((resolve, reject) => {
         const cb = "cb_" + Math.random().toString(16).slice(2);
@@ -591,7 +594,7 @@
     async function apiCall(action, payload = {}){
       const url = new URL(API_URL);
       url.searchParams.set("action", action);
-      url.searchParams.set("sheet", currentSheet); // base name
+      url.searchParams.set("sheet", currentSheet);
       url.searchParams.set("date", currentDate);
       url.searchParams.set("apiKey", API_KEY);
 
@@ -653,7 +656,7 @@
       btnReverseCancel.disabled = cancelIds.length === 0;
     }
 
-     // ====== PRINTING (safe script closing) ======
+    // ====== PRINTING (safe script closing) ======
     function printLines(title, lines){
       const w = window.open("", "_blank");
       const safeTitle = escapeHtml(title);
@@ -671,7 +674,6 @@
         </tr>
       `).join("");
 
-      // IMPORTANT: break up closing script tag so it can't terminate the main page <script>
       const closeScript = "</scr" + "ipt>";
 
       w.document.write(`
@@ -711,17 +713,17 @@
 
     // ====== RENDERING ======
     function rowClass(r){
-    const status = (r.STATUS || "").toString().trim().toUpperCase();
-    const sent = (r.SENT || "").toString().trim().toUpperCase() === "YES";
-    const dropped = (r.DROPPED || "").toString().trim().toUpperCase() === "YES";
+      const status = (r.STATUS || "").toString().trim().toUpperCase();
+      const sent = (r.SENT || "").toString().trim().toUpperCase() === "YES";
+      const dropped = (r.DROPPED || "").toString().trim().toUpperCase() === "YES";
 
-    if (status === "NEW") return "status-new";
-    if (status === "CANCELLED") return "status-cancel";
-    if (sent) return "status-sent";
-    if (dropped) return "status-dropped";
-    return "";
+      // NEW class is only used for New table styling (scoped in CSS)
+      if (status === "NEW") return "status-new";
+      if (status === "CANCELLED") return "status-cancel";
+      if (sent) return "status-sent";
+      if (dropped) return "status-dropped";
+      return "";
     }
-
 
     function buildSelect(options, value){
       const v = (value ?? "").toString();
@@ -882,7 +884,7 @@
       if (ev.target && ev.target.matches("input[type='checkbox'][data-rowcheck]")) updateButtons();
     });
 
-    // Inline edits for ACTIVE only
+    // Inline edits (ACTIVE table)
     document.addEventListener("change", async (ev) => {
       const tr = ev.target.closest("tr[data-rowid]");
       if (!tr) return;
@@ -918,22 +920,22 @@
       }
     });
 
-    // ====== NEW REQUESTS ACTIONS ======
+    // ====== NEW ACTIONS ======
+    // ✅ Accept = move to ACTIVE only (no print prompt)
     btnAcceptNew.addEventListener("click", async () => {
-    const ids = selectedRowIds("input[data-rowcheck='new']:checked");
-    if (!ids.length) return;
+      const ids = selectedRowIds("input[data-rowcheck='new']:checked");
+      if (!ids.length) return;
 
-    try{
-      setStatus("Accepting…", "warn");
-      await bulkPatch(ids, { STATUS: "ACTIVE" });
-      showToast("Accepted");
-      await refresh();
-    } catch(e){
-      setStatus("Accept failed", "err");
-      showToast(String(e.message || e));
-    }
+      try{
+        setStatus("Accepting…", "warn");
+        await bulkPatch(ids, { STATUS: "ACTIVE" });
+        showToast("Accepted");
+        await refresh();
+      } catch(e){
+        setStatus("Accept failed", "err");
+        showToast(String(e.message || e));
+      }
     });
-
 
     btnPrintNew.addEventListener("click", () => {
       const ids = selectedRowIds("input[data-rowcheck='new']:checked");
@@ -1048,7 +1050,7 @@
       }
     });
 
-    // ====== PASTE UPLOAD MODAL ======
+    // ====== PASTE UPLOAD ======
     btnPasteUpload.addEventListener("click", () => {
       pasteBox.value = "";
       pastePreview.textContent = "Nothing pasted yet.";
@@ -1161,7 +1163,7 @@
       }
     });
 
-    // ====== ADD LINE MODAL ======
+    // ====== ADD LINE ======
     btnAddLine.addEventListener("click", () => {
       addType.value = "SPLIT";
       addProduct.value = "";
@@ -1205,7 +1207,7 @@
       }
     });
 
-    // ====== AUTO REFRESH (resets date to today) ======
+    // ====== AUTO REFRESH ======
     setInterval(() => {
       currentDate = todayISO();
       datePicker.value = currentDate;
