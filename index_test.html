@@ -39,20 +39,45 @@
 
     .controls{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .tabs{ display:flex; gap:8px; }
+    
     .tab{
-      border:1px solid var(--border);
-      background:#fff;
-      padding:8px 10px;
-      border-radius:999px;
-      cursor:pointer;
-      font-weight:700;
-      font-size:13px;
-    }
-    .tab.active{
-      border-color:var(--accent);
-      color:var(--accent);
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
-    }
+  border:1px solid var(--accent);
+  background:#fff;
+  padding:8px 14px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:700;
+  font-size:13px;
+  color: var(--accent);
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+/* Hover effect for inactive tabs */
+.tab:not(.active):hover{
+  background: rgba(37,99,235,0.08);
+  transform: translateY(-1px);
+}
+
+/* Press / click feedback */
+.tab:active{
+  transform: translateY(0px) scale(0.98);
+}
+
+/* Active tab = blue pill with white text, slightly raised */
+.tab.active{
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 4px 10px rgba(37,99,235,0.35);
+  transform: translateY(-1px);
+}
+
+/* Slightly reduce hover effect on active (so it doesn't jump too much) */
+.tab.active:hover{
+  transform: translateY(-1px);
+}
+
 
     .btn{
       border:1px solid var(--border);
@@ -275,7 +300,7 @@
 
         <button class="btn" id="btnRefresh">Refresh</button>
         <button class="btn" id="btnAddLine">Add Line</button>
-        <button class="btn primary" id="btnPasteUpload">Paste Upload</button>
+        <button class="btn" id="btnPasteUpload">Paste Upload</button>
       </div>
     </div>
   </header>
