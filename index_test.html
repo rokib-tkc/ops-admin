@@ -204,6 +204,41 @@
     }
 
     .hidden{ display:none !important; }
+
+    /* ====== LOADING OVERLAY (NEW) ====== */
+    body.busy{ cursor: wait; }
+    .loading-backdrop{
+      position:fixed; inset:0;
+      background: rgba(17,24,39,0.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:3000;
+    }
+    .loading-panel{
+      width:min(520px, 100%);
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      padding:18px 16px;
+      display:flex;
+      align-items:center;
+      gap:14px;
+    }
+    .spinner{
+      width:44px; height:44px;
+      border-radius:50%;
+      border:5px solid #e5e7eb;
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+      flex: 0 0 auto;
+    }
+    @keyframes spin{ to { transform: rotate(360deg); } }
+    .loading-text{ display:flex; flex-direction:column; gap:4px; }
+    .loading-title{ font-weight:800; font-size:14px; color:#111827; }
+    .loading-sub{ font-size:12px; color: var(--muted); line-height:1.35; }
   </style>
 </head>
 <body>
@@ -440,6 +475,17 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- ====== LOADING OVERLAY (NEW) ====== -->
+  <div class="loading-backdrop" id="loadingOverlay" role="status" aria-live="polite" aria-label="Loading">
+    <div class="loading-panel">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="loading-text">
+        <div class="loading-title" id="loadingTitle">Working…</div>
+        <div class="loading-sub" id="loadingSub">Talking to Google Sheets. Please wait…</div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ====== EDIT THESE ======
     const API_URL = "https://script.google.com/macros/s/AKfycbxpeOikchlafJAHPgZAyGD-5kCbRWijK1jn4zE1uZQOd1LA-DMJIf6ud3INj2HHW9yj/exec";
@@ -510,6 +556,40 @@
     const addComments = document.getElementById("addComments");
 
     const toast = document.getElementById("toast");
+
+    // ====== LOADING OVERLAY (NEW) ======
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const loadingTitle = document.getElementById("loadingTitle");
+    const loadingSub = document.getElementById("loadingSub");
+    let __busyCount = 0;
+
+    function isBusy(){ return __busyCount > 0; }
+
+    function showLoading(title="Working…", sub="Talking to Google Sheets. Please wait…"){
+      __busyCount++;
+      loadingTitle.textContent = title;
+      loadingSub.textContent = sub;
+
+      document.body.classList.add("busy");
+      loadingOverlay.style.display = "flex";
+    }
+
+    function hideLoading(){
+      __busyCount = Math.max(0, __busyCount - 1);
+      if (__busyCount === 0){
+        loadingOverlay.style.display = "none";
+        document.body.classList.remove("busy");
+      }
+    }
+
+    async function withLoading(title, fn, sub){
+      showLoading(title, sub || "Talking to Google Sheets. Please wait…");
+      try{
+        return await fn();
+      } finally {
+        hideLoading();
+      }
+    }
 
     // ====== HELPERS ======
     function todayISO(){
@@ -856,16 +936,25 @@
       setStatus(`Loaded ${rows.length} lines`, "ok");
     }
 
-    async function refresh(){
-      try {
-        setStatus("Loading…", "warn");
-        const data = await apiCall("list");
-        if (!data.ok) throw new Error(data.error || "API error");
-        rows = data.rows || [];
-        render();
-      } catch (e) {
-        setStatus("Error loading", "err");
-        showToast(String(e.message || e));
+    async function refresh(showOverlay = true){
+      if (showOverlay && isBusy()) return; // prevents double-refresh spam while already busy
+      const doWork = async () => {
+        try {
+          setStatus("Loading…", "warn");
+          const data = await apiCall("list");
+          if (!data.ok) throw new Error(data.error || "API error");
+          rows = data.rows || [];
+          render();
+        } catch (e) {
+          setStatus("Error loading", "err");
+          showToast(String(e.message || e));
+        }
+      };
+
+      if (showOverlay){
+        await withLoading("Loading transfers…", doWork, "Fetching the latest lines from Google Sheets…");
+      } else {
+        await doWork();
       }
     }
 
@@ -897,26 +986,30 @@
 
     // ====== EVENTS ======
     tabPKY.addEventListener("click", () => {
+      if (isBusy()) return;
       currentSheet = "PKY_TO_DTN";
       tabPKY.classList.add("active");
       tabDTN.classList.remove("active");
-      refresh();
+      refresh(true);
     });
     tabDTN.addEventListener("click", () => {
+      if (isBusy()) return;
       currentSheet = "DTN_TO_PKY";
       tabDTN.classList.add("active");
       tabPKY.classList.remove("active");
-      refresh();
+      refresh(true);
     });
 
-    btnRefresh.addEventListener("click", refresh);
+    btnRefresh.addEventListener("click", () => refresh(true));
 
     datePicker.addEventListener("change", () => {
+      if (isBusy()) return;
       currentDate = datePicker.value || todayISO();
-      refresh();
+      refresh(true);
     });
 
     function setAll(which, checked){
+      if (isBusy()) return;
       document.querySelectorAll(`input[data-rowcheck='${which}']`).forEach(c => c.checked = checked);
       updateButtons();
     }
@@ -930,6 +1023,8 @@
     });
 
     document.addEventListener("change", async (ev) => {
+      if (isBusy()) return;
+
       const tr = ev.target.closest("tr[data-rowid]");
       if (!tr) return;
 
@@ -949,35 +1044,40 @@
       if (col === "COMMENTS") value = (value || "").toString().toUpperCase();
       if (col === "QTY") value = value === "" ? "" : Number(value);
 
-      if (col === "PRODUCT" && value === "") { showToast("Product cannot be blank"); await refresh(); return; }
-      if (col === "WH" && value === "") { showToast("WH cannot be blank"); await refresh(); return; }
-      if (col === "BIN" && value === "") { showToast("BIN cannot be blank"); await refresh(); return; }
+      if (col === "PRODUCT" && value === "") { showToast("Product cannot be blank"); await refresh(true); return; }
+      if (col === "WH" && value === "") { showToast("WH cannot be blank"); await refresh(true); return; }
+      if (col === "BIN" && value === "") { showToast("BIN cannot be blank"); await refresh(true); return; }
 
-      try{
-        setStatus("Saving…", "warn");
-        await patchRow(rowId, { [col]: value });
-        showToast("Saved");
-        await refresh();
-      } catch(e){
-        setStatus("Save failed", "err");
-        showToast(String(e.message || e));
-      }
+      await withLoading("Saving changes…", async () => {
+        try{
+          setStatus("Saving…", "warn");
+          await patchRow(rowId, { [col]: value });
+          showToast("Saved");
+          await refresh(false);
+        } catch(e){
+          setStatus("Save failed", "err");
+          showToast(String(e.message || e));
+        }
+      }, "Updating Google Sheets and refreshing the page…");
     });
 
     // ====== NEW ACTIONS ======
     btnAcceptNew.addEventListener("click", async () => {
+      if (isBusy()) return;
       const ids = selectedRowIds("input[data-rowcheck='new']:checked");
       if (!ids.length) return;
 
-      try{
-        setStatus("Accepting…", "warn");
-        await bulkPatch(ids, { STATUS: "ACTIVE" });
-        showToast("Accepted");
-        await refresh();
-      } catch(e){
-        setStatus("Accept failed", "err");
-        showToast(String(e.message || e));
-      }
+      await withLoading("Accepting request(s)…", async () => {
+        try{
+          setStatus("Accepting…", "warn");
+          await bulkPatch(ids, { STATUS: "ACTIVE" });
+          showToast("Accepted");
+          await refresh(false);
+        } catch(e){
+          setStatus("Accept failed", "err");
+          showToast(String(e.message || e));
+        }
+      }, "Moving selected lines to Active Transfers…");
     });
 
     btnPrintNew.addEventListener("click", () => {
@@ -987,19 +1087,22 @@
     });
 
     btnCancelNew.addEventListener("click", async () => {
+      if (isBusy()) return;
       const ids = selectedRowIds("input[data-rowcheck='new']:checked");
       if (!ids.length) return;
       if (!confirm("Cancel the selected request(s)?")) return;
 
-      try{
-        setStatus("Cancelling…", "warn");
-        await bulkPatch(ids, { STATUS: "CANCELLED" });
-        showToast("Cancelled");
-        await refresh();
-      } catch(e){
-        setStatus("Cancel failed", "err");
-        showToast(String(e.message || e));
-      }
+      await withLoading("Cancelling request(s)…", async () => {
+        try{
+          setStatus("Cancelling…", "warn");
+          await bulkPatch(ids, { STATUS: "CANCELLED" });
+          showToast("Cancelled");
+          await refresh(false);
+        } catch(e){
+          setStatus("Cancel failed", "err");
+          showToast(String(e.message || e));
+        }
+      }, "Updating Google Sheets and refreshing the page…");
     });
 
     // ====== ACTIVE ACTIONS ======
@@ -1010,41 +1113,58 @@
     });
 
     btnBulkDropped.addEventListener("click", async () => {
+      if (isBusy()) return;
       const ids = selectedRowIds("input[data-rowcheck='active']:checked");
       if (!ids.length) return;
-      try{
-        setStatus("Saving…", "warn");
-        await bulkPatch(ids, { DROPPED: "YES" });
-        showToast("Marked Dropped");
-        await refresh();
-      } catch(e){ setStatus("Bulk save failed", "err"); showToast(String(e.message || e)); }
+
+      await withLoading("Marking Dropped…", async () => {
+        try{
+          setStatus("Saving…", "warn");
+          await bulkPatch(ids, { DROPPED: "YES" });
+          showToast("Marked Dropped");
+          await refresh(false);
+        } catch(e){
+          setStatus("Bulk save failed", "err");
+          showToast(String(e.message || e));
+        }
+      }, "Setting DROPPED = YES for selected lines…");
     });
 
     btnBulkSent.addEventListener("click", async () => {
+      if (isBusy()) return;
       const ids = selectedRowIds("input[data-rowcheck='active']:checked");
       if (!ids.length) return;
-      try{
-        setStatus("Saving…", "warn");
-        await bulkPatch(ids, { SENT: "YES" });
-        showToast("Marked Sent");
-        await refresh();
-      } catch(e){ setStatus("Bulk save failed", "err"); showToast(String(e.message || e)); }
+
+      await withLoading("Marking Sent…", async () => {
+        try{
+          setStatus("Saving…", "warn");
+          await bulkPatch(ids, { SENT: "YES" });
+          showToast("Marked Sent");
+          await refresh(false);
+        } catch(e){
+          setStatus("Bulk save failed", "err");
+          showToast(String(e.message || e));
+        }
+      }, "Setting SENT = YES for selected lines…");
     });
 
     btnCancelActive.addEventListener("click", async () => {
+      if (isBusy()) return;
       const ids = selectedRowIds("input[data-rowcheck='active']:checked");
       if (!ids.length) return;
       if (!confirm("Cancel the selected active transfer(s)?")) return;
 
-      try{
-        setStatus("Cancelling…", "warn");
-        await bulkPatch(ids, { STATUS: "CANCELLED" });
-        showToast("Cancelled");
-        await refresh();
-      } catch(e){
-        setStatus("Cancel failed", "err");
-        showToast(String(e.message || e));
-      }
+      await withLoading("Cancelling transfer(s)…", async () => {
+        try{
+          setStatus("Cancelling…", "warn");
+          await bulkPatch(ids, { STATUS: "CANCELLED" });
+          showToast("Cancelled");
+          await refresh(false);
+        } catch(e){
+          setStatus("Cancel failed", "err");
+          showToast(String(e.message || e));
+        }
+      }, "Updating Google Sheets and refreshing the page…");
     });
 
     // ====== SENT ACTIONS ======
@@ -1055,19 +1175,22 @@
     });
 
     btnReverseSent.addEventListener("click", async () => {
+      if (isBusy()) return;
       const ids = selectedRowIds("input[data-rowcheck='sent']:checked");
       if (!ids.length) return;
       if (!confirm("Reverse 'Sent' for the selected line(s)? They will return to Active Transfers.")) return;
 
-      try{
-        setStatus("Reversing…", "warn");
-        await bulkPatch(ids, { SENT: "", STATUS: "ACTIVE" });
-        showToast("Reversed Sent");
-        await refresh();
-      } catch(e){
-        setStatus("Reverse failed", "err");
-        showToast(String(e.message || e));
-      }
+      await withLoading("Reversing Sent…", async () => {
+        try{
+          setStatus("Reversing…", "warn");
+          await bulkPatch(ids, { SENT: "", STATUS: "ACTIVE" });
+          showToast("Reversed Sent");
+          await refresh(false);
+        } catch(e){
+          setStatus("Reverse failed", "err");
+          showToast(String(e.message || e));
+        }
+      }, "Moving selected lines back to Active Transfers…");
     });
 
     btnToggleSent.addEventListener("click", () => {
@@ -1078,23 +1201,27 @@
 
     // ====== CANCELLED ACTIONS ======
     btnReverseCancel.addEventListener("click", async () => {
+      if (isBusy()) return;
       const ids = selectedRowIds("input[data-rowcheck='cancel']:checked");
       if (!ids.length) return;
       if (!confirm("Reverse cancellation for the selected line(s)? They will return to Active Transfers.")) return;
 
-      try{
-        setStatus("Reversing…", "warn");
-        await bulkPatch(ids, { STATUS: "ACTIVE" });
-        showToast("Reversed Cancellation");
-        await refresh();
-      } catch(e){
-        setStatus("Reverse failed", "err");
-        showToast(String(e.message || e));
-      }
+      await withLoading("Reversing cancellation…", async () => {
+        try{
+          setStatus("Reversing…", "warn");
+          await bulkPatch(ids, { STATUS: "ACTIVE" });
+          showToast("Reversed Cancellation");
+          await refresh(false);
+        } catch(e){
+          setStatus("Reverse failed", "err");
+          showToast(String(e.message || e));
+        }
+      }, "Returning selected lines to Active Transfers…");
     });
 
     // ====== PASTE UPLOAD ======
     btnPasteUpload.addEventListener("click", () => {
+      if (isBusy()) return;
       pasteBox.value = "";
       pastePreview.textContent = "Nothing pasted yet.";
       pasteModal.style.display = "flex";
@@ -1188,26 +1315,31 @@
     });
 
     btnPasteSubmit.addEventListener("click", async () => {
+      if (isBusy()) return;
       const parsed = parsePaste(pasteBox.value);
       if (!parsed.rows.length){
         showToast("Nothing valid to upload (requires PRODUCT, WH, BIN)");
         return;
       }
-      try{
-        setStatus("Uploading…", "warn");
-        // ✅ chunked upload to avoid JSONP URL length failures
-        const added = await bulkAddChunked(parsed.rows);
-        showToast(`Uploaded ${added} lines`);
-        pasteModal.style.display = "none";
-        await refresh();
-      } catch(e){
-        setStatus("Upload failed", "err");
-        showToast(String(e.message || e));
-      }
+
+      await withLoading("Uploading lines…", async () => {
+        try{
+          setStatus("Uploading…", "warn");
+          // ✅ chunked upload to avoid JSONP URL length failures
+          const added = await bulkAddChunked(parsed.rows);
+          showToast(`Uploaded ${added} lines`);
+          pasteModal.style.display = "none";
+          await refresh(false);
+        } catch(e){
+          setStatus("Upload failed", "err");
+          showToast(String(e.message || e));
+        }
+      }, "Sending pasted lines to Google Sheets and refreshing…");
     });
 
     // ====== ADD LINE ======
     btnAddLine.addEventListener("click", () => {
+      if (isBusy()) return;
       addType.value = "SPLIT";
       addProduct.value = "";
       addQty.value = "";
@@ -1220,6 +1352,8 @@
     btnAddClose.addEventListener("click", () => addModal.style.display = "none");
 
     btnAddSubmit.addEventListener("click", async () => {
+      if (isBusy()) return;
+
       const row = {
         DATE: currentDate || todayISO(),
         TYPE: (addType.value || "SPLIT").toUpperCase(),
@@ -1237,31 +1371,34 @@
       if (!row.WH){ showToast("WH is required"); return; }
       if (!row.BIN){ showToast("BIN is required"); return; }
 
-      try{
-        setStatus("Adding…", "warn");
-        const res = await apiCall("add", { row });
-        if (!res.ok) throw new Error(res.error || "Add failed");
-        showToast("Added to New Requests");
-        addModal.style.display = "none";
-        await refresh();
-      } catch(e){
-        setStatus("Add failed", "err");
-        showToast(String(e.message || e));
-      }
+      await withLoading("Adding line…", async () => {
+        try{
+          setStatus("Adding…", "warn");
+          const res = await apiCall("add", { row });
+          if (!res.ok) throw new Error(res.error || "Add failed");
+          showToast("Added to New Requests");
+          addModal.style.display = "none";
+          await refresh(false);
+        } catch(e){
+          setStatus("Add failed", "err");
+          showToast(String(e.message || e));
+        }
+      }, "Saving the new line to Google Sheets and refreshing…");
     });
 
     // ====== AUTO REFRESH ======
     setInterval(() => {
+      if (isBusy()) return;
       currentDate = todayISO();
       datePicker.value = currentDate;
-      refresh();
+      refresh(true);
     }, AUTO_REFRESH_MS);
 
     // ====== START ======
     (function(){
       currentDate = todayISO();
       datePicker.value = currentDate;
-      refresh();
+      refresh(true);
     })();
   </script>
 </body>
