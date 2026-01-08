@@ -75,6 +75,19 @@
     }
     .btn:disabled{ opacity:0.55; cursor:not-allowed; }
 
+    /* Yellow Refresh button */
+    #btnRefresh{
+      background: #facc15;     /* highlight yellow */
+      border-color: #facc15;
+      color: #111827;
+    }
+    #btnRefresh:hover{
+      filter: brightness(0.95);
+    }
+    #btnRefresh:disabled{
+      opacity: 0.55;
+    }
+    
     .pill{
       font-size:12px;
       padding:6px 10px;
@@ -1391,7 +1404,7 @@
       if (isBusy()) return;
       currentDate = todayISO();
       datePicker.value = currentDate;
-      refresh(true);
+      refresh(false);
     }, AUTO_REFRESH_MS);
 
     // ====== START ======
