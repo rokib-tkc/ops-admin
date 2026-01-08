@@ -652,7 +652,7 @@
       btnReverseCancel.disabled = cancelIds.length === 0;
     }
 
-    // ====== PRINTING (FIXED: NO LITERAL </script> IN MAIN PAGE SCRIPT) ======
+     // ====== PRINTING (safe script closing) ======
     function printLines(title, lines){
       const w = window.open("", "_blank");
       const safeTitle = escapeHtml(title);
