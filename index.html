@@ -122,10 +122,9 @@
 
     tr:hover td{ background:#fafafa; }
 
-    /* ✅ NEW = blue highlight ONLY in the New table */
+    /* NEW = blue highlight ONLY in New table */
     #newTable tr.status-new td{ background: rgba(96,165,250,0.18); }
 
-    /* Other statuses (global) */
     tr.status-dropped td{ background: rgba(245,158,11,0.16); }
     tr.status-sent td{ background: rgba(22,163,74,0.12); }
     tr.status-cancel td{ background: rgba(239,68,68,0.12); }
@@ -236,7 +235,6 @@
   <main class="wrap">
     <div class="grid">
 
-      <!-- NEW REQUESTS -->
       <section class="card hidden" id="newCard">
         <div class="cardhead">
           <div>
@@ -268,7 +266,6 @@
         </div>
       </section>
 
-      <!-- ACTIVE -->
       <section class="card">
         <div class="cardhead">
           <div>
@@ -303,7 +300,6 @@
         </div>
       </section>
 
-      <!-- SENT -->
       <section class="card">
         <div class="cardhead">
           <div>
@@ -337,7 +333,6 @@
         </div>
       </section>
 
-      <!-- CANCELLED -->
       <section class="card hidden" id="cancelCard">
         <div class="cardhead">
           <div>
@@ -372,7 +367,6 @@
     </div>
   </main>
 
-  <!-- Paste Upload Modal -->
   <div class="modal-backdrop" id="pasteModal">
     <div class="modal">
       <header>
@@ -396,7 +390,6 @@
     </div>
   </div>
 
-  <!-- Add Line Modal -->
   <div class="modal-backdrop" id="addModal">
     <div class="modal">
       <header>
@@ -453,7 +446,10 @@
     const API_KEY = "Lthdn637H7shdbs8987jnsm72GtsFh";
 
     // ====== SETTINGS ======
-    const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+    const AUTO_REFRESH_MS = 5 * 60 * 1000;
+
+    // For JSONP GET URLs. Keep safely below typical limits.
+    const JSONP_URL_MAX = 1700;
 
     // ====== STATE ======
     let currentSheet = "PKY_TO_DTN";
@@ -471,7 +467,6 @@
     const btnPasteUpload = document.getElementById("btnPasteUpload");
     const btnAddLine = document.getElementById("btnAddLine");
 
-    // New
     const newCard = document.getElementById("newCard");
     const newBody = document.getElementById("newBody");
     const checkAllNew = document.getElementById("checkAllNew");
@@ -479,7 +474,6 @@
     const btnPrintNew = document.getElementById("btnPrintNew");
     const btnCancelNew = document.getElementById("btnCancelNew");
 
-    // Active
     const activeBody = document.getElementById("activeBody");
     const checkAllActive = document.getElementById("checkAllActive");
     const btnPrintActive = document.getElementById("btnPrintActive");
@@ -487,7 +481,6 @@
     const btnBulkSent = document.getElementById("btnBulkSent");
     const btnCancelActive = document.getElementById("btnCancelActive");
 
-    // Sent
     const sentWrap = document.getElementById("sentWrap");
     const sentBody = document.getElementById("sentBody");
     const checkAllSent = document.getElementById("checkAllSent");
@@ -495,13 +488,11 @@
     const btnReverseSent = document.getElementById("btnReverseSent");
     const btnToggleSent = document.getElementById("btnToggleSent");
 
-    // Cancel
     const cancelCard = document.getElementById("cancelCard");
     const cancelBody = document.getElementById("cancelBody");
     const checkAllCancel = document.getElementById("checkAllCancel");
     const btnReverseCancel = document.getElementById("btnReverseCancel");
 
-    // Modals
     const pasteModal = document.getElementById("pasteModal");
     const pasteBox = document.getElementById("pasteBox");
     const pastePreview = document.getElementById("pastePreview");
@@ -579,8 +570,30 @@
         script.src = u.toString();
         script.async = true;
 
-        window[cb] = (data) => { cleanup(); resolve(data); };
-        script.onerror = () => { cleanup(); reject(new Error("Failed to fetch (JSONP)")); };
+        let done = false;
+
+        const timer = setTimeout(() => {
+          if (done) return;
+          done = true;
+          cleanup();
+          reject(new Error("JSONP timeout"));
+        }, 20000);
+
+        window[cb] = (data) => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          cleanup();
+          reject(new Error("Failed to fetch (JSONP)"));
+        };
 
         function cleanup(){
           try { delete window[cb]; } catch(e){}
@@ -591,7 +604,7 @@
       });
     }
 
-    async function apiCall(action, payload = {}){
+    function buildApiUrl(action, payload = {}){
       const url = new URL(API_URL);
       url.searchParams.set("action", action);
       url.searchParams.set("sheet", currentSheet);
@@ -622,10 +635,43 @@
         url.searchParams.set("patch", JSON.stringify(payload.patch || {}));
       }
 
-      return await jsonp(url.toString());
+      return url.toString();
     }
 
-    // ====== SELECTION HELPERS ======
+    async function apiCall(action, payload = {}){
+      return await jsonp(buildApiUrl(action, payload));
+    }
+
+    // ✅ Robust bulk upload: automatically chunks so URL doesn’t exceed JSONP limits
+    async function bulkAddChunked(allRows){
+      let addedTotal = 0;
+      let i = 0;
+
+      while (i < allRows.length){
+        const chunk = [];
+        while (i < allRows.length){
+          chunk.push(allRows[i]);
+          const testUrl = buildApiUrl("bulkAdd", { rows: chunk });
+          if (testUrl.length > JSONP_URL_MAX){
+            chunk.pop();
+            break;
+          }
+          i++;
+        }
+
+        if (chunk.length === 0){
+          throw new Error("One line is too large to upload via JSONP. Shorten COMMENTS or upload fewer columns.");
+        }
+
+        const res = await apiCall("bulkAdd", { rows: chunk });
+        if (!res.ok) throw new Error(res.error || "Upload failed");
+        addedTotal += (res.added || chunk.length);
+      }
+
+      return addedTotal;
+    }
+
+    // ====== SELECTION ======
     function selectedRowIds(selector){
       return [...document.querySelectorAll(selector)]
         .filter(x => x.checked)
@@ -656,7 +702,7 @@
       btnReverseCancel.disabled = cancelIds.length === 0;
     }
 
-    // ====== PRINTING (safe script closing) ======
+    // ====== PRINTING ======
     function printLines(title, lines){
       const w = window.open("", "_blank");
       const safeTitle = escapeHtml(title);
@@ -717,7 +763,6 @@
       const sent = (r.SENT || "").toString().trim().toUpperCase() === "YES";
       const dropped = (r.DROPPED || "").toString().trim().toUpperCase() === "YES";
 
-      // NEW class is only used for New table styling (scoped in CSS)
       if (status === "NEW") return "status-new";
       if (status === "CANCELLED") return "status-cancel";
       if (sent) return "status-sent";
@@ -884,7 +929,6 @@
       if (ev.target && ev.target.matches("input[type='checkbox'][data-rowcheck]")) updateButtons();
     });
 
-    // Inline edits (ACTIVE table)
     document.addEventListener("change", async (ev) => {
       const tr = ev.target.closest("tr[data-rowid]");
       if (!tr) return;
@@ -921,7 +965,6 @@
     });
 
     // ====== NEW ACTIONS ======
-    // ✅ Accept = move to ACTIVE only (no print prompt)
     btnAcceptNew.addEventListener("click", async () => {
       const ids = selectedRowIds("input[data-rowcheck='new']:checked");
       if (!ids.length) return;
@@ -1152,9 +1195,9 @@
       }
       try{
         setStatus("Uploading…", "warn");
-        const res = await apiCall("bulkAdd", { rows: parsed.rows });
-        if (!res.ok) throw new Error(res.error || "Upload failed");
-        showToast(`Uploaded ${res.added || parsed.rows.length} lines`);
+        // ✅ chunked upload to avoid JSONP URL length failures
+        const added = await bulkAddChunked(parsed.rows);
+        showToast(`Uploaded ${added} lines`);
         pasteModal.style.display = "none";
         await refresh();
       } catch(e){
