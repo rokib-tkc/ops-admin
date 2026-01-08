@@ -102,8 +102,6 @@
     .sub{ color:var(--muted); font-size:12px; }
     .row-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 
-    .divider{ height:1px; background:var(--border); margin:10px 0; }
-
     table{ width:100%; border-collapse:collapse; }
     th, td{
       border-bottom:1px solid #eef0f3;
@@ -271,7 +269,7 @@
         <div class="cardhead">
           <div>
             <h2>Active Transfers</h2>
-            <div class="sub">Accepted requests being worked. Mark Dropped and Sent as items are prepared and dispatched.</div>
+            <div class="sub">Accepted requests being worked. Mark Dropped and Sent as items are prepared and despatched.</div>
           </div>
           <div class="row-actions">
             <button class="btn" id="btnPrintActive" disabled>Print</button>
@@ -388,7 +386,7 @@
           <strong>PRODUCT, QTY, WH, BIN</strong>. TYPE defaults to BULK for paste uploads. These lines enter as <strong>New</strong>.
         </p>
         <textarea id="pasteBox" placeholder="Paste here..."></textarea>
-        <div class="divider"></div>
+        <div style="height:1px; background:var(--border); margin:10px 0;"></div>
         <div class="small" id="pastePreview">Nothing pasted yet.</div>
       </div>
     </div>
@@ -577,15 +575,8 @@
         script.src = u.toString();
         script.async = true;
 
-        window[cb] = (data) => {
-          cleanup();
-          resolve(data);
-        };
-
-        script.onerror = () => {
-          cleanup();
-          reject(new Error("Failed to fetch (JSONP)"));
-        };
+        window[cb] = (data) => { cleanup(); resolve(data); };
+        script.onerror = () => { cleanup(); reject(new Error("Failed to fetch (JSONP)")); };
 
         function cleanup(){
           try { delete window[cb]; } catch(e){}
@@ -661,11 +652,12 @@
       btnReverseCancel.disabled = cancelIds.length === 0;
     }
 
-    // ====== PRINTING ======
+    // ====== PRINTING (FIXED: NO LITERAL </script> IN MAIN PAGE SCRIPT) ======
     function printLines(title, lines){
       const w = window.open("", "_blank");
       const safeTitle = escapeHtml(title);
       const dateTxt = escapeHtml(currentDate);
+      const dirTxt = escapeHtml(currentSheet);
 
       const rowsHtml = lines.map(r => `
         <tr>
@@ -677,6 +669,9 @@
           <td>${escapeHtml(r.COMMENTS)}</td>
         </tr>
       `).join("");
+
+      // IMPORTANT: break up closing script tag so it can't terminate the main page <script>
+      const closeScript = "</scr" + "ipt>";
 
       w.document.write(`
         <html>
@@ -694,7 +689,7 @@
         </head>
         <body>
           <h1>${safeTitle}</h1>
-          <p class="meta">Date: ${dateTxt} • Direction: ${escapeHtml(currentSheet)}</p>
+          <p class="meta">Date: ${dateTxt} • Direction: ${dirTxt}</p>
           <table>
             <thead>
               <tr>
@@ -704,11 +699,12 @@
             <tbody>${rowsHtml}</tbody>
           </table>
           <script>
-            window.onload = () => { window.print(); };
-          </script>
+            window.onload = function(){ window.print(); };
+          ${closeScript}
         </body>
         </html>
       `);
+
       w.document.close();
     }
 
@@ -730,6 +726,7 @@
         ${options.map(o => `<option value="${escapeHtml(o)}" ${o===v ? "selected":""}>${escapeHtml(o)}</option>`).join("")}
       </select>`;
     }
+
     function buildInput(value, type="text"){
       return `<input class="cell-input" type="${type}" value="${escapeHtml(value ?? "")}">`;
     }
@@ -743,11 +740,9 @@
       const sent = rows.filter(r => isSent(r) && status(r) !== "CANCELLED");
       const cancelled = rows.filter(r => status(r) === "CANCELLED");
 
-      // Toggle cards visibility
       newCard.classList.toggle("hidden", newReq.length === 0);
       cancelCard.classList.toggle("hidden", cancelled.length === 0);
 
-      // NEW REQUESTS
       newBody.innerHTML = newReq.map(r => `
         <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
           <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
@@ -760,7 +755,6 @@
         </tr>
       `).join("");
 
-      // ACTIVE (editable)
       activeBody.innerHTML = active.map(r => `
         <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
           <td><input class="checkbox" type="checkbox" data-rowcheck="active" data-rowid="${r.rowId}"></td>
@@ -775,7 +769,6 @@
         </tr>
       `).join("");
 
-      // SENT (selectable + reversible)
       sentBody.innerHTML = sent.map(r => `
         <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
           <td><input class="checkbox" type="checkbox" data-rowcheck="sent" data-rowid="${r.rowId}"></td>
@@ -790,7 +783,6 @@
         </tr>
       `).join("");
 
-      // CANCELLED (selectable + reversible)
       cancelBody.innerHTML = cancelled.map(r => `
         <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
           <td><input class="checkbox" type="checkbox" data-rowcheck="cancel" data-rowid="${r.rowId}"></td>
@@ -805,7 +797,6 @@
         </tr>
       `).join("");
 
-      // Reset select-alls
       checkAllNew.checked = false;
       checkAllActive.checked = false;
       checkAllSent.checked = false;
@@ -839,7 +830,6 @@
     }
 
     // ====== INPUT NORMALISATION ======
-    // Live uppercase on typing (PRODUCT/WH/BIN/COMMENTS)
     document.addEventListener("input", (ev) => {
       const input = ev.target;
       if (!input.classList.contains("cell-input")) return;
@@ -876,7 +866,6 @@
       refresh();
     });
 
-    // Select-all checkboxes
     function setAll(which, checked){
       document.querySelectorAll(`input[data-rowcheck='${which}']`).forEach(c => c.checked = checked);
       updateButtons();
@@ -886,11 +875,8 @@
     checkAllSent.addEventListener("change", () => setAll("sent", checkAllSent.checked));
     checkAllCancel.addEventListener("change", () => setAll("cancel", checkAllCancel.checked));
 
-    // Any checkbox change updates buttons
     document.addEventListener("change", (ev) => {
-      if (ev.target && ev.target.matches("input[type='checkbox'][data-rowcheck]")) {
-        updateButtons();
-      }
+      if (ev.target && ev.target.matches("input[type='checkbox'][data-rowcheck]")) updateButtons();
     });
 
     // Inline edits for ACTIVE only
@@ -901,26 +887,19 @@
       const td = ev.target.closest("td[data-col]");
       if (!td) return;
 
-      // Only allow edits in Active table rows (they have data-col)
       const rowId = Number(tr.getAttribute("data-rowid"));
       const col = td.getAttribute("data-col");
 
       let value = (ev.target.tagName === "SELECT") ? ev.target.value : ev.target.value;
 
-      // Normalise
       if (col === "TYPE") value = (value || "SPLIT").toUpperCase();
       if (col === "DROPPED") value = (value || "").toUpperCase();
       if (col === "SENT") value = (value || "").toUpperCase();
 
-      if (col === "PRODUCT" || col === "WH" || col === "BIN") {
-        value = (value || "").toString().trim().toUpperCase();
-      }
-      if (col === "COMMENTS") {
-        value = (value || "").toString().toUpperCase(); // do not trim comments
-      }
+      if (col === "PRODUCT" || col === "WH" || col === "BIN") value = (value || "").toString().trim().toUpperCase();
+      if (col === "COMMENTS") value = (value || "").toString().toUpperCase();
       if (col === "QTY") value = value === "" ? "" : Number(value);
 
-      // Prevent blank required fields
       if (col === "PRODUCT" && value === "") { showToast("Product cannot be blank"); await refresh(); return; }
       if (col === "WH" && value === "") { showToast("WH cannot be blank"); await refresh(); return; }
       if (col === "BIN" && value === "") { showToast("BIN cannot be blank"); await refresh(); return; }
@@ -947,10 +926,7 @@
         showToast("Accepted");
 
         const doPrint = confirm("Requests accepted. Print the selected lines now?");
-        if (doPrint) {
-          const lines = selectedRowsByIds(ids);
-          printLines("Accepted Transfer Requests", lines);
-        }
+        if (doPrint) printLines("Accepted Transfer Requests", selectedRowsByIds(ids));
 
         await refresh();
       } catch(e){
@@ -1144,7 +1120,7 @@
           else if (k === "PRODUCT") obj.PRODUCT = v.toUpperCase();
           else if (k === "WH") obj.WH = v.toUpperCase();
           else if (k === "BIN") obj.BIN = v.toUpperCase();
-          else if (k === "COMMENTS") obj.COMMENTS = vRaw.toUpperCase(); // keep spacing more than trim
+          else if (k === "COMMENTS") obj.COMMENTS = vRaw.toUpperCase();
         }
 
         if (!headerLike && row.length >= 1) obj.PRODUCT = (row[0] ?? "").toString().trim().toUpperCase();
@@ -1152,12 +1128,10 @@
         if (!headerLike && row.length >= 3) obj.WH = (row[2] ?? "").toString().trim().toUpperCase();
         if (!headerLike && row.length >= 4) obj.BIN = (row[3] ?? "").toString().trim().toUpperCase();
 
-        // Require PRODUCT/WH/BIN
         if (obj.PRODUCT && obj.WH && obj.BIN) out.push(obj);
       }
 
-      const preview =
-        `Parsed ${out.length} line(s). First line: ` +
+      const preview = `Parsed ${out.length} line(s). First line: ` +
         (out[0] ? `${out[0].TYPE} ${out[0].PRODUCT} x${out[0].QTY} (${out[0].WH}/${out[0].BIN})` : "n/a");
 
       return { rows: out, preview };
