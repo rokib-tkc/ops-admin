@@ -20,6 +20,9 @@
       --dropped:#f59e0b;
       --cancel:#ef4444;
 
+      --priority:#b91c1c;        /* dark red */
+      --priorityBg: rgba(185,28,28,0.12); /* light red highlight */
+
       --shadow: 0 6px 16px rgba(0,0,0,0.08);
       --radius: 12px;
     }
@@ -95,9 +98,16 @@
       border-color:var(--cancel);
       color:#fff;
     }
+    .btn.priority{
+      background: var(--priority);
+      border-color: var(--priority);
+      color:#fff;
+    }
+    .btn.priority:hover{ filter: brightness(0.95); }
+
     .btn:disabled{ opacity:0.55; cursor:not-allowed; transform:none; }
 
-    /* Home button (NEW) */
+    /* Home button */
     .btn.home{
       border-color: rgba(37,99,235,0.25);
       background: rgba(37,99,235,0.06);
@@ -162,10 +172,34 @@
 
     tr:hover td{ background:#fafafa; }
 
+    /* New = blue highlight (unless priority / dropped / sent) */
     #newTable tr.status-new td{ background: rgba(96,165,250,0.18); }
+
     tr.status-dropped td{ background: rgba(245,158,11,0.16); }
     tr.status-sent td{ background: rgba(22,163,74,0.12); }
     tr.status-cancel td{ background: rgba(239,68,68,0.12); }
+
+    /* Priority highlight (applies only when NOT dropped/sent/cancelled) */
+    tr.status-priority td{ background: var(--priorityBg) !important; }
+
+    .prio-flag{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:18px; height:18px;
+      border-radius:999px;
+      background: rgba(185,28,28,0.12);
+      border: 1px solid rgba(185,28,28,0.35);
+      color: var(--priority);
+      font-weight:900;
+      font-size:12px;
+      line-height:1;
+    }
+    .prio-flag.empty{
+      background: transparent;
+      border-color: transparent;
+      color: transparent;
+    }
 
     .cell-input, .cell-select{
       width:100%;
@@ -195,7 +229,7 @@
       z-index:1000;
     }
     .modal{
-      width:min(900px, 100%);
+      width:min(1050px, 100%);
       background:#fff;
       border-radius:16px;
       box-shadow: var(--shadow);
@@ -218,14 +252,6 @@
       resize:vertical;
       font-size:13px;
     }
-    .formgrid{
-      display:grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap:10px;
-    }
-    .formgrid .span2{ grid-column: span 2; }
-    .formgrid .span6{ grid-column: span 6; }
-    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:5px; }
 
     .toast{
       position:fixed;
@@ -277,6 +303,59 @@
     .loading-text{ display:flex; flex-direction:column; gap:4px; }
     .loading-title{ font-weight:700; font-size:14px; color:#111827; }
     .loading-sub{ font-size:12px; color: var(--muted); line-height:1.35; }
+
+    /* ===== Add Lines (multi-row) UI ===== */
+    .addlines-wrap{
+      border:1px solid #eef0f3;
+      border-radius:12px;
+      overflow:auto;
+      max-height:420px;
+    }
+    .addlines-table{
+      width:100%;
+      border-collapse:collapse;
+      min-width: 980px; /* keeps table-like feel */
+    }
+    .addlines-table th, .addlines-table td{
+      border-bottom:1px solid #eef0f3;
+      padding:10px 8px;
+      vertical-align:top;
+      font-size:13px;
+      background:#fff;
+    }
+    .addlines-table th{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background:#fff;
+      color: var(--muted);
+      font-size:12px;
+      text-align:left;
+    }
+    .iconbtn{
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius:10px;
+      padding:7px 10px;
+      cursor:pointer;
+      font-weight:800;
+      font-size:13px;
+      transition: all 0.15s ease;
+      white-space:nowrap;
+    }
+    .iconbtn:hover{ transform: translateY(-1px); }
+    .iconbtn:active{ transform: translateY(0px) scale(0.98); }
+    .iconbtn.danger{
+      border-color: rgba(239,68,68,0.45);
+      background: rgba(239,68,68,0.08);
+      color:#991b1b;
+    }
+    .hint{
+      margin:10px 0 0 0;
+      font-size:12px;
+      color: var(--muted);
+      line-height:1.35;
+    }
   </style>
 </head>
 <body>
@@ -288,7 +367,6 @@
       </div>
 
       <div class="controls">
-        <!-- HOME BUTTON (NEW) -->
         <button class="btn home" id="btnHome" title="Back to Ops Admin Home">Home</button>
 
         <div class="tabs">
@@ -318,6 +396,7 @@
             <div class="sub">New requests waiting to be accepted by the team managing transfers.</div>
           </div>
           <div class="row-actions">
+            <button class="btn priority" id="btnPriorityNew" disabled>Priority</button>
             <button class="btn primary" id="btnAcceptNew" disabled>Accept Request(s)</button>
             <button class="btn" id="btnPrintNew" disabled>Print</button>
             <button class="btn danger" id="btnCancelNew" disabled>Cancel Request(s)</button>
@@ -329,6 +408,7 @@
             <thead>
               <tr>
                 <th style="width:34px;"><input type="checkbox" id="checkAllNew" class="checkbox"></th>
+                <th style="width:30px;"></th>
                 <th style="width:90px;">TYPE</th>
                 <th style="width:160px;">PRODUCT</th>
                 <th style="width:80px;">QTY</th>
@@ -349,6 +429,7 @@
             <div class="sub">Accepted requests being worked. Mark Dropped and Sent as items are prepared and despatched.</div>
           </div>
           <div class="row-actions">
+            <button class="btn priority" id="btnPriorityActive" disabled>Priority</button>
             <button class="btn" id="btnPrintActive" disabled>Print</button>
             <button class="btn" id="btnBulkDropped" disabled>Mark Dropped</button>
             <button class="btn" id="btnBulkSent" disabled>Mark Sent</button>
@@ -361,6 +442,7 @@
             <thead>
               <tr>
                 <th style="width:34px;"><input type="checkbox" id="checkAllActive" class="checkbox"></th>
+                <th style="width:30px;"></th>
                 <th style="width:90px;">TYPE</th>
                 <th style="width:160px;">PRODUCT</th>
                 <th style="width:80px;">QTY</th>
@@ -394,6 +476,7 @@
             <thead>
               <tr>
                 <th style="width:34px;"><input type="checkbox" id="checkAllSent" class="checkbox"></th>
+                <th style="width:30px;"></th>
                 <th style="width:90px;">TYPE</th>
                 <th style="width:160px;">PRODUCT</th>
                 <th style="width:80px;">QTY</th>
@@ -425,6 +508,7 @@
             <thead>
               <tr>
                 <th style="width:34px;"><input type="checkbox" id="checkAllCancel" class="checkbox"></th>
+                <th style="width:30px;"></th>
                 <th style="width:90px;">TYPE</th>
                 <th style="width:160px;">PRODUCT</th>
                 <th style="width:80px;">QTY</th>
@@ -443,6 +527,7 @@
     </div>
   </main>
 
+  <!-- Paste Modal (unchanged behaviour) -->
   <div class="modal-backdrop" id="pasteModal">
     <div class="modal">
       <header>
@@ -466,11 +551,12 @@
     </div>
   </div>
 
+  <!-- Add Lines Modal (NEW multi-line) -->
   <div class="modal-backdrop" id="addModal">
     <div class="modal">
       <header>
         <div class="wrap topbar" style="padding:12px 14px;">
-          <h1 style="font-size:16px;">Add Line</h1>
+          <h1 style="font-size:16px;">Add Line(s)</h1>
           <div class="controls">
             <button class="btn" id="btnAddClose">Close</button>
             <button class="btn primary" id="btnAddSubmit">Add</button>
@@ -478,38 +564,34 @@
         </div>
       </header>
       <div class="content">
-        <div class="formgrid">
-          <div class="span2">
-            <label>TYPE</label>
-            <select id="addType" class="cell-select">
-              <option>SPLIT</option>
-              <option>BULK</option>
-            </select>
-          </div>
-          <div class="span2">
-            <label>PRODUCT</label>
-            <input id="addProduct" class="cell-input" placeholder="e.g. 18DR1810A" />
-          </div>
-          <div class="span2">
-            <label>QTY</label>
-            <input id="addQty" class="cell-input" type="number" min="0" step="1" placeholder="e.g. 6" />
-          </div>
-          <div class="span2">
-            <label>WH</label>
-            <input id="addWH" class="cell-input" placeholder="e.g. BB" />
-          </div>
-          <div class="span2">
-            <label>BIN</label>
-            <input id="addBin" class="cell-input" placeholder="e.g. F49E" />
-          </div>
-          <div class="span6">
-            <label>COMMENTS</label>
-            <input id="addComments" class="cell-input" placeholder="Optional notes (urgency, order ref, etc.)" />
-          </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+          <div class="small">Add one or more lines. <strong>PRODUCT is required</strong>. WH/BIN can be left blank.</div>
+          <button class="iconbtn" id="btnAddAnother">+ Add another line</button>
         </div>
-        <div class="small" style="margin-top:10px;">
-          Note: New lines enter as <strong>New Transfer Requests</strong> until accepted.
+
+        <div class="addlines-wrap">
+          <table class="addlines-table">
+            <thead>
+              <tr>
+                <th style="width:120px;">TYPE</th>
+                <th style="width:200px;">PRODUCT</th>
+                <th style="width:110px;">QTY</th>
+                <th style="width:110px;">WH</th>
+                <th style="width:120px;">BIN</th>
+                <th>COMMENTS</th>
+                <th style="width:120px;">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="addLinesBody"></tbody>
+          </table>
         </div>
+
+        <p class="hint">
+          Notes:
+          <br>• Lines are created as <strong>NEW</strong> and non-priority by default.
+          <br>• You can mark Priority afterwards from <strong>New</strong> or <strong>Active</strong>.
+        </p>
       </div>
     </div>
   </div>
@@ -531,7 +613,7 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbxpeOikchlafJAHPgZAyGD-5kCbRWijK1jn4zE1uZQOd1LA-DMJIf6ud3INj2HHW9yj/exec";
     const API_KEY = "Lthdn637H7shdbs8987jnsm72GtsFh";
 
-    // Home URL (NEW) - points back to Ops Admin home
+    // Home URL - points back to Ops Admin home
     const HOME_URL = "index.html";
 
     // ====== SETTINGS ======
@@ -550,7 +632,7 @@
     const tabDTN = document.getElementById("tabDTN");
     const datePicker = document.getElementById("datePicker");
 
-    const btnHome = document.getElementById("btnHome");   // NEW
+    const btnHome = document.getElementById("btnHome");
     const btnRefresh = document.getElementById("btnRefresh");
     const btnPasteUpload = document.getElementById("btnPasteUpload");
     const btnAddLine = document.getElementById("btnAddLine");
@@ -558,12 +640,14 @@
     const newCard = document.getElementById("newCard");
     const newBody = document.getElementById("newBody");
     const checkAllNew = document.getElementById("checkAllNew");
+    const btnPriorityNew = document.getElementById("btnPriorityNew");
     const btnAcceptNew = document.getElementById("btnAcceptNew");
     const btnPrintNew = document.getElementById("btnPrintNew");
     const btnCancelNew = document.getElementById("btnCancelNew");
 
     const activeBody = document.getElementById("activeBody");
     const checkAllActive = document.getElementById("checkAllActive");
+    const btnPriorityActive = document.getElementById("btnPriorityActive");
     const btnPrintActive = document.getElementById("btnPrintActive");
     const btnBulkDropped = document.getElementById("btnBulkDropped");
     const btnBulkSent = document.getElementById("btnBulkSent");
@@ -590,12 +674,8 @@
     const addModal = document.getElementById("addModal");
     const btnAddClose = document.getElementById("btnAddClose");
     const btnAddSubmit = document.getElementById("btnAddSubmit");
-    const addType = document.getElementById("addType");
-    const addProduct = document.getElementById("addProduct");
-    const addQty = document.getElementById("addQty");
-    const addWH = document.getElementById("addWH");
-    const addBin = document.getElementById("addBin");
-    const addComments = document.getElementById("addComments");
+    const btnAddAnother = document.getElementById("btnAddAnother");
+    const addLinesBody = document.getElementById("addLinesBody");
 
     const toast = document.getElementById("toast");
 
@@ -611,7 +691,6 @@
       __busyCount++;
       loadingTitle.textContent = title;
       loadingSub.textContent = sub;
-
       document.body.classList.add("busy");
       loadingOverlay.style.display = "flex";
     }
@@ -681,6 +760,10 @@
         .replaceAll("'","&#039;");
     }
 
+    function isYes(v){
+      return (v || "").toString().trim().toUpperCase() === "YES";
+    }
+
     // ====== JSONP ======
     function jsonp(url){
       return new Promise((resolve, reject) => {
@@ -745,6 +828,8 @@
         url.searchParams.set("SENT", row.SENT || "");
         url.searchParams.set("COMMENTS", row.COMMENTS || "");
         url.searchParams.set("STATUS", row.STATUS || "NEW");
+        // NEW COLUMN in sheet:
+        url.searchParams.set("PRIORITY", row.PRIORITY || "");
       }
 
       if (action === "bulkAdd") url.searchParams.set("rows", JSON.stringify(payload.rows || []));
@@ -764,6 +849,7 @@
       return await jsonp(buildApiUrl(action, payload));
     }
 
+    // Robust bulk upload: automatically chunks so URL doesn’t exceed JSONP limits
     async function bulkAddChunked(allRows){
       let addedTotal = 0;
       let i = 0;
@@ -803,17 +889,31 @@
       return rows.filter(r => set.has(Number(r.rowId)));
     }
 
+    function updatePriorityButton(btn, selectedIds){
+      if (!selectedIds.length){
+        btn.disabled = true;
+        btn.textContent = "Priority";
+        return;
+      }
+      btn.disabled = false;
+      const selected = selectedRowsByIds(selectedIds);
+      const allPriority = selected.length > 0 && selected.every(r => isYes(r.PRIORITY));
+      btn.textContent = allPriority ? "Unmark Priority" : "Priority";
+    }
+
     function updateButtons(){
       const newIds = selectedRowIds("input[data-rowcheck='new']:checked");
       btnAcceptNew.disabled = newIds.length === 0;
       btnPrintNew.disabled = newIds.length === 0;
       btnCancelNew.disabled = newIds.length === 0;
+      updatePriorityButton(btnPriorityNew, newIds);
 
       const activeIds = selectedRowIds("input[data-rowcheck='active']:checked");
       btnPrintActive.disabled = activeIds.length === 0;
       btnBulkDropped.disabled = activeIds.length === 0;
       btnBulkSent.disabled = activeIds.length === 0;
       btnCancelActive.disabled = activeIds.length === 0;
+      updatePriorityButton(btnPriorityActive, activeIds);
 
       const sentIds = selectedRowIds("input[data-rowcheck='sent']:checked");
       btnPrintSent.disabled = sentIds.length === 0;
@@ -881,13 +981,18 @@
     // ====== RENDERING ======
     function rowClass(r){
       const status = (r.STATUS || "").toString().trim().toUpperCase();
-      const sent = (r.SENT || "").toString().trim().toUpperCase() === "YES";
-      const dropped = (r.DROPPED || "").toString().trim().toUpperCase() === "YES";
+      const sent = isYes(r.SENT);
+      const dropped = isYes(r.DROPPED);
+      const priority = isYes(r.PRIORITY);
 
-      if (status === "NEW") return "status-new";
       if (status === "CANCELLED") return "status-cancel";
       if (sent) return "status-sent";
       if (dropped) return "status-dropped";
+
+      // Priority highlight remains until Dropped/Sent/Cancelled (handled above)
+      if (priority) return "status-priority";
+
+      if (status === "NEW") return "status-new";
       return "";
     }
 
@@ -902,14 +1007,31 @@
       return `<input class="cell-input" type="${type}" value="${escapeHtml(value ?? "")}">`;
     }
 
+    function buildPrioFlag(priorityYes){
+      if (priorityYes){
+        return `<span class="prio-flag" title="Priority">!</span>`;
+      }
+      return `<span class="prio-flag empty">!</span>`;
+    }
+
+    function sortPriorityFirst(list){
+      // Priority YES first, then stable by rowId ascending
+      return [...list].sort((a,b) => {
+        const ap = isYes(a.PRIORITY) ? 1 : 0;
+        const bp = isYes(b.PRIORITY) ? 1 : 0;
+        if (ap !== bp) return bp - ap;
+        return Number(a.rowId) - Number(b.rowId);
+      });
+    }
+
     function render(){
       const status = (x) => (x.STATUS || "").toString().trim().toUpperCase();
-      const isSent = (x) => (x.SENT || "").toString().trim().toUpperCase() === "YES";
+      const isSentRow = (x) => isYes(x.SENT);
 
-      const newReq = rows.filter(r => !isSent(r) && status(r) === "NEW");
-      const active = rows.filter(r => !isSent(r) && status(r) === "ACTIVE");
-      const sent = rows.filter(r => isSent(r) && status(r) !== "CANCELLED");
-      const cancelled = rows.filter(r => status(r) === "CANCELLED");
+      const newReq = sortPriorityFirst(rows.filter(r => !isSentRow(r) && status(r) === "NEW"));
+      const active = sortPriorityFirst(rows.filter(r => !isSentRow(r) && status(r) === "ACTIVE"));
+      const sent = sortPriorityFirst(rows.filter(r => isSentRow(r) && status(r) !== "CANCELLED"));
+      const cancelled = sortPriorityFirst(rows.filter(r => status(r) === "CANCELLED"));
 
       newCard.classList.toggle("hidden", newReq.length === 0);
       cancelCard.classList.toggle("hidden", cancelled.length === 0);
@@ -917,6 +1039,7 @@
       newBody.innerHTML = newReq.map(r => `
         <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
           <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
+          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
           <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
           <td>${escapeHtml(r.PRODUCT)}</td>
           <td>${escapeHtml(r.QTY)}</td>
@@ -929,7 +1052,8 @@
       activeBody.innerHTML = active.map(r => `
         <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
           <td><input class="checkbox" type="checkbox" data-rowcheck="active" data-rowid="${r.rowId}"></td>
-          <td data-col="TYPE">${buildSelect(["SPLIT","BULK"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
+          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
+          <td data-col="TYPE">${buildSelect(["SPLIT","BULK","ORDER"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
           <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
           <td data-col="QTY">${buildInput(r.QTY, "number")}</td>
           <td data-col="WH">${buildInput(r.WH)}</td>
@@ -943,6 +1067,7 @@
       sentBody.innerHTML = sent.map(r => `
         <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
           <td><input class="checkbox" type="checkbox" data-rowcheck="sent" data-rowid="${r.rowId}"></td>
+          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
           <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
           <td>${escapeHtml(r.PRODUCT)}</td>
           <td>${escapeHtml(r.QTY)}</td>
@@ -957,6 +1082,7 @@
       cancelBody.innerHTML = cancelled.map(r => `
         <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
           <td><input class="checkbox" type="checkbox" data-rowcheck="cancel" data-rowid="${r.rowId}"></td>
+          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
           <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
           <td>${escapeHtml(r.PRODUCT)}</td>
           <td>${escapeHtml(r.QTY)}</td>
@@ -1025,13 +1151,12 @@
       }
     });
 
-    // ====== HOME BUTTON LOGIC (NEW) ======
+    // ====== HOME BUTTON ======
     btnHome.addEventListener("click", () => {
       if (isBusy()){
         showToast("Please wait for the current action to finish.");
         return;
       }
-      // Optional safety prompt if user has modals open
       if (pasteModal.style.display === "flex" || addModal.style.display === "flex"){
         if (!confirm("Close this window and return to Home?")) return;
       }
@@ -1076,6 +1201,7 @@
       if (ev.target && ev.target.matches("input[type='checkbox'][data-rowcheck]")) updateButtons();
     });
 
+    // Inline edit changes (Active Transfers)
     document.addEventListener("change", async (ev) => {
       if (isBusy()) return;
 
@@ -1098,9 +1224,8 @@
       if (col === "COMMENTS") value = (value || "").toString().toUpperCase();
       if (col === "QTY") value = value === "" ? "" : Number(value);
 
+      // PRODUCT still required, but WH/BIN now allowed to be blank
       if (col === "PRODUCT" && value === "") { showToast("Product cannot be blank"); await refresh(true); return; }
-      if (col === "WH" && value === "") { showToast("WH cannot be blank"); await refresh(true); return; }
-      if (col === "BIN" && value === "") { showToast("BIN cannot be blank"); await refresh(true); return; }
 
       await withLoading("Saving changes…", async () => {
         try{
@@ -1113,6 +1238,38 @@
           showToast(String(e.message || e));
         }
       }, "Updating and refreshing the page…");
+    });
+
+    // ====== PRIORITY ACTIONS ======
+    async function togglePriorityForSelected(which){
+      const ids = selectedRowIds(`input[data-rowcheck='${which}']:checked`);
+      if (!ids.length) return;
+
+      const selected = selectedRowsByIds(ids);
+      const allPriority = selected.length > 0 && selected.every(r => isYes(r.PRIORITY));
+      const newValue = allPriority ? "" : "YES";
+
+      await withLoading(allPriority ? "Removing Priority…" : "Setting Priority…", async () => {
+        try{
+          setStatus("Saving…", "warn");
+          await bulkPatch(ids, { PRIORITY: newValue });
+          showToast(allPriority ? "Priority removed" : "Marked as Priority");
+          await refresh(false);
+        } catch(e){
+          setStatus("Priority update failed", "err");
+          showToast(String(e.message || e));
+        }
+      }, "Updating selected lines…");
+    }
+
+    btnPriorityNew.addEventListener("click", async () => {
+      if (isBusy()) return;
+      await togglePriorityForSelected("new");
+    });
+
+    btnPriorityActive.addEventListener("click", async () => {
+      if (isBusy()) return;
+      await togglePriorityForSelected("active");
     });
 
     // ====== NEW ACTIONS ======
@@ -1273,7 +1430,7 @@
       }, "Returning selected lines to Active Transfers…");
     });
 
-    // ====== PASTE UPLOAD ======
+    // ====== PASTE UPLOAD (unchanged rules: requires PRODUCT, WH, BIN) ======
     btnPasteUpload.addEventListener("click", () => {
       if (isBusy()) return;
       pasteBox.value = "";
@@ -1332,7 +1489,8 @@
           DROPPED: "",
           SENT: "",
           COMMENTS: "",
-          STATUS: "NEW"
+          STATUS: "NEW",
+          PRIORITY: "" // new column
         };
 
         for (let c = 0; c < row.length; c++){
@@ -1354,6 +1512,7 @@
         if (!headerLike && row.length >= 3) obj.WH = (row[2] ?? "").toString().trim().toUpperCase();
         if (!headerLike && row.length >= 4) obj.BIN = (row[3] ?? "").toString().trim().toUpperCase();
 
+        // Keep existing rule: paste uploads require PRODUCT + WH + BIN
         if (obj.PRODUCT && obj.WH && obj.BIN) out.push(obj);
       }
 
@@ -1390,53 +1549,139 @@
       }, "Saving pasted lines and refreshing…");
     });
 
-    // ====== ADD LINE ======
+    // ====== ADD LINES (multi-row) ======
+    function makeAddRow(prefillType){
+      const type = (prefillType || "SPLIT").toUpperCase();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+          <select class="cell-select" data-addcol="TYPE">
+            <option ${type==="SPLIT" ? "selected":""}>SPLIT</option>
+            <option ${type==="BULK" ? "selected":""}>BULK</option>
+            <option ${type==="ORDER" ? "selected":""}>ORDER</option>
+          </select>
+        </td>
+        <td><input class="cell-input" data-addcol="PRODUCT" placeholder="e.g. 18DR1810A" /></td>
+        <td><input class="cell-input" data-addcol="QTY" type="number" min="0" step="1" placeholder="e.g. 6" /></td>
+        <td><input class="cell-input" data-addcol="WH" placeholder="e.g. BB" /></td>
+        <td><input class="cell-input" data-addcol="BIN" placeholder="e.g. F49E" /></td>
+        <td><input class="cell-input" data-addcol="COMMENTS" placeholder="Optional notes (urgency, order ref, etc.)" /></td>
+        <td><button class="iconbtn danger" data-action="remove">Remove</button></td>
+      `;
+      return tr;
+    }
+
+    function resetAddModal(){
+      addLinesBody.innerHTML = "";
+      addLinesBody.appendChild(makeAddRow("SPLIT"));
+      // focus first product
+      const firstProduct = addLinesBody.querySelector("input[data-addcol='PRODUCT']");
+      if (firstProduct) firstProduct.focus();
+    }
+
     btnAddLine.addEventListener("click", () => {
       if (isBusy()) return;
-      addType.value = "SPLIT";
-      addProduct.value = "";
-      addQty.value = "";
-      addWH.value = "";
-      addBin.value = "";
-      addComments.value = "";
+      resetAddModal();
       addModal.style.display = "flex";
-      addProduct.focus();
     });
+
     btnAddClose.addEventListener("click", () => addModal.style.display = "none");
+
+    btnAddAnother.addEventListener("click", () => {
+      if (isBusy()) return;
+      // default new row uses the last row's TYPE if available
+      const lastTypeSel = addLinesBody.querySelector("tr:last-child select[data-addcol='TYPE']");
+      const nextType = lastTypeSel ? lastTypeSel.value : "SPLIT";
+      addLinesBody.appendChild(makeAddRow(nextType));
+      const newRowProduct = addLinesBody.querySelector("tr:last-child input[data-addcol='PRODUCT']");
+      if (newRowProduct) newRowProduct.focus();
+    });
+
+    addLinesBody.addEventListener("click", (ev) => {
+      const btn = ev.target.closest("button[data-action='remove']");
+      if (!btn) return;
+      const tr = btn.closest("tr");
+      if (!tr) return;
+
+      // Keep at least one row visible
+      if (addLinesBody.querySelectorAll("tr").length <= 1){
+        showToast("At least one line is required.");
+        return;
+      }
+      tr.remove();
+    });
+
+    // Uppercase while typing in Add modal (PRODUCT/WH/BIN/COMMENTS)
+    addLinesBody.addEventListener("input", (ev) => {
+      const el = ev.target;
+      if (!el || !el.matches("input.cell-input")) return;
+      const col = el.getAttribute("data-addcol");
+      if (!["PRODUCT","WH","BIN","COMMENTS"].includes(col)) return;
+
+      const pos = el.selectionStart;
+      el.value = (el.value || "").toUpperCase();
+      try { el.setSelectionRange(pos, pos); } catch(e){}
+    });
+
+    function readAddModalRows(){
+      const trs = [...addLinesBody.querySelectorAll("tr")];
+      const out = [];
+
+      for (const tr of trs){
+        const get = (col) => {
+          const el = tr.querySelector(`[data-addcol='${col}']`);
+          return el ? el.value : "";
+        };
+
+        const row = {
+          DATE: currentDate || todayISO(),
+          TYPE: (get("TYPE") || "SPLIT").toString().trim().toUpperCase(),
+          PRODUCT: (get("PRODUCT") || "").toString().trim().toUpperCase(),
+          QTY: get("QTY") === "" ? "" : Number(get("QTY")),
+          WH: (get("WH") || "").toString().trim().toUpperCase(),
+          BIN: (get("BIN") || "").toString().trim().toUpperCase(),
+          DROPPED: "",
+          SENT: "",
+          COMMENTS: (get("COMMENTS") || "").toString().toUpperCase(),
+          STATUS: "NEW",
+          PRIORITY: ""
+        };
+
+        // Only PRODUCT is forced
+        if (!row.PRODUCT){
+          return { ok:false, error:"Product is required on all lines." };
+        }
+
+        // TYPE safeguard
+        if (!["SPLIT","BULK","ORDER"].includes(row.TYPE)) row.TYPE = "SPLIT";
+
+        out.push(row);
+      }
+
+      return { ok:true, rows: out };
+    }
 
     btnAddSubmit.addEventListener("click", async () => {
       if (isBusy()) return;
 
-      const row = {
-        DATE: currentDate || todayISO(),
-        TYPE: (addType.value || "SPLIT").toUpperCase(),
-        PRODUCT: (addProduct.value || "").trim().toUpperCase(),
-        QTY: addQty.value === "" ? "" : Number(addQty.value),
-        WH: (addWH.value || "").trim().toUpperCase(),
-        BIN: (addBin.value || "").trim().toUpperCase(),
-        DROPPED: "",
-        SENT: "",
-        COMMENTS: (addComments.value || "").toString().toUpperCase(),
-        STATUS: "NEW"
-      };
+      const parsed = readAddModalRows();
+      if (!parsed.ok){
+        showToast(parsed.error || "Check your lines.");
+        return;
+      }
 
-      if (!row.PRODUCT){ showToast("Product is required"); return; }
-      if (!row.WH){ showToast("WH is required"); return; }
-      if (!row.BIN){ showToast("BIN is required"); return; }
-
-      await withLoading("Adding line…", async () => {
+      await withLoading("Adding line(s)…", async () => {
         try{
           setStatus("Adding…", "warn");
-          const res = await apiCall("add", { row });
-          if (!res.ok) throw new Error(res.error || "Add failed");
-          showToast("Added to New Requests");
+          const added = await bulkAddChunked(parsed.rows);
+          showToast(`Added ${added} line(s) to New Requests`);
           addModal.style.display = "none";
           await refresh(false);
         } catch(e){
           setStatus("Add failed", "err");
           showToast(String(e.message || e));
         }
-      }, "Saving the new line and refreshing…");
+      }, "Saving the new line(s) and refreshing…");
     });
 
     // ====== AUTO REFRESH ======
