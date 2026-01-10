@@ -1039,24 +1039,15 @@
       return `<span class="prio-flag empty">!</span>`;
     }
 
-    function sortPriorityFirst(list){
-      // Priority YES first, then stable by rowId ascending
-      return [...list].sort((a,b) => {
-        const ap = isYes(a.PRIORITY) ? 1 : 0;
-        const bp = isYes(b.PRIORITY) ? 1 : 0;
-        if (ap !== bp) return bp - ap;
-        return Number(a.rowId) - Number(b.rowId);
-      });
-    }
-
     function render(){
       const status = (x) => (x.STATUS || "").toString().trim().toUpperCase();
       const isSentRow = (x) => isYes(x.SENT);
 
-      const newReq = sortPriorityFirst(rows.filter(r => !isSentRow(r) && status(r) === "NEW"));
-      const active = sortPriorityFirst(rows.filter(r => !isSentRow(r) && status(r) === "ACTIVE"));
-      const sent = sortPriorityFirst(rows.filter(r => isSentRow(r) && status(r) !== "CANCELLED"));
-      const cancelled = sortPriorityFirst(rows.filter(r => status(r) === "CANCELLED"));
+      const newReq = rows.filter(r => !isSentRow(r) && status(r) === "NEW");
+      const active = rows.filter(r => !isSentRow(r) && status(r) === "ACTIVE");
+      const sent = rows.filter(r => isSentRow(r) && status(r) !== "CANCELLED");
+      const cancelled = rows.filter(r => status(r) === "CANCELLED");
+
 
       newCard.classList.toggle("hidden", newReq.length === 0);
       cancelCard.classList.toggle("hidden", cancelled.length === 0);
