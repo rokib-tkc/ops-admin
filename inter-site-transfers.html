@@ -215,6 +215,16 @@
       box-shadow:0 0 0 3px rgba(37,99,235,0.12);
     }
 
+    /* ===== TYPE colouring in Active table ===== */
+    .type-split{
+      background: rgba(250, 204, 21, 0.35) !important; /* yellow */
+    }
+
+    .type-bulk{
+      background: rgba(239, 68, 68, 0.25) !important; /* light red */
+    }
+
+
     .checkbox{ width:16px; height:16px; }
     .small{ font-size:12px; color:var(--muted); }
 
@@ -760,6 +770,21 @@
         .replaceAll("'","&#039;");
     }
 
+    // ===== TYPE COLOUR HELPER =====
+    function applyTypeColour(selectEl){
+      if (!selectEl) return;
+
+    // Remove any previous type classes
+      selectEl.classList.remove("type-split", "type-bulk");
+
+      const v = (selectEl.value || "").toUpperCase();
+
+      if (v === "SPLIT") selectEl.classList.add("type-split");
+      else if (v === "BULK") selectEl.classList.add("type-bulk");
+      // ORDER = no colour
+    }
+
+
     function isYes(v){
       return (v || "").toString().trim().toUpperCase() === "YES";
     }
@@ -1064,6 +1089,13 @@
         </tr>
       `).join("");
 
+
+      // Apply TYPE colouring to Active table
+    activeBody.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => {
+      applyTypeColour(sel);
+    });
+
+
       sentBody.innerHTML = sent.map(r => `
         <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
           <td><input class="checkbox" type="checkbox" data-rowcheck="sent" data-rowid="${r.rowId}"></td>
@@ -1217,6 +1249,12 @@
       let value = (ev.target.tagName === "SELECT") ? ev.target.value : ev.target.value;
 
       if (col === "TYPE") value = (value || "SPLIT").toUpperCase();
+
+      // Update colour immediately in UI when TYPE changes
+    if (col === "TYPE" && ev.target.tagName === "SELECT"){
+      applyTypeColour(ev.target);
+    }
+
       if (col === "DROPPED") value = (value || "").toUpperCase();
       if (col === "SENT") value = (value || "").toUpperCase();
 
