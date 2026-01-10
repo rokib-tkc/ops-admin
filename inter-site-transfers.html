@@ -182,6 +182,25 @@
     /* Priority highlight (applies only when NOT dropped/sent/cancelled) */
     tr.status-priority td{ background: var(--priorityBg) !important; }
 
+    /* ===== Outstanding Priority Transfers (summary table) ===== */
+    .priority-card{
+      border-color: rgba(185,28,28,0.35) !important;
+      background: rgba(185,28,28,0.06) !important; /* light red tint */
+    }
+
+    .priority-card .cardhead h2{
+      color: #7f1d1d;
+    }
+
+    #priorityTable tbody td{
+      background: rgba(185,28,28,0.08); /* light red row background */
+    }
+
+    #priorityTable tr:hover td{
+      background: rgba(185,28,28,0.12);
+    }
+
+    
     .prio-flag{
       display:inline-flex;
       align-items:center;
@@ -399,6 +418,38 @@
   <main class="wrap">
     <div class="grid">
 
+<!-- Outstanding Priority Transfers (shows only when there are outstanding priority ACTIVE lines not yet SENT) -->
+<section class="card hidden priority-card" id="priorityCard">
+  <div class="cardhead">
+    <div>
+      <h2>Outstanding Priority Transfers</h2>
+      <div class="sub">Priority lines currently sitting in <strong>Active Transfers</strong> (not yet marked Sent).</div>
+    </div>
+    <div class="row-actions">
+      <button class="btn" id="btnPrintPriority" disabled>Print</button>
+    </div>
+  </div>
+
+  <div style="position:relative; border:1px solid rgba(185,28,28,0.25); border-radius:12px;">
+    <table id="priorityTable">
+      <thead>
+        <tr>
+          <th style="width:34px;"><input type="checkbox" id="checkAllPriority" class="checkbox"></th>
+          <th style="width:110px;">TYPE</th>
+          <th style="width:170px;">PRODUCT</th>
+          <th style="width:80px;">QTY</th>
+          <th style="width:60px;">WH</th>
+          <th style="width:80px;">BIN</th>
+          <th>COMMENTS</th>
+        </tr>
+      </thead>
+      <tbody id="priorityBody"></tbody>
+    </table>
+  </div>
+</section>
+
+
+      
       <section class="card hidden" id="newCard">
         <div class="cardhead">
           <div>
@@ -647,6 +698,13 @@
     const btnPasteUpload = document.getElementById("btnPasteUpload");
     const btnAddLine = document.getElementById("btnAddLine");
 
+    // Outstanding Priority Transfers
+    const priorityCard = document.getElementById("priorityCard");
+    const priorityBody = document.getElementById("priorityBody");
+    const checkAllPriority = document.getElementById("checkAllPriority");
+    const btnPrintPriority = document.getElementById("btnPrintPriority");
+
+    
     const newCard = document.getElementById("newCard");
     const newBody = document.getElementById("newBody");
     const checkAllNew = document.getElementById("checkAllNew");
@@ -927,6 +985,10 @@
     }
 
     function updateButtons(){
+
+      const prioIds = selectedRowIds("input[data-rowcheck='prio']:checked");
+      btnPrintPriority.disabled = prioIds.length === 0;
+
       const newIds = selectedRowIds("input[data-rowcheck='new']:checked");
       btnAcceptNew.disabled = newIds.length === 0;
       btnPrintNew.disabled = newIds.length === 0;
@@ -1045,12 +1107,27 @@
 
       const newReq = rows.filter(r => !isSentRow(r) && status(r) === "NEW");
       const active = rows.filter(r => !isSentRow(r) && status(r) === "ACTIVE");
+      const outstandingPrio = active.filter(r => isYes(r.PRIORITY) && !isYes(r.SENT));
       const sent = rows.filter(r => isSentRow(r) && status(r) !== "CANCELLED");
       const cancelled = rows.filter(r => status(r) === "CANCELLED");
 
 
       newCard.classList.toggle("hidden", newReq.length === 0);
       cancelCard.classList.toggle("hidden", cancelled.length === 0);
+      priorityCard.classList.toggle("hidden", outstandingPrio.length === 0);
+
+
+      priorityBody.innerHTML = outstandingPrio.map(r => `
+      <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+        <td><input class="checkbox" type="checkbox" data-rowcheck="prio" data-rowid="${r.rowId}"></td>
+        <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
+        <td>${escapeHtml(r.PRODUCT)}</td>
+        <td>${escapeHtml(r.QTY)}</td>
+        <td>${escapeHtml(r.WH)}</td>
+        <td>${escapeHtml(r.BIN)}</td>
+        <td>${escapeHtml(r.COMMENTS)}</td>
+      </tr>
+    `).join("");
 
       newBody.innerHTML = newReq.map(r => `
         <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
@@ -1121,6 +1198,7 @@
       checkAllActive.checked = false;
       checkAllSent.checked = false;
       checkAllCancel.checked = false;
+      checkAllPriority.checked = false;
 
       updateButtons();
       setStatus(`Loaded ${rows.length} lines`, "ok");
@@ -1219,6 +1297,7 @@
     checkAllActive.addEventListener("change", () => setAll("active", checkAllActive.checked));
     checkAllSent.addEventListener("change", () => setAll("sent", checkAllSent.checked));
     checkAllCancel.addEventListener("change", () => setAll("cancel", checkAllCancel.checked));
+    checkAllPriority.addEventListener("change", () => setAll("prio", checkAllPriority.checked));
 
     document.addEventListener("change", (ev) => {
       if (ev.target && ev.target.matches("input[type='checkbox'][data-rowcheck]")) updateButtons();
@@ -1325,6 +1404,13 @@
       if (!ids.length) return;
       printLines("New Transfer Requests", selectedRowsByIds(ids));
     });
+
+    btnPrintPriority.addEventListener("click", () => {
+      const ids = selectedRowIds("input[data-rowcheck='prio']:checked");
+      if (!ids.length) return;
+      printLines("Outstanding Priority Transfers", selectedRowsByIds(ids));
+    });
+
 
     btnCancelNew.addEventListener("click", async () => {
       if (isBusy()) return;
