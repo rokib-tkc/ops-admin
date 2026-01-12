@@ -182,6 +182,25 @@
     /* Priority highlight (applies only when NOT dropped/sent/cancelled) */
     tr.status-priority td{ background: var(--priorityBg) !important; }
 
+    /* ===== Outstanding Priority Transfers (summary table) ===== */
+    .priority-card{
+      border-color: rgba(185,28,28,0.35) !important;
+      background: rgba(185,28,28,0.06) !important; /* light red tint */
+    }
+
+    .priority-card .cardhead h2{
+      color: #7f1d1d;
+    }
+
+    #priorityTable tbody td{
+      background: rgba(185,28,28,0.08); /* light red row background */
+    }
+
+    #priorityTable tr:hover td{
+      background: rgba(185,28,28,0.12);
+    }
+
+    
     .prio-flag{
       display:inline-flex;
       align-items:center;
@@ -214,6 +233,16 @@
       border-color:var(--accent);
       box-shadow:0 0 0 3px rgba(37,99,235,0.12);
     }
+
+    /* ===== TYPE colouring in Active table ===== */
+    .type-split{
+      background: rgba(250, 204, 21, 0.35) !important; /* yellow */
+    }
+
+    .type-bulk{
+      background: rgba(239, 68, 68, 0.25) !important; /* light red */
+    }
+
 
     .checkbox{ width:16px; height:16px; }
     .small{ font-size:12px; color:var(--muted); }
@@ -356,6 +385,42 @@
       color: var(--muted);
       line-height:1.35;
     }
+
+
+/* ===== Page Search (body filter) ===== */
+.search-card{
+  padding: 12px 14px;
+}
+.searchbar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.searchbar label{
+  font-size:12px;
+  color: var(--muted);
+  font-weight:700;
+}
+#productSearch{
+  width: 280px;
+  max-width: 100%;
+}
+.search-msg{
+  margin-top:8px;
+  font-size:12px;
+  color: var(--muted);
+}
+.search-msg.bad{
+  color:#991b1b;
+  font-weight:700;
+}
+.search-msg.good{
+  color:#166534;
+  font-weight:700;
+}
+
+    
   </style>
 </head>
 <body>
@@ -389,6 +454,50 @@
   <main class="wrap">
     <div class="grid">
 
+<!-- Product Search (filters page to one table + matching lines only) -->
+<section class="card search-card" id="searchCard">
+  <div class="searchbar">
+    <label for="productSearch">Search product</label>
+    <input id="productSearch" class="cell-input" type="text" placeholder="e.g. 18DR1810A" autocomplete="off">
+    <button class="btn" id="btnClearSearch" type="button" disabled>Clear</button>
+  </div>
+  <div id="searchMsg" class="search-msg">Tip: start typing a product code to filter the page.</div>
+</section>
+
+
+
+<!-- Outstanding Priority Transfers (shows only when there are outstanding priority ACTIVE lines not yet SENT) -->
+<section class="card hidden priority-card" id="priorityCard">
+  <div class="cardhead">
+    <div>
+      <h2>Outstanding Priority Transfers</h2>
+      <div class="sub">Priority lines currently sitting in <strong>Active Transfers</strong> (not yet marked Sent).</div>
+    </div>
+    <div class="row-actions">
+      <button class="btn" id="btnPrintPriority" disabled>Print</button>
+    </div>
+  </div>
+
+  <div style="position:relative; border:1px solid rgba(185,28,28,0.25); border-radius:12px;">
+    <table id="priorityTable">
+      <thead>
+        <tr>
+          <th style="width:34px;"><input type="checkbox" id="checkAllPriority" class="checkbox"></th>
+          <th style="width:110px;">TYPE</th>
+          <th style="width:170px;">PRODUCT</th>
+          <th style="width:80px;">QTY</th>
+          <th style="width:60px;">WH</th>
+          <th style="width:80px;">BIN</th>
+          <th>COMMENTS</th>
+        </tr>
+      </thead>
+      <tbody id="priorityBody"></tbody>
+    </table>
+  </div>
+</section>
+
+
+      
       <section class="card hidden" id="newCard">
         <div class="cardhead">
           <div>
@@ -637,6 +746,23 @@
     const btnPasteUpload = document.getElementById("btnPasteUpload");
     const btnAddLine = document.getElementById("btnAddLine");
 
+
+// ====== PAGE SEARCH (BODY FILTER) ======
+let filterProduct = ""; // uppercased, trimmed
+
+const productSearch = document.getElementById("productSearch");
+const btnClearSearch = document.getElementById("btnClearSearch");
+const searchMsg = document.getElementById("searchMsg");
+
+
+    
+    // Outstanding Priority Transfers
+    const priorityCard = document.getElementById("priorityCard");
+    const priorityBody = document.getElementById("priorityBody");
+    const checkAllPriority = document.getElementById("checkAllPriority");
+    const btnPrintPriority = document.getElementById("btnPrintPriority");
+
+    
     const newCard = document.getElementById("newCard");
     const newBody = document.getElementById("newBody");
     const checkAllNew = document.getElementById("checkAllNew");
@@ -759,6 +885,21 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
+
+    // ===== TYPE COLOUR HELPER =====
+    function applyTypeColour(selectEl){
+      if (!selectEl) return;
+
+    // Remove any previous type classes
+      selectEl.classList.remove("type-split", "type-bulk");
+
+      const v = (selectEl.value || "").toUpperCase();
+
+      if (v === "SPLIT") selectEl.classList.add("type-split");
+      else if (v === "BULK") selectEl.classList.add("type-bulk");
+      // ORDER = no colour
+    }
+
 
     function isYes(v){
       return (v || "").toString().trim().toUpperCase() === "YES";
@@ -902,6 +1043,10 @@
     }
 
     function updateButtons(){
+
+      const prioIds = selectedRowIds("input[data-rowcheck='prio']:checked");
+      btnPrintPriority.disabled = prioIds.length === 0;
+
       const newIds = selectedRowIds("input[data-rowcheck='new']:checked");
       btnAcceptNew.disabled = newIds.length === 0;
       btnPrintNew.disabled = newIds.length === 0;
@@ -1014,95 +1159,180 @@
       return `<span class="prio-flag empty">!</span>`;
     }
 
-    function sortPriorityFirst(list){
-      // Priority YES first, then stable by rowId ascending
-      return [...list].sort((a,b) => {
-        const ap = isYes(a.PRIORITY) ? 1 : 0;
-        const bp = isYes(b.PRIORITY) ? 1 : 0;
-        if (ap !== bp) return bp - ap;
-        return Number(a.rowId) - Number(b.rowId);
-      });
+
+function render(){
+  const status = (x) => (x.STATUS || "").toString().trim().toUpperCase();
+  const isSentRow = (x) => isYes(x.SENT);
+
+  const newReq = rows.filter(r => !isSentRow(r) && status(r) === "NEW");
+  const active = rows.filter(r => !isSentRow(r) && status(r) === "ACTIVE");
+  const outstandingPrio = active.filter(r => isYes(r.PRIORITY) && !isYes(r.SENT));
+  const sent = rows.filter(r => isSentRow(r) && status(r) !== "CANCELLED");
+  const cancelled = rows.filter(r => status(r) === "CANCELLED");
+
+  // ===== Filter logic =====
+  const q = (filterProduct || "").trim().toUpperCase();
+
+  // Helper: match product contains query (allows partial)
+  const match = (r) => (r.PRODUCT || "").toString().toUpperCase().includes(q);
+
+  // If searching, find which single table should show (priority: Active > New > Sent > Cancelled)
+  let showOnly = ""; // "active" | "new" | "sent" | "cancel" | ""
+  let matches = [];
+
+  if (q){
+    const mActive = active.filter(match);
+    const mNew = newReq.filter(match);
+    const mSent = sent.filter(match);
+    const mCancel = cancelled.filter(match);
+
+    if (mActive.length){ showOnly = "active"; matches = mActive; }
+    else if (mNew.length){ showOnly = "new"; matches = mNew; }
+    else if (mSent.length){ showOnly = "sent"; matches = mSent; }
+    else if (mCancel.length){ showOnly = "cancel"; matches = mCancel; }
+    else { showOnly = "none"; matches = []; }
+  }
+
+  // ===== Card visibility =====
+  if (!q){
+    // Normal view
+    newCard.classList.toggle("hidden", newReq.length === 0);
+    cancelCard.classList.toggle("hidden", cancelled.length === 0);
+    priorityCard.classList.toggle("hidden", outstandingPrio.length === 0);
+
+    // Search UI message
+    btnClearSearch.disabled = true;
+    searchMsg.className = "search-msg";
+    searchMsg.textContent = "Tip: start typing a product code to filter the page.";
+  } else {
+    // Search view: hide all cards except the one with results
+    // Also hide Priority summary during search to avoid duplicates/confusion
+    priorityCard.classList.add("hidden");
+
+    newCard.classList.toggle("hidden", showOnly !== "new");
+    cancelCard.classList.toggle("hidden", showOnly !== "cancel");
+    // Active + Sent cards are not marked hidden in your HTML, so we do it manually:
+    document.querySelector("section.card:has(#activeTable)")?.classList.toggle("hidden", showOnly !== "active");
+    document.querySelector("section.card:has(#sentTable)")?.classList.toggle("hidden", showOnly !== "sent");
+
+    btnClearSearch.disabled = false;
+
+    if (showOnly === "none"){
+      searchMsg.className = "search-msg bad";
+      searchMsg.textContent = `Not found: ${q}`;
+    } else {
+      const label =
+        showOnly === "active" ? "Active Transfers" :
+        showOnly === "new" ? "New Transfer Requests" :
+        showOnly === "sent" ? "Sent Transfers" :
+        "Cancellations";
+
+      searchMsg.className = "search-msg good";
+      searchMsg.textContent = `Showing ${matches.length} result(s) for ${q} in ${label}.`;
     }
+  }
 
-    function render(){
-      const status = (x) => (x.STATUS || "").toString().trim().toUpperCase();
-      const isSentRow = (x) => isYes(x.SENT);
+  // ===== Priority table (normal view only) =====
+  if (!q){
+    priorityBody.innerHTML = outstandingPrio.map(r => `
+      <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+        <td><input class="checkbox" type="checkbox" data-rowcheck="prio" data-rowid="${r.rowId}"></td>
+        <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
+        <td>${escapeHtml(r.PRODUCT)}</td>
+        <td>${escapeHtml(r.QTY)}</td>
+        <td>${escapeHtml(r.WH)}</td>
+        <td>${escapeHtml(r.BIN)}</td>
+        <td>${escapeHtml(r.COMMENTS)}</td>
+      </tr>
+    `).join("");
+  } else {
+    priorityBody.innerHTML = "";
+  }
 
-      const newReq = sortPriorityFirst(rows.filter(r => !isSentRow(r) && status(r) === "NEW"));
-      const active = sortPriorityFirst(rows.filter(r => !isSentRow(r) && status(r) === "ACTIVE"));
-      const sent = sortPriorityFirst(rows.filter(r => isSentRow(r) && status(r) !== "CANCELLED"));
-      const cancelled = sortPriorityFirst(rows.filter(r => status(r) === "CANCELLED"));
+  // ===== Decide which rows to render into each table =====
+  const newRows = q ? (showOnly === "new" ? newReq.filter(match) : []) : newReq;
+  const activeRows = q ? (showOnly === "active" ? active.filter(match) : []) : active;
+  const sentRows = q ? (showOnly === "sent" ? sent.filter(match) : []) : sent;
+  const cancelRows = q ? (showOnly === "cancel" ? cancelled.filter(match) : []) : cancelled;
 
-      newCard.classList.toggle("hidden", newReq.length === 0);
-      cancelCard.classList.toggle("hidden", cancelled.length === 0);
+  // ===== Render New =====
+  newBody.innerHTML = newRows.map(r => `
+    <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+      <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
+      <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
+      <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
+      <td>${escapeHtml(r.PRODUCT)}</td>
+      <td>${escapeHtml(r.QTY)}</td>
+      <td>${escapeHtml(r.WH)}</td>
+      <td>${escapeHtml(r.BIN)}</td>
+      <td>${escapeHtml(r.COMMENTS)}</td>
+    </tr>
+  `).join("");
 
-      newBody.innerHTML = newReq.map(r => `
-        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-          <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
-          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
-          <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
-          <td>${escapeHtml(r.PRODUCT)}</td>
-          <td>${escapeHtml(r.QTY)}</td>
-          <td>${escapeHtml(r.WH)}</td>
-          <td>${escapeHtml(r.BIN)}</td>
-          <td>${escapeHtml(r.COMMENTS)}</td>
-        </tr>
-      `).join("");
+  // ===== Render Active =====
+  activeBody.innerHTML = activeRows.map(r => `
+    <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+      <td><input class="checkbox" type="checkbox" data-rowcheck="active" data-rowid="${r.rowId}"></td>
+      <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
+      <td data-col="TYPE">${buildSelect(["SPLIT","BULK","ORDER"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
+      <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
+      <td data-col="QTY">${buildInput(r.QTY, "number")}</td>
+      <td data-col="WH">${buildInput(r.WH)}</td>
+      <td data-col="BIN">${buildInput(r.BIN)}</td>
+      <td data-col="DROPPED">${buildSelect(["","YES"], (r.DROPPED || "").toString().toUpperCase())}</td>
+      <td data-col="SENT">${buildSelect(["","YES"], (r.SENT || "").toString().toUpperCase())}</td>
+      <td data-col="COMMENTS">${buildInput(r.COMMENTS)}</td>
+    </tr>
+  `).join("");
 
-      activeBody.innerHTML = active.map(r => `
-        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-          <td><input class="checkbox" type="checkbox" data-rowcheck="active" data-rowid="${r.rowId}"></td>
-          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
-          <td data-col="TYPE">${buildSelect(["SPLIT","BULK","ORDER"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
-          <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
-          <td data-col="QTY">${buildInput(r.QTY, "number")}</td>
-          <td data-col="WH">${buildInput(r.WH)}</td>
-          <td data-col="BIN">${buildInput(r.BIN)}</td>
-          <td data-col="DROPPED">${buildSelect(["","YES"], (r.DROPPED || "").toString().toUpperCase())}</td>
-          <td data-col="SENT">${buildSelect(["","YES"], (r.SENT || "").toString().toUpperCase())}</td>
-          <td data-col="COMMENTS">${buildInput(r.COMMENTS)}</td>
-        </tr>
-      `).join("");
+  // Apply TYPE colouring to Active table
+  activeBody.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => applyTypeColour(sel));
 
-      sentBody.innerHTML = sent.map(r => `
-        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-          <td><input class="checkbox" type="checkbox" data-rowcheck="sent" data-rowid="${r.rowId}"></td>
-          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
-          <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
-          <td>${escapeHtml(r.PRODUCT)}</td>
-          <td>${escapeHtml(r.QTY)}</td>
-          <td>${escapeHtml(r.WH)}</td>
-          <td>${escapeHtml(r.BIN)}</td>
-          <td>${escapeHtml((r.DROPPED || "").toUpperCase())}</td>
-          <td>${escapeHtml((r.SENT || "").toUpperCase())}</td>
-          <td>${escapeHtml(r.COMMENTS)}</td>
-        </tr>
-      `).join("");
+  // ===== Render Sent =====
+  sentBody.innerHTML = sentRows.map(r => `
+    <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+      <td><input class="checkbox" type="checkbox" data-rowcheck="sent" data-rowid="${r.rowId}"></td>
+      <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
+      <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
+      <td>${escapeHtml(r.PRODUCT)}</td>
+      <td>${escapeHtml(r.QTY)}</td>
+      <td>${escapeHtml(r.WH)}</td>
+      <td>${escapeHtml(r.BIN)}</td>
+      <td>${escapeHtml((r.DROPPED || "").toUpperCase())}</td>
+      <td>${escapeHtml((r.SENT || "").toUpperCase())}</td>
+      <td>${escapeHtml(r.COMMENTS)}</td>
+    </tr>
+  `).join("");
 
-      cancelBody.innerHTML = cancelled.map(r => `
-        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-          <td><input class="checkbox" type="checkbox" data-rowcheck="cancel" data-rowid="${r.rowId}"></td>
-          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
-          <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
-          <td>${escapeHtml(r.PRODUCT)}</td>
-          <td>${escapeHtml(r.QTY)}</td>
-          <td>${escapeHtml(r.WH)}</td>
-          <td>${escapeHtml(r.BIN)}</td>
-          <td>${escapeHtml((r.DROPPED || "").toUpperCase())}</td>
-          <td>${escapeHtml((r.SENT || "").toUpperCase())}</td>
-          <td>${escapeHtml(r.COMMENTS)}</td>
-        </tr>
-      `).join("");
+  // ===== Render Cancelled =====
+  cancelBody.innerHTML = cancelRows.map(r => `
+    <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+      <td><input class="checkbox" type="checkbox" data-rowcheck="cancel" data-rowid="${r.rowId}"></td>
+      <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
+      <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
+      <td>${escapeHtml(r.PRODUCT)}</td>
+      <td>${escapeHtml(r.QTY)}</td>
+      <td>${escapeHtml(r.WH)}</td>
+      <td>${escapeHtml(r.BIN)}</td>
+      <td>${escapeHtml((r.DROPPED || "").toUpperCase())}</td>
+      <td>${escapeHtml((r.SENT || "").toUpperCase())}</td>
+      <td>${escapeHtml(r.COMMENTS)}</td>
+    </tr>
+  `).join("");
 
-      checkAllNew.checked = false;
-      checkAllActive.checked = false;
-      checkAllSent.checked = false;
-      checkAllCancel.checked = false;
+  // Reset "check all"
+  checkAllNew.checked = false;
+  checkAllActive.checked = false;
+  checkAllSent.checked = false;
+  checkAllCancel.checked = false;
+  checkAllPriority.checked = false;
 
-      updateButtons();
-      setStatus(`Loaded ${rows.length} lines`, "ok");
-    }
+  updateButtons();
+  setStatus(`Loaded ${rows.length} lines`, "ok");
+}
 
+
+    
     async function refresh(showOverlay = true){
       if (showOverlay && isBusy()) return;
       const doWork = async () => {
@@ -1181,6 +1411,31 @@
 
     btnRefresh.addEventListener("click", () => refresh(true));
 
+
+    // ====== PAGE SEARCH EVENTS ======
+productSearch.addEventListener("input", () => {
+  if (isBusy()) return;
+  filterProduct = (productSearch.value || "").toString().trim().toUpperCase();
+  btnClearSearch.disabled = filterProduct.length === 0;
+  render();
+});
+
+btnClearSearch.addEventListener("click", () => {
+  if (isBusy()) return;
+  productSearch.value = "";
+  filterProduct = "";
+  btnClearSearch.disabled = true;
+  render();
+  productSearch.focus();
+});
+
+// ESC clears search
+productSearch.addEventListener("keydown", (e) => {
+  if (e.key === "Escape"){
+    btnClearSearch.click();
+  }
+});
+    
     datePicker.addEventListener("change", () => {
       if (isBusy()) return;
       currentDate = datePicker.value || todayISO();
@@ -1196,6 +1451,7 @@
     checkAllActive.addEventListener("change", () => setAll("active", checkAllActive.checked));
     checkAllSent.addEventListener("change", () => setAll("sent", checkAllSent.checked));
     checkAllCancel.addEventListener("change", () => setAll("cancel", checkAllCancel.checked));
+    checkAllPriority.addEventListener("change", () => setAll("prio", checkAllPriority.checked));
 
     document.addEventListener("change", (ev) => {
       if (ev.target && ev.target.matches("input[type='checkbox'][data-rowcheck]")) updateButtons();
@@ -1217,6 +1473,12 @@
       let value = (ev.target.tagName === "SELECT") ? ev.target.value : ev.target.value;
 
       if (col === "TYPE") value = (value || "SPLIT").toUpperCase();
+
+      // Update colour immediately in UI when TYPE changes
+    if (col === "TYPE" && ev.target.tagName === "SELECT"){
+      applyTypeColour(ev.target);
+    }
+
       if (col === "DROPPED") value = (value || "").toUpperCase();
       if (col === "SENT") value = (value || "").toUpperCase();
 
@@ -1296,6 +1558,13 @@
       if (!ids.length) return;
       printLines("New Transfer Requests", selectedRowsByIds(ids));
     });
+
+    btnPrintPriority.addEventListener("click", () => {
+      const ids = selectedRowIds("input[data-rowcheck='prio']:checked");
+      if (!ids.length) return;
+      printLines("Outstanding Priority Transfers", selectedRowsByIds(ids));
+    });
+
 
     btnCancelNew.addEventListener("click", async () => {
       if (isBusy()) return;
