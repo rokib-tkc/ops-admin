@@ -1247,28 +1247,20 @@ function render(){
   const sent = rows.filter(r => isSentRow(r) && status(r) !== "CANCELLED");
   const cancelled = rows.filter(r => status(r) === "CANCELLED");
 
-  // ===== Filter logic =====
+    // ===== Filter logic (multi-table) =====
   const q = (filterProduct || "").trim().toUpperCase();
 
   // Helper: match product contains query (allows partial)
   const match = (r) => (r.PRODUCT || "").toString().toUpperCase().includes(q);
 
-  // If searching, find which single table should show (priority: Active > New > Sent > Cancelled)
-  let showOnly = ""; // "active" | "new" | "sent" | "cancel" | ""
-  let matches = [];
+  // Per-table matches (allow multiple tables to show)
+  const mNew = q ? newReq.filter(match) : [];
+  const mActive = q ? active.filter(match) : [];
+  const mSent = q ? sent.filter(match) : [];
+  const mCancel = q ? cancelled.filter(match) : [];
 
-  if (q){
-    const mActive = active.filter(match);
-    const mNew = newReq.filter(match);
-    const mSent = sent.filter(match);
-    const mCancel = cancelled.filter(match);
+  const anyMatches = q ? (mNew.length + mActive.length + mSent.length + mCancel.length) > 0 : true;
 
-    if (mActive.length){ showOnly = "active"; matches = mActive; }
-    else if (mNew.length){ showOnly = "new"; matches = mNew; }
-    else if (mSent.length){ showOnly = "sent"; matches = mSent; }
-    else if (mCancel.length){ showOnly = "cancel"; matches = mCancel; }
-    else { showOnly = "none"; matches = []; }
-  }
 
   // ===== Card visibility =====
   if (!q){
@@ -1285,35 +1277,35 @@ function render(){
     btnClearSearch.disabled = true;
     searchMsg.className = "search-msg";
     searchMsg.textContent = "Tip: start typing a product code to filter the page.";
+
   } else {
-    // Search view: hide all cards except the one with results
-    // Also hide Priority summary during search to avoid duplicates/confusion
+    // Search view: show every table that contains matches
+    // Hide Priority summary during search to avoid duplicates/confusion (it duplicates Active)
     priorityCard.classList.add("hidden");
 
-    newCard.classList.toggle("hidden", showOnly !== "new");
-    cancelCard.classList.toggle("hidden", showOnly !== "cancel");
-    // Active + Sent cards (robust: toggle by ID, no :has())
-activeCard.classList.toggle("hidden", showOnly !== "active");
-sentCard.classList.toggle("hidden", showOnly !== "sent");
-
+    newCard.classList.toggle("hidden", mNew.length === 0);
+    activeCard.classList.toggle("hidden", mActive.length === 0);
+    sentCard.classList.toggle("hidden", mSent.length === 0);
+    cancelCard.classList.toggle("hidden", mCancel.length === 0);
 
     btnClearSearch.disabled = false;
 
-    if (showOnly === "none"){
+    if (!anyMatches){
       searchMsg.className = "search-msg bad";
       searchMsg.textContent = `Not found: ${q}`;
     } else {
-      const label =
-        showOnly === "active" ? "Active Transfers" :
-        showOnly === "new" ? "New Transfer Requests" :
-        showOnly === "sent" ? "Sent Transfers" :
-        "Cancellations";
+      const parts = [];
+      if (mNew.length) parts.push(`New: ${mNew.length}`);
+      if (mActive.length) parts.push(`Active: ${mActive.length}`);
+      if (mSent.length) parts.push(`Sent: ${mSent.length}`);
+      if (mCancel.length) parts.push(`Cancelled: ${mCancel.length}`);
 
       searchMsg.className = "search-msg good";
-      searchMsg.textContent = `Showing ${matches.length} result(s) for ${q} in ${label}.`;
+      searchMsg.textContent = `Showing results for ${q} (${parts.join(" • ")}).`;
     }
   }
 
+    
   // ===== Priority table (normal view only) =====
   if (!q){
     priorityBody.innerHTML = outstandingPrio.map(r => `
@@ -1332,10 +1324,11 @@ sentCard.classList.toggle("hidden", showOnly !== "sent");
   }
 
   // ===== Decide which rows to render into each table =====
-  const newRows = q ? (showOnly === "new" ? newReq.filter(match) : []) : newReq;
-  const activeRows = q ? (showOnly === "active" ? active.filter(match) : []) : active;
-  const sentRows = q ? (showOnly === "sent" ? sent.filter(match) : []) : sent;
-  const cancelRows = q ? (showOnly === "cancel" ? cancelled.filter(match) : []) : cancelled;
+  const newRows = q ? mNew : newReq;
+  const activeRows = q ? mActive : active;
+  const sentRows = q ? mSent : sent;
+  const cancelRows = q ? mCancel : cancelled;
+
 
   // ===== Render New =====
   newBody.innerHTML = newRows.map(r => `
