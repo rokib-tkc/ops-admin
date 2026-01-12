@@ -1907,18 +1907,18 @@ productSearch.addEventListener("keydown", (e) => {
 
     // ====== ADD LINES (multi-row) ======
     
-    function makeAddRow(prefillType){
+function makeAddRow(prefillType){
   const type = (prefillType || "SPLIT").toUpperCase();
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <!-- PRIORITY (NEW) -->
-    <td style="width:90px;">
+    <td style="width:110px;">
       <div style="display:flex;align-items:center;gap:8px;">
-        <span class="prio-flag empty" data-prio-flag title="Priority">!</span>
         <select class="cell-select" data-addcol="PRIORITY" style="min-width:72px;">
           <option value="">NO</option>
           <option value="YES">YES</option>
         </select>
+        <span class="prio-flag empty" data-prio-flag title="Priority">!</span>
       </div>
     </td>
 
@@ -1940,6 +1940,7 @@ productSearch.addEventListener("keydown", (e) => {
   updateAddRowPrioFlag(tr);
   return tr;
 }
+
 
     function resetAddModal(){
       addLinesBody.innerHTML = "";
