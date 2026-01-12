@@ -759,6 +759,7 @@
           <table class="addlines-table">
             <thead>
               <tr>
+                <th style="width:90px;">PRIORITY</th>
                 <th style="width:120px;">TYPE</th>
                 <th style="width:200px;">PRODUCT</th>
                 <th style="width:110px;">QTY</th>
@@ -962,6 +963,17 @@ const sentCard = document.getElementById("sentCard");
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
+
+
+    function updateAddRowPrioFlag(tr){
+  const sel = tr.querySelector("select[data-addcol='PRIORITY']");
+  const flag = tr.querySelector("[data-prio-flag]");
+  if (!sel || !flag) return;
+
+  const yes = (sel.value || "").toString().trim().toUpperCase() === "YES";
+  flag.classList.toggle("empty", !yes);
+  flag.title = yes ? "Priority" : "";
+}
 
     // ===== TYPE COLOUR HELPER =====
     function applyTypeColour(selectEl){
@@ -1894,26 +1906,40 @@ productSearch.addEventListener("keydown", (e) => {
     });
 
     // ====== ADD LINES (multi-row) ======
+    
     function makeAddRow(prefillType){
-      const type = (prefillType || "SPLIT").toUpperCase();
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>
-          <select class="cell-select" data-addcol="TYPE">
-            <option ${type==="SPLIT" ? "selected":""}>SPLIT</option>
-            <option ${type==="BULK" ? "selected":""}>BULK</option>
-            <option ${type==="ORDER" ? "selected":""}>ORDER</option>
-          </select>
-        </td>
-        <td><input class="cell-input" data-addcol="PRODUCT" placeholder="e.g. 18DR1810A" /></td>
-        <td><input class="cell-input" data-addcol="QTY" type="number" min="0" step="1" placeholder="e.g. 6" /></td>
-        <td><input class="cell-input" data-addcol="WH" placeholder="e.g. BB" /></td>
-        <td><input class="cell-input" data-addcol="BIN" placeholder="e.g. F49E" /></td>
-        <td><input class="cell-input" data-addcol="COMMENTS" placeholder="Optional notes (urgency, order ref, etc.)" /></td>
-        <td><button class="iconbtn danger" data-action="remove">Remove</button></td>
-      `;
-      return tr;
-    }
+  const type = (prefillType || "SPLIT").toUpperCase();
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <!-- PRIORITY (NEW) -->
+    <td style="width:90px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="prio-flag empty" data-prio-flag title="Priority">!</span>
+        <select class="cell-select" data-addcol="PRIORITY" style="min-width:72px;">
+          <option value="">NO</option>
+          <option value="YES">YES</option>
+        </select>
+      </div>
+    </td>
+
+    <td>
+      <select class="cell-select" data-addcol="TYPE">
+        <option ${type==="SPLIT" ? "selected":""}>SPLIT</option>
+        <option ${type==="BULK" ? "selected":""}>BULK</option>
+        <option ${type==="ORDER" ? "selected":""}>ORDER</option>
+      </select>
+    </td>
+    <td><input class="cell-input" data-addcol="PRODUCT" placeholder="e.g. 18DR1810A" /></td>
+    <td><input class="cell-input" data-addcol="QTY" type="number" min="0" step="1" placeholder="e.g. 6" /></td>
+    <td><input class="cell-input" data-addcol="WH" placeholder="e.g. BB" /></td>
+    <td><input class="cell-input" data-addcol="BIN" placeholder="e.g. F49E" /></td>
+    <td><input class="cell-input" data-addcol="COMMENTS" placeholder="Optional notes (urgency, order ref, etc.)" /></td>
+    <td><button class="iconbtn danger" data-action="remove">Remove</button></td>
+  `;
+  // ensure initial flag matches default priority (NO)
+  updateAddRowPrioFlag(tr);
+  return tr;
+}
 
     function resetAddModal(){
       addLinesBody.innerHTML = "";
@@ -1955,6 +1981,14 @@ productSearch.addEventListener("keydown", (e) => {
       tr.remove();
     });
 
+    addLinesBody.addEventListener("change", (ev) => {
+  const sel = ev.target && ev.target.matches("select[data-addcol='PRIORITY']") ? ev.target : null;
+  if (!sel) return;
+  const tr = sel.closest("tr");
+  if (!tr) return;
+  updateAddRowPrioFlag(tr);
+});
+
     // Uppercase while typing in Add modal (PRODUCT/WH/BIN/COMMENTS)
     addLinesBody.addEventListener("input", (ev) => {
       const el = ev.target;
@@ -1979,6 +2013,7 @@ productSearch.addEventListener("keydown", (e) => {
 
         const row = {
           DATE: currentDate || todayISO(),
+          PRIORITY: (get("PRIORITY") || "").toString().trim().toUpperCase(),
           TYPE: (get("TYPE") || "SPLIT").toString().trim().toUpperCase(),
           PRODUCT: (get("PRODUCT") || "").toString().trim().toUpperCase(),
           QTY: get("QTY") === "" ? "" : Number(get("QTY")),
@@ -1988,7 +2023,6 @@ productSearch.addEventListener("keydown", (e) => {
           SENT: "",
           COMMENTS: (get("COMMENTS") || "").toString().toUpperCase(),
           STATUS: "NEW",
-          PRIORITY: ""
         };
 
         // Only PRODUCT is forced
@@ -1999,7 +2033,10 @@ productSearch.addEventListener("keydown", (e) => {
         // TYPE safeguard
         if (!["SPLIT","BULK","ORDER"].includes(row.TYPE)) row.TYPE = "SPLIT";
 
-        out.push(row);
+        // PRIORITY safeguard
+        if (row.PRIORITY !== "YES") row.PRIORITY = "";
+
+    out.push(row);
       }
 
       return { ok:true, rows: out };
