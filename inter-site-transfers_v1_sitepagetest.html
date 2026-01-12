@@ -531,7 +531,7 @@
         </div>
       </section>
 
-      <section class="card">
+      <section class="card" id="activeCard">
         <div class="cardhead">
           <div>
             <h2>Active Transfers</h2>
@@ -567,7 +567,7 @@
         </div>
       </section>
 
-      <section class="card">
+      <section class="card" id="sentCard">
         <div class="cardhead">
           <div>
             <h2>Sent Transfers</h2>
@@ -753,7 +753,8 @@ let filterProduct = ""; // uppercased, trimmed
 const productSearch = document.getElementById("productSearch");
 const btnClearSearch = document.getElementById("btnClearSearch");
 const searchMsg = document.getElementById("searchMsg");
-
+const activeCard = document.getElementById("activeCard");
+const sentCard = document.getElementById("sentCard");
 
     
     // Outstanding Priority Transfers
@@ -1200,6 +1201,10 @@ function render(){
     cancelCard.classList.toggle("hidden", cancelled.length === 0);
     priorityCard.classList.toggle("hidden", outstandingPrio.length === 0);
 
+    // Always restore these after a search
+    activeCard.classList.remove("hidden");
+    sentCard.classList.remove("hidden");
+
     // Search UI message
     btnClearSearch.disabled = true;
     searchMsg.className = "search-msg";
@@ -1211,9 +1216,10 @@ function render(){
 
     newCard.classList.toggle("hidden", showOnly !== "new");
     cancelCard.classList.toggle("hidden", showOnly !== "cancel");
-    // Active + Sent cards are not marked hidden in your HTML, so we do it manually:
-    document.querySelector("section.card:has(#activeTable)")?.classList.toggle("hidden", showOnly !== "active");
-    document.querySelector("section.card:has(#sentTable)")?.classList.toggle("hidden", showOnly !== "sent");
+    // Active + Sent cards (robust: toggle by ID, no :has())
+activeCard.classList.toggle("hidden", showOnly !== "active");
+sentCard.classList.toggle("hidden", showOnly !== "sent");
+
 
     btnClearSearch.disabled = false;
 
