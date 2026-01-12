@@ -200,6 +200,82 @@
       background: rgba(185,28,28,0.12);
     }
 
+
+    /* ===== New Transfer Requests (blue-tint card to match Priority styling style) ===== */
+.new-card{
+  border-color: rgba(37,99,235,0.35) !important;
+  background: rgba(37,99,235,0.06) !important; /* light blue tint */
+}
+
+.new-card .cardhead h2{
+  color: #1d4ed8; /* blue header text */
+}
+
+/* blue-tint row background (like priority table tint) */
+#newTable tbody td{
+  background: rgba(37,99,235,0.06);
+}
+
+#newTable tr:hover td{
+  background: rgba(37,99,235,0.10);
+}
+
+/* keep New status highlight stronger than the base tint */
+#newTable tr.status-new td{
+  background: rgba(96,165,250,0.22) !important;
+}
+
+
+    /* ===== Sent Transfers (green-tint card to match Priority/New styling style) ===== */
+.sent-card{
+  border-color: rgba(22,163,74,0.35) !important;
+  background: rgba(22,163,74,0.06) !important; /* light green tint */
+}
+
+.sent-card .cardhead h2{
+  color: #166534; /* green header text */
+}
+
+/* green-tint row background */
+#sentTable tbody td{
+  background: rgba(22,163,74,0.06);
+}
+
+#sentTable tr:hover td{
+  background: rgba(22,163,74,0.10);
+}
+
+/* keep Sent status highlight stronger than the base tint */
+#sentTable tr.status-sent td{
+  background: rgba(22,163,74,0.18) !important;
+}
+
+
+    /* ===== Cancellations (red/grey-tint card) ===== */
+.cancel-card{
+  border-color: rgba(185,28,28,0.35) !important;
+  background: rgba(185,28,28,0.05) !important; /* very light red/grey tint */
+}
+
+.cancel-card .cardhead h2{
+  color: #7f1d1d; /* dark muted red */
+}
+
+/* red/grey-tint row background */
+#cancelTable tbody td{
+  background: rgba(185,28,28,0.04);
+}
+
+#cancelTable tr:hover td{
+  background: rgba(185,28,28,0.08);
+}
+
+/* keep Cancelled status highlight stronger than base tint */
+#cancelTable tr.status-cancel td{
+  background: rgba(239,68,68,0.18) !important;
+}
+
+    
     
     .prio-flag{
       display:inline-flex;
@@ -258,7 +334,7 @@
       z-index:1000;
     }
     .modal{
-      width:min(1050px, 100%);
+      width:min(1300px, 100%);
       background:#fff;
       border-radius:16px;
       box-shadow: var(--shadow);
@@ -385,6 +461,42 @@
       color: var(--muted);
       line-height:1.35;
     }
+
+
+/* ===== Page Search (body filter) ===== */
+.search-card{
+  padding: 12px 14px;
+}
+.searchbar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.searchbar label{
+  font-size:12px;
+  color: var(--muted);
+  font-weight:700;
+}
+#productSearch{
+  width: 280px;
+  max-width: 100%;
+}
+.search-msg{
+  margin-top:8px;
+  font-size:12px;
+  color: var(--muted);
+}
+.search-msg.bad{
+  color:#991b1b;
+  font-weight:700;
+}
+.search-msg.good{
+  color:#166534;
+  font-weight:700;
+}
+
+    
   </style>
 </head>
 <body>
@@ -418,6 +530,18 @@
   <main class="wrap">
     <div class="grid">
 
+<!-- Product Search (filters page to one table + matching lines only) -->
+<section class="card search-card" id="searchCard">
+  <div class="searchbar">
+    <label for="productSearch">Search product</label>
+    <input id="productSearch" class="cell-input" type="text" placeholder="e.g. 18DR1810A" autocomplete="off">
+    <button class="btn" id="btnClearSearch" type="button" disabled>Clear</button>
+  </div>
+  <div id="searchMsg" class="search-msg">Tip: start typing a product code to filter the page.</div>
+</section>
+
+
+
 <!-- Outstanding Priority Transfers (shows only when there are outstanding priority ACTIVE lines not yet SENT) -->
 <section class="card hidden priority-card" id="priorityCard">
   <div class="cardhead">
@@ -450,7 +574,7 @@
 
 
       
-      <section class="card hidden" id="newCard">
+      <section class="card hidden new-card" id="newCard">
         <div class="cardhead">
           <div>
             <h2>New Transfer Requests</h2>
@@ -483,7 +607,7 @@
         </div>
       </section>
 
-      <section class="card">
+      <section class="card" id="activeCard">
         <div class="cardhead">
           <div>
             <h2>Active Transfers</h2>
@@ -519,7 +643,7 @@
         </div>
       </section>
 
-      <section class="card">
+      <section class="card sent-card" id="sentCard">
         <div class="cardhead">
           <div>
             <h2>Sent Transfers</h2>
@@ -553,7 +677,7 @@
         </div>
       </section>
 
-      <section class="card hidden" id="cancelCard">
+      <section class="card hidden cancel-card" id="cancelCard">
         <div class="cardhead">
           <div>
             <h2>Cancellations</h2>
@@ -592,7 +716,7 @@
   <div class="modal-backdrop" id="pasteModal">
     <div class="modal">
       <header>
-        <div class="wrap topbar" style="padding:12px 14px;">
+        <div class="topbar" style="padding:12px 14px;">
           <h1 style="font-size:16px;">Paste Upload</h1>
           <div class="controls">
             <button class="btn" id="btnPasteClose">Close</button>
@@ -616,7 +740,7 @@
   <div class="modal-backdrop" id="addModal">
     <div class="modal">
       <header>
-        <div class="wrap topbar" style="padding:12px 14px;">
+        <div class="topbar" style="padding:12px 14px;">
           <h1 style="font-size:16px;">Add Line(s)</h1>
           <div class="controls">
             <button class="btn" id="btnAddClose">Close</button>
@@ -635,12 +759,13 @@
           <table class="addlines-table">
             <thead>
               <tr>
+                <th style="width:90px;">PRIORITY</th>
                 <th style="width:120px;">TYPE</th>
                 <th style="width:200px;">PRODUCT</th>
                 <th style="width:110px;">QTY</th>
                 <th style="width:110px;">WH</th>
                 <th style="width:120px;">BIN</th>
-                <th>COMMENTS</th>
+                <th style="min-width:300px;">COMMENTS</th>
                 <th style="width:120px;">ACTION</th>
               </tr>
             </thead>
@@ -698,6 +823,17 @@
     const btnPasteUpload = document.getElementById("btnPasteUpload");
     const btnAddLine = document.getElementById("btnAddLine");
 
+
+// ====== PAGE SEARCH (BODY FILTER) ======
+let filterProduct = ""; // uppercased, trimmed
+
+const productSearch = document.getElementById("productSearch");
+const btnClearSearch = document.getElementById("btnClearSearch");
+const searchMsg = document.getElementById("searchMsg");
+const activeCard = document.getElementById("activeCard");
+const sentCard = document.getElementById("sentCard");
+
+    
     // Outstanding Priority Transfers
     const priorityCard = document.getElementById("priorityCard");
     const priorityBody = document.getElementById("priorityBody");
@@ -827,6 +963,17 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
+
+
+    function updateAddRowPrioFlag(tr){
+  const sel = tr.querySelector("select[data-addcol='PRIORITY']");
+  const flag = tr.querySelector("[data-prio-flag]");
+  if (!sel || !flag) return;
+
+  const yes = (sel.value || "").toString().trim().toUpperCase() === "YES";
+  flag.classList.toggle("empty", !yes);
+  flag.title = yes ? "Priority" : "";
+}
 
     // ===== TYPE COLOUR HELPER =====
     function applyTypeColour(selectEl){
@@ -1101,23 +1248,79 @@
       return `<span class="prio-flag empty">!</span>`;
     }
 
-    function render(){
-      const status = (x) => (x.STATUS || "").toString().trim().toUpperCase();
-      const isSentRow = (x) => isYes(x.SENT);
 
-      const newReq = rows.filter(r => !isSentRow(r) && status(r) === "NEW");
-      const active = rows.filter(r => !isSentRow(r) && status(r) === "ACTIVE");
-      const outstandingPrio = active.filter(r => isYes(r.PRIORITY) && !isYes(r.SENT));
-      const sent = rows.filter(r => isSentRow(r) && status(r) !== "CANCELLED");
-      const cancelled = rows.filter(r => status(r) === "CANCELLED");
+function render(){
+  const status = (x) => (x.STATUS || "").toString().trim().toUpperCase();
+  const isSentRow = (x) => isYes(x.SENT);
+
+  const newReq = rows.filter(r => !isSentRow(r) && status(r) === "NEW");
+  const active = rows.filter(r => !isSentRow(r) && status(r) === "ACTIVE");
+  const outstandingPrio = active.filter(r => isYes(r.PRIORITY) && !isYes(r.SENT));
+  const sent = rows.filter(r => isSentRow(r) && status(r) !== "CANCELLED");
+  const cancelled = rows.filter(r => status(r) === "CANCELLED");
+
+    // ===== Filter logic (multi-table) =====
+  const q = (filterProduct || "").trim().toUpperCase();
+
+  // Helper: match product contains query (allows partial)
+  const match = (r) => (r.PRODUCT || "").toString().toUpperCase().includes(q);
+
+  // Per-table matches (allow multiple tables to show)
+  const mNew = q ? newReq.filter(match) : [];
+  const mActive = q ? active.filter(match) : [];
+  const mSent = q ? sent.filter(match) : [];
+  const mCancel = q ? cancelled.filter(match) : [];
+
+  const anyMatches = q ? (mNew.length + mActive.length + mSent.length + mCancel.length) > 0 : true;
 
 
-      newCard.classList.toggle("hidden", newReq.length === 0);
-      cancelCard.classList.toggle("hidden", cancelled.length === 0);
-      priorityCard.classList.toggle("hidden", outstandingPrio.length === 0);
+  // ===== Card visibility =====
+  if (!q){
+    // Normal view
+    newCard.classList.toggle("hidden", newReq.length === 0);
+    cancelCard.classList.toggle("hidden", cancelled.length === 0);
+    priorityCard.classList.toggle("hidden", outstandingPrio.length === 0);
 
+    // Always restore these after a search
+    activeCard.classList.remove("hidden");
+    sentCard.classList.remove("hidden");
 
-      priorityBody.innerHTML = outstandingPrio.map(r => `
+    // Search UI message
+    btnClearSearch.disabled = true;
+    searchMsg.className = "search-msg";
+    searchMsg.textContent = "Tip: start typing a product code to filter the page.";
+
+  } else {
+    // Search view: show every table that contains matches
+    // Hide Priority summary during search to avoid duplicates/confusion (it duplicates Active)
+    priorityCard.classList.add("hidden");
+
+    newCard.classList.toggle("hidden", mNew.length === 0);
+    activeCard.classList.toggle("hidden", mActive.length === 0);
+    sentCard.classList.toggle("hidden", mSent.length === 0);
+    cancelCard.classList.toggle("hidden", mCancel.length === 0);
+
+    btnClearSearch.disabled = false;
+
+    if (!anyMatches){
+      searchMsg.className = "search-msg bad";
+      searchMsg.textContent = `Not found: ${q}`;
+    } else {
+      const parts = [];
+      if (mNew.length) parts.push(`New: ${mNew.length}`);
+      if (mActive.length) parts.push(`Active: ${mActive.length}`);
+      if (mSent.length) parts.push(`Sent: ${mSent.length}`);
+      if (mCancel.length) parts.push(`Cancelled: ${mCancel.length}`);
+
+      searchMsg.className = "search-msg good";
+      searchMsg.textContent = `Showing results for ${q} (${parts.join(" • ")}).`;
+    }
+  }
+
+    
+  // ===== Priority table (normal view only) =====
+  if (!q){
+    priorityBody.innerHTML = outstandingPrio.map(r => `
       <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
         <td><input class="checkbox" type="checkbox" data-rowcheck="prio" data-rowid="${r.rowId}"></td>
         <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
@@ -1128,82 +1331,95 @@
         <td>${escapeHtml(r.COMMENTS)}</td>
       </tr>
     `).join("");
+  } else {
+    priorityBody.innerHTML = "";
+  }
 
-      newBody.innerHTML = newReq.map(r => `
-        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-          <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
-          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
-          <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
-          <td>${escapeHtml(r.PRODUCT)}</td>
-          <td>${escapeHtml(r.QTY)}</td>
-          <td>${escapeHtml(r.WH)}</td>
-          <td>${escapeHtml(r.BIN)}</td>
-          <td>${escapeHtml(r.COMMENTS)}</td>
-        </tr>
-      `).join("");
-
-      activeBody.innerHTML = active.map(r => `
-        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-          <td><input class="checkbox" type="checkbox" data-rowcheck="active" data-rowid="${r.rowId}"></td>
-          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
-          <td data-col="TYPE">${buildSelect(["SPLIT","BULK","ORDER"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
-          <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
-          <td data-col="QTY">${buildInput(r.QTY, "number")}</td>
-          <td data-col="WH">${buildInput(r.WH)}</td>
-          <td data-col="BIN">${buildInput(r.BIN)}</td>
-          <td data-col="DROPPED">${buildSelect(["","YES"], (r.DROPPED || "").toString().toUpperCase())}</td>
-          <td data-col="SENT">${buildSelect(["","YES"], (r.SENT || "").toString().toUpperCase())}</td>
-          <td data-col="COMMENTS">${buildInput(r.COMMENTS)}</td>
-        </tr>
-      `).join("");
+  // ===== Decide which rows to render into each table =====
+  const newRows = q ? mNew : newReq;
+  const activeRows = q ? mActive : active;
+  const sentRows = q ? mSent : sent;
+  const cancelRows = q ? mCancel : cancelled;
 
 
-      // Apply TYPE colouring to Active table
-    activeBody.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => {
-      applyTypeColour(sel);
-    });
+  // ===== Render New =====
+  newBody.innerHTML = newRows.map(r => `
+    <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+      <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
+      <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
+      <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
+      <td>${escapeHtml(r.PRODUCT)}</td>
+      <td>${escapeHtml(r.QTY)}</td>
+      <td>${escapeHtml(r.WH)}</td>
+      <td>${escapeHtml(r.BIN)}</td>
+      <td>${escapeHtml(r.COMMENTS)}</td>
+    </tr>
+  `).join("");
+
+  // ===== Render Active =====
+  activeBody.innerHTML = activeRows.map(r => `
+    <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+      <td><input class="checkbox" type="checkbox" data-rowcheck="active" data-rowid="${r.rowId}"></td>
+      <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
+      <td data-col="TYPE">${buildSelect(["SPLIT","BULK","ORDER"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
+      <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
+      <td data-col="QTY">${buildInput(r.QTY, "number")}</td>
+      <td data-col="WH">${buildInput(r.WH)}</td>
+      <td data-col="BIN">${buildInput(r.BIN)}</td>
+      <td data-col="DROPPED">${buildSelect(["","YES"], (r.DROPPED || "").toString().toUpperCase())}</td>
+      <td data-col="SENT">${buildSelect(["","YES"], (r.SENT || "").toString().toUpperCase())}</td>
+      <td data-col="COMMENTS">${buildInput(r.COMMENTS)}</td>
+    </tr>
+  `).join("");
+
+  // Apply TYPE colouring to Active table
+  activeBody.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => applyTypeColour(sel));
+
+  // ===== Render Sent =====
+  sentBody.innerHTML = sentRows.map(r => `
+    <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+      <td><input class="checkbox" type="checkbox" data-rowcheck="sent" data-rowid="${r.rowId}"></td>
+      <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
+      <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
+      <td>${escapeHtml(r.PRODUCT)}</td>
+      <td>${escapeHtml(r.QTY)}</td>
+      <td>${escapeHtml(r.WH)}</td>
+      <td>${escapeHtml(r.BIN)}</td>
+      <td>${escapeHtml((r.DROPPED || "").toUpperCase())}</td>
+      <td>${escapeHtml((r.SENT || "").toUpperCase())}</td>
+      <td>${escapeHtml(r.COMMENTS)}</td>
+    </tr>
+  `).join("");
+
+  // ===== Render Cancelled =====
+  cancelBody.innerHTML = cancelRows.map(r => `
+    <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+      <td><input class="checkbox" type="checkbox" data-rowcheck="cancel" data-rowid="${r.rowId}"></td>
+      <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
+      <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
+      <td>${escapeHtml(r.PRODUCT)}</td>
+      <td>${escapeHtml(r.QTY)}</td>
+      <td>${escapeHtml(r.WH)}</td>
+      <td>${escapeHtml(r.BIN)}</td>
+      <td>${escapeHtml((r.DROPPED || "").toUpperCase())}</td>
+      <td>${escapeHtml((r.SENT || "").toUpperCase())}</td>
+      <td>${escapeHtml(r.COMMENTS)}</td>
+    </tr>
+  `).join("");
+
+  // Reset "check all"
+  checkAllNew.checked = false;
+  checkAllActive.checked = false;
+  checkAllSent.checked = false;
+  checkAllCancel.checked = false;
+  checkAllPriority.checked = false;
+
+  updateButtons();
+  setStatus(`Loaded ${rows.length} lines`, "ok");
+}
 
 
-      sentBody.innerHTML = sent.map(r => `
-        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-          <td><input class="checkbox" type="checkbox" data-rowcheck="sent" data-rowid="${r.rowId}"></td>
-          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
-          <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
-          <td>${escapeHtml(r.PRODUCT)}</td>
-          <td>${escapeHtml(r.QTY)}</td>
-          <td>${escapeHtml(r.WH)}</td>
-          <td>${escapeHtml(r.BIN)}</td>
-          <td>${escapeHtml((r.DROPPED || "").toUpperCase())}</td>
-          <td>${escapeHtml((r.SENT || "").toUpperCase())}</td>
-          <td>${escapeHtml(r.COMMENTS)}</td>
-        </tr>
-      `).join("");
-
-      cancelBody.innerHTML = cancelled.map(r => `
-        <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-          <td><input class="checkbox" type="checkbox" data-rowcheck="cancel" data-rowid="${r.rowId}"></td>
-          <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
-          <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
-          <td>${escapeHtml(r.PRODUCT)}</td>
-          <td>${escapeHtml(r.QTY)}</td>
-          <td>${escapeHtml(r.WH)}</td>
-          <td>${escapeHtml(r.BIN)}</td>
-          <td>${escapeHtml((r.DROPPED || "").toUpperCase())}</td>
-          <td>${escapeHtml((r.SENT || "").toUpperCase())}</td>
-          <td>${escapeHtml(r.COMMENTS)}</td>
-        </tr>
-      `).join("");
-
-      checkAllNew.checked = false;
-      checkAllActive.checked = false;
-      checkAllSent.checked = false;
-      checkAllCancel.checked = false;
-      checkAllPriority.checked = false;
-
-      updateButtons();
-      setStatus(`Loaded ${rows.length} lines`, "ok");
-    }
-
+    
     async function refresh(showOverlay = true){
       if (showOverlay && isBusy()) return;
       const doWork = async () => {
@@ -1282,6 +1498,31 @@
 
     btnRefresh.addEventListener("click", () => refresh(true));
 
+
+    // ====== PAGE SEARCH EVENTS ======
+productSearch.addEventListener("input", () => {
+  if (isBusy()) return;
+  filterProduct = (productSearch.value || "").toString().trim().toUpperCase();
+  btnClearSearch.disabled = filterProduct.length === 0;
+  render();
+});
+
+btnClearSearch.addEventListener("click", () => {
+  if (isBusy()) return;
+  productSearch.value = "";
+  filterProduct = "";
+  btnClearSearch.disabled = true;
+  render();
+  productSearch.focus();
+});
+
+// ESC clears search
+productSearch.addEventListener("keydown", (e) => {
+  if (e.key === "Escape"){
+    btnClearSearch.click();
+  }
+});
+    
     datePicker.addEventListener("change", () => {
       if (isBusy()) return;
       currentDate = datePicker.value || todayISO();
@@ -1665,26 +1906,41 @@
     });
 
     // ====== ADD LINES (multi-row) ======
-    function makeAddRow(prefillType){
-      const type = (prefillType || "SPLIT").toUpperCase();
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>
-          <select class="cell-select" data-addcol="TYPE">
-            <option ${type==="SPLIT" ? "selected":""}>SPLIT</option>
-            <option ${type==="BULK" ? "selected":""}>BULK</option>
-            <option ${type==="ORDER" ? "selected":""}>ORDER</option>
-          </select>
-        </td>
-        <td><input class="cell-input" data-addcol="PRODUCT" placeholder="e.g. 18DR1810A" /></td>
-        <td><input class="cell-input" data-addcol="QTY" type="number" min="0" step="1" placeholder="e.g. 6" /></td>
-        <td><input class="cell-input" data-addcol="WH" placeholder="e.g. BB" /></td>
-        <td><input class="cell-input" data-addcol="BIN" placeholder="e.g. F49E" /></td>
-        <td><input class="cell-input" data-addcol="COMMENTS" placeholder="Optional notes (urgency, order ref, etc.)" /></td>
-        <td><button class="iconbtn danger" data-action="remove">Remove</button></td>
-      `;
-      return tr;
-    }
+    
+function makeAddRow(prefillType){
+  const type = (prefillType || "SPLIT").toUpperCase();
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <!-- PRIORITY (NEW) -->
+    <td style="width:110px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <select class="cell-select" data-addcol="PRIORITY" style="min-width:72px;">
+          <option value="">NO</option>
+          <option value="YES">YES</option>
+        </select>
+        <span class="prio-flag empty" data-prio-flag title="Priority">!</span>
+      </div>
+    </td>
+
+    <td>
+      <select class="cell-select" data-addcol="TYPE">
+        <option ${type==="SPLIT" ? "selected":""}>SPLIT</option>
+        <option ${type==="BULK" ? "selected":""}>BULK</option>
+        <option ${type==="ORDER" ? "selected":""}>ORDER</option>
+      </select>
+    </td>
+    <td><input class="cell-input" data-addcol="PRODUCT" placeholder="e.g. 18DR1810A" /></td>
+    <td><input class="cell-input" data-addcol="QTY" type="number" min="0" step="1" placeholder="e.g. 6" /></td>
+    <td><input class="cell-input" data-addcol="WH" placeholder="e.g. BB" /></td>
+    <td><input class="cell-input" data-addcol="BIN" placeholder="e.g. F49E" /></td>
+    <td><input class="cell-input" data-addcol="COMMENTS" placeholder="Optional notes (urgency, order ref, etc.)" /></td>
+    <td><button class="iconbtn danger" data-action="remove">Remove</button></td>
+  `;
+  // ensure initial flag matches default priority (NO)
+  updateAddRowPrioFlag(tr);
+  return tr;
+}
+
 
     function resetAddModal(){
       addLinesBody.innerHTML = "";
@@ -1726,6 +1982,14 @@
       tr.remove();
     });
 
+    addLinesBody.addEventListener("change", (ev) => {
+  const sel = ev.target && ev.target.matches("select[data-addcol='PRIORITY']") ? ev.target : null;
+  if (!sel) return;
+  const tr = sel.closest("tr");
+  if (!tr) return;
+  updateAddRowPrioFlag(tr);
+});
+
     // Uppercase while typing in Add modal (PRODUCT/WH/BIN/COMMENTS)
     addLinesBody.addEventListener("input", (ev) => {
       const el = ev.target;
@@ -1750,6 +2014,7 @@
 
         const row = {
           DATE: currentDate || todayISO(),
+          PRIORITY: (get("PRIORITY") || "").toString().trim().toUpperCase(),
           TYPE: (get("TYPE") || "SPLIT").toString().trim().toUpperCase(),
           PRODUCT: (get("PRODUCT") || "").toString().trim().toUpperCase(),
           QTY: get("QTY") === "" ? "" : Number(get("QTY")),
@@ -1759,7 +2024,6 @@
           SENT: "",
           COMMENTS: (get("COMMENTS") || "").toString().toUpperCase(),
           STATUS: "NEW",
-          PRIORITY: ""
         };
 
         // Only PRODUCT is forced
@@ -1770,7 +2034,10 @@
         // TYPE safeguard
         if (!["SPLIT","BULK","ORDER"].includes(row.TYPE)) row.TYPE = "SPLIT";
 
-        out.push(row);
+        // PRIORITY safeguard
+        if (row.PRIORITY !== "YES") row.PRIORITY = "";
+
+    out.push(row);
       }
 
       return { ok:true, rows: out };
