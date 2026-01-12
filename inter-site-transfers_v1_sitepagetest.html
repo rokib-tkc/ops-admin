@@ -226,6 +226,56 @@
 }
 
 
+    /* ===== Sent Transfers (green-tint card to match Priority/New styling style) ===== */
+.sent-card{
+  border-color: rgba(22,163,74,0.35) !important;
+  background: rgba(22,163,74,0.06) !important; /* light green tint */
+}
+
+.sent-card .cardhead h2{
+  color: #166534; /* green header text */
+}
+
+/* green-tint row background */
+#sentTable tbody td{
+  background: rgba(22,163,74,0.06);
+}
+
+#sentTable tr:hover td{
+  background: rgba(22,163,74,0.10);
+}
+
+/* keep Sent status highlight stronger than the base tint */
+#sentTable tr.status-sent td{
+  background: rgba(22,163,74,0.18) !important;
+}
+
+
+    /* ===== Cancellations (red/grey-tint card) ===== */
+.cancel-card{
+  border-color: rgba(185,28,28,0.35) !important;
+  background: rgba(185,28,28,0.05) !important; /* very light red/grey tint */
+}
+
+.cancel-card .cardhead h2{
+  color: #7f1d1d; /* dark muted red */
+}
+
+/* red/grey-tint row background */
+#cancelTable tbody td{
+  background: rgba(185,28,28,0.04);
+}
+
+#cancelTable tr:hover td{
+  background: rgba(185,28,28,0.08);
+}
+
+/* keep Cancelled status highlight stronger than base tint */
+#cancelTable tr.status-cancel td{
+  background: rgba(239,68,68,0.18) !important;
+}
+
+    
     
     .prio-flag{
       display:inline-flex;
@@ -593,7 +643,7 @@
         </div>
       </section>
 
-      <section class="card" id="sentCard">
+      <section class="card sent-card" id="sentCard">
         <div class="cardhead">
           <div>
             <h2>Sent Transfers</h2>
@@ -627,7 +677,7 @@
         </div>
       </section>
 
-      <section class="card hidden" id="cancelCard">
+      <section class="card hidden cancel-card" id="cancelCard">
         <div class="cardhead">
           <div>
             <h2>Cancellations</h2>
