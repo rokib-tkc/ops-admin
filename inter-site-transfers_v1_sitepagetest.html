@@ -200,6 +200,32 @@
       background: rgba(185,28,28,0.12);
     }
 
+
+    /* ===== New Transfer Requests (blue-tint card to match Priority styling style) ===== */
+.new-card{
+  border-color: rgba(37,99,235,0.35) !important;
+  background: rgba(37,99,235,0.06) !important; /* light blue tint */
+}
+
+.new-card .cardhead h2{
+  color: #1d4ed8; /* blue header text */
+}
+
+/* blue-tint row background (like priority table tint) */
+#newTable tbody td{
+  background: rgba(37,99,235,0.06);
+}
+
+#newTable tr:hover td{
+  background: rgba(37,99,235,0.10);
+}
+
+/* keep New status highlight stronger than the base tint */
+#newTable tr.status-new td{
+  background: rgba(96,165,250,0.22) !important;
+}
+
+
     
     .prio-flag{
       display:inline-flex;
@@ -498,7 +524,7 @@
 
 
       
-      <section class="card hidden" id="newCard">
+      <section class="card hidden new-card" id="newCard">
         <div class="cardhead">
           <div>
             <h2>New Transfer Requests</h2>
