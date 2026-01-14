@@ -508,8 +508,7 @@
       </div>
 
       <div class="controls">
-        <button class="btn home" id="btnHome" title="Back to Ops Admin Home">Home</button>
-
+        
         <div class="tabs">
           <button class="tab active" id="tabPKY">PKY → DTN</button>
           <button class="tab" id="tabDTN">DTN → PKY</button>
@@ -799,9 +798,6 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbxpeOikchlafJAHPgZAyGD-5kCbRWijK1jn4zE1uZQOd1LA-DMJIf6ud3INj2HHW9yj/exec";
     const API_KEY = "Lthdn637H7shdbs8987jnsm72GtsFh";
 
-    // Home URL - points back to Ops Admin home
-    const HOME_URL = "index.html";
-
     // ====== SETTINGS ======
     const AUTO_REFRESH_MS = 10 * 60 * 1000;
     const JSONP_URL_MAX = 1700;
@@ -818,7 +814,6 @@
     const tabDTN = document.getElementById("tabDTN");
     const datePicker = document.getElementById("datePicker");
 
-    const btnHome = document.getElementById("btnHome");
     const btnRefresh = document.getElementById("btnRefresh");
     const btnPasteUpload = document.getElementById("btnPasteUpload");
     const btnAddLine = document.getElementById("btnAddLine");
@@ -1476,17 +1471,6 @@ function render(){
       }
     });
 
-    // ====== HOME BUTTON ======
-    btnHome.addEventListener("click", () => {
-      if (isBusy()){
-        showToast("Please wait for the current action to finish.");
-        return;
-      }
-      if (pasteModal.style.display === "flex" || addModal.style.display === "flex"){
-        if (!confirm("Close this window and return to Home?")) return;
-      }
-      window.location.href = HOME_URL;
-    });
 
     // ====== EVENTS ======
     tabPKY.addEventListener("click", () => {
