@@ -803,7 +803,7 @@
     const HOME_URL = "index.html";
 
     // ====== SETTINGS ======
-    const AUTO_REFRESH_MS = 5 * 60 * 1000;
+    const AUTO_REFRESH_MS = 10 * 60 * 1000;
     const JSONP_URL_MAX = 1700;
 
     // ====== STATE ======
@@ -924,6 +924,14 @@ const sentCard = document.getElementById("sentCard");
       const dd = String(d.getDate()).padStart(2,"0");
       return `${yyyy}-${mm}-${dd}`;
     }
+
+    function resetToTodayAndRefresh(showOverlay = true){
+    const t = todayISO();
+    currentDate = t;
+    datePicker.value = t;
+    refresh(showOverlay);
+  }
+
 
     function setStatus(text, kind=""){
       statusPill.textContent = text;
@@ -1496,8 +1504,7 @@ function render(){
       refresh(true);
     });
 
-    btnRefresh.addEventListener("click", () => refresh(true));
-
+    btnRefresh.addEventListener("click", () => resetToTodayAndRefresh(true));
 
     // ====== PAGE SEARCH EVENTS ======
 productSearch.addEventListener("input", () => {
@@ -2068,12 +2075,11 @@ function makeAddRow(prefillType){
 
     // ====== AUTO REFRESH ======
     setInterval(() => {
-      if (isBusy()) return;
-      currentDate = todayISO();
-      datePicker.value = currentDate;
-      refresh(false);
-    }, AUTO_REFRESH_MS);
+  if (isBusy()) return;
+  resetToTodayAndRefresh(false);
+}, AUTO_REFRESH_MS);
 
+    
     // ====== START ======
     (function(){
       currentDate = todayISO();
