@@ -1,0 +1,1512 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Goods In CSV Generator</title>
+
+  <!-- SheetJS (Excel) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- PDF.js (PDF text extraction) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
+
+  <style>
+    :root{
+      --bg:#f5f6f8;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --border:#e5e7eb;
+
+      --accent:#2563eb;
+      --accent2:#1d4ed8;
+
+      --ok:#16a34a;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+      --radius:16px;
+      --focus: 0 0 0 4px rgba(147,197,253,.35);
+    }
+
+    *{ box-sizing:border-box; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
+    body{ margin:0; background:var(--bg); color:var(--text); }
+
+    .wrap{ max-width: 1200px; margin: 24px auto; padding: 0 16px 28px; }
+    header{
+      display:flex; gap:14px; align-items:flex-start; justify-content:space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .brand{ display:flex; flex-direction:column; gap:6px; }
+    .brand h1{ margin:0; font-size: 20px; }
+    .brand p{ margin:0; color:var(--muted); font-size: 13px; line-height: 1.35; }
+
+    .pill{
+      font-size: 12px; color: var(--muted);
+      border:1px solid var(--border);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background:#fafafa;
+      white-space: nowrap;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .sectionTitle{
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .sectionTitle h2{ margin:0; font-size: 15px; }
+
+    .supplierList{ display:flex; flex-direction:column; gap:10px; }
+
+    .btn{
+      appearance:none;
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius: 12px;
+      padding: 12px 12px;
+      text-align:left;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      cursor:pointer;
+      transition: transform .05s ease, border-color .15s ease, background .15s ease, opacity .15s ease;
+      user-select:none;
+    }
+    .btn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      border-color: transparent;
+      color:#fff;
+    }
+    .btn.primary:hover{ filter: brightness(1.02); }
+
+    .btn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+      transform:none !important;
+    }
+
+    .btn .name{ font-weight: 800; }
+    .btn .meta{ font-size:12px; opacity:.85; line-height: 1.25; }
+
+    .form{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    @media (max-width: 760px){
+      .form{ grid-template-columns: 1fr; }
+    }
+
+    label{ display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    input[type="text"], input[type="number"]{
+      width:100%;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border:1px solid var(--border);
+      outline:none;
+      background:#fff;
+      font-size: 14px;
+    }
+    input[type="text"]:focus, input[type="number"]:focus{
+      border-color:#93c5fd;
+      box-shadow: var(--focus);
+    }
+
+    .twoCol{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+      align-items: end;
+    }
+    @media (max-width: 760px){
+      .twoCol{ grid-template-columns: 1fr; }
+    }
+
+    .dropZone{
+      border:2px dashed #cbd5e1;
+      border-radius: 14px;
+      background: #fbfbfd;
+      padding: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      min-height: 74px;
+      transition: border-color .15s ease, background .15s ease, transform .05s ease;
+    }
+    .dropZone strong{ display:block; }
+    .dropZone .dzText{
+      display:flex; flex-direction:column; gap:4px;
+      min-width: 0;
+    }
+    .dropZone .dzSub{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.25;
+    }
+    .dropZone .dzFile{
+      color: #374151;
+      font-size: 12px;
+      margin-top: 4px;
+      word-break: break-word;
+    }
+    .dropZone.isDrag{
+      border-color:#60a5fa;
+      background: rgba(147,197,253,.18);
+    }
+
+    .fileHidden{ display:none; }
+    .fileBtn{
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor:pointer;
+      white-space: nowrap;
+    }
+    .fileBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
+
+    .actions{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top: 12px;
+      align-items:center;
+    }
+    .actions .btn{ width:auto; padding: 11px 12px; text-align:center; }
+
+    .statusRow{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      margin-top: 12px;
+      padding: 12px;
+      border:1px dashed var(--border);
+      border-radius: 12px;
+      background:#fbfbfb;
+    }
+    .statusText{ display:flex; flex-direction:column; gap:4px; }
+    .statusText .small{ font-size: 12px; color: var(--muted); line-height: 1.35; }
+
+    .badge{
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border:1px solid var(--border);
+      background:#fff;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .badge.ok{ border-color: rgba(22,163,74,.25); color: var(--ok); background: rgba(22,163,74,.07); }
+    .badge.warn{ border-color: rgba(245,158,11,.25); color: var(--warn); background: rgba(245,158,11,.08); }
+    .badge.bad{ border-color: rgba(239,68,68,.25); color: var(--bad); background: rgba(239,68,68,.08); }
+
+    .summary{
+      margin-top: 12px;
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 980px){
+      .summary{ grid-template-columns: repeat(2, 1fr); }
+    }
+    .kpi{
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .kpi .k{ font-size: 12px; color: var(--muted); }
+    .kpi .v{ font-size: 22px; font-weight: 900; margin-top: 4px; }
+
+    table{
+      width:100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      overflow:hidden;
+      border-radius: 14px;
+      border:1px solid var(--border);
+      background:#fff;
+    }
+    thead th{
+      background:#f3f4f6;
+      text-align:left;
+      font-size: 12px;
+      color:#374151;
+      padding: 10px;
+      border-bottom:1px solid var(--border);
+    }
+    tbody td{
+      padding: 10px;
+      border-bottom:1px solid var(--border);
+      font-size: 13px;
+      vertical-align: top;
+    }
+    tbody tr:last-child td{ border-bottom:none; }
+
+    .hidden{ display:none !important; }
+
+    .spinner{
+      width:16px; height:16px; border-radius:999px;
+      border: 2px solid rgba(0,0,0,.12);
+      border-top-color: rgba(0,0,0,.55);
+      animation: spin 0.85s linear infinite;
+    }
+    @keyframes spin{ to { transform: rotate(360deg); } }
+
+    .note{
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .historyTop{
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 10px; flex-wrap: wrap;
+    }
+    .historyActions{ display:flex; gap: 10px; flex-wrap: wrap; }
+    .linkBtn{
+      appearance:none;
+      border: 1px solid var(--border);
+      background:#fff;
+      border-radius: 12px;
+      padding: 8px 10px;
+      cursor:pointer;
+      font-size: 12px;
+    }
+    .linkBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
+
+    .historyEmpty{
+      margin-top: 10px;
+      border:1px dashed var(--border);
+      border-radius: 12px;
+      background:#fbfbfb;
+      padding: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .helpBox{
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fff;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .helpBox h3{ margin:0 0 6px 0; font-size: 13px; }
+    .helpBox ul{ margin:0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .helpBox li{ margin: 4px 0; }
+
+    .dangerZone{
+      margin-top: 12px;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items:center;
+    }
+    .danger{
+      border-color: rgba(239,68,68,.35) !important;
+      color: var(--bad);
+      background: rgba(239,68,68,.06);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <h1>Goods In CSV Generator</h1>
+        <p>
+          Static web version • runs on GitHub Pages • files stay on your computer • produces <span class="mono">PONum, Ref, Part, Qty, WH, Bin</span>
+        </p>
+      </div>
+      <div class="pill">CSV: <span class="mono">UTF-8 + BOM</span> (Excel-friendly)</div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT: Supplier + Help -->
+      <div class="card">
+        <div class="sectionTitle">
+          <h2>1) Choose supplier</h2>
+          <span class="pill" id="selectedSupplierPill">None selected</span>
+        </div>
+
+        <div class="supplierList">
+          <button class="btn" data-supplier="Saca">
+            <div>
+              <div class="name">Saca</div>
+              <div class="meta">Excel • columns: Numero conferma / Articolo esterno / Quantità spuntata</div>
+            </div>
+            <span>→</span>
+          </button>
+
+          <button class="btn" data-supplier="Decorative Panels">
+            <div>
+              <div class="name">Decorative Panels</div>
+              <div class="meta">PDF • splits qty by pallet</div>
+            </div>
+            <span>→</span>
+          </button>
+
+          <button class="btn" data-supplier="Italdecor">
+            <div>
+              <div class="name">Italdecor</div>
+              <div class="meta">Excel • PO from “-->ORD. n.” • Part from col A • Qty from col M</div>
+            </div>
+            <span>→</span>
+          </button>
+
+          <button class="btn" data-supplier="Pieffe Union">
+            <div>
+              <div class="name">Pieffe Union</div>
+              <div class="meta">Excel • auto-detect header row (Your PO / Item Code / Qty) • manual override available</div>
+            </div>
+            <span>→</span>
+          </button>
+
+          <button class="btn" data-supplier="Macfarlane">
+            <div>
+              <div class="name">Macfarlane</div>
+              <div class="meta">PDF • stops at “Outstanding goods”</div>
+            </div>
+            <span>→</span>
+          </button>
+
+          <button class="btn primary" id="resetBtn" type="button">
+            <div>
+              <div class="name">Reset</div>
+              <div class="meta">Clears supplier, file, results & preview</div>
+            </div>
+            <span>⟲</span>
+          </button>
+        </div>
+
+        <div class="helpBox">
+          <h3>Idiot-proof checklist</h3>
+          <ul>
+            <li>Pick the supplier (left).</li>
+            <li>Enter Ref, WH, Bin (right).</li>
+            <li>Drag & drop the file (or click “Choose file”).</li>
+            <li>Click “Process & Generate CSV”, then “Download CSV”.</li>
+            <li>For Pieffe only: if it fails, set “Header row override”.</li>
+          </ul>
+        </div>
+
+        <div class="note">
+          Tip: the app will block “Process” until everything required is filled in correctly.
+        </div>
+      </div>
+
+      <!-- RIGHT: Processing -->
+      <div class="card">
+        <div class="sectionTitle">
+          <h2 id="rightTitle">2) Upload file & generate CSV</h2>
+          <span class="badge" id="statusBadge">Idle</span>
+        </div>
+
+        <div class="form">
+          <div>
+            <label for="ref">Delivery Ref <span class="mono">*</span></label>
+            <input id="ref" type="text" placeholder="e.g. SACAFAWB0558" autocomplete="off" />
+          </div>
+          <div>
+            <label for="wh">Warehouse (WH) <span class="mono">*</span></label>
+            <input id="wh" type="text" placeholder="e.g. 6Q" autocomplete="off" />
+          </div>
+          <div>
+            <label for="bin">Bin <span class="mono">*</span></label>
+            <input id="bin" type="text" placeholder="e.g. PRE" autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Pieffe override row (only shown for Pieffe) -->
+        <div class="twoCol hidden" id="pieffeOverrideRow">
+          <div>
+            <label for="pieffeHeaderOverride">Pieffe header row override (optional)</label>
+            <input id="pieffeHeaderOverride" type="number" min="1" step="1" placeholder="Leave blank to auto-detect" />
+            <div class="note" style="margin-top:6px;">
+              Use this only if auto-detect fails. Enter the <strong>Excel row number</strong> where the header is (e.g. 22).
+            </div>
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <div class="pill" id="pieffeOverrideHint">Auto-detect enabled</div>
+          </div>
+        </div>
+
+        <!-- Drag & Drop -->
+        <div class="twoCol">
+          <div class="dropZone" id="dropZone" role="button" tabindex="0" aria-label="File drop area">
+            <div class="dzText">
+              <strong>3) Drop file here</strong>
+              <div class="dzSub" id="dropSub">Or click “Choose file”. Accepted type depends on supplier.</div>
+              <div class="dzFile mono" id="fileName">No file selected</div>
+            </div>
+            <button class="fileBtn" id="chooseFileBtn" type="button">Choose file</button>
+          </div>
+
+          <div>
+            <label for="fileInput">Hidden file input</label>
+            <input id="fileInput" class="fileHidden" type="file" />
+            <div class="note">
+              Output name: <span class="mono" id="outputNameHint">REF.csv</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" id="processBtn" type="button" disabled>Process & Generate CSV</button>
+          <button class="btn" id="downloadBtn" type="button" disabled>Download CSV</button>
+          <button class="btn danger" id="clearFileBtn" type="button" disabled>Clear file</button>
+        </div>
+
+        <div class="statusRow" id="statusRow">
+          <div class="statusText">
+            <div id="statusLine"><strong>Status:</strong> Waiting for supplier + file</div>
+            <div class="small" id="statusDetail">Select supplier → fill Ref/WH/Bin → choose file → process.</div>
+          </div>
+          <div id="spinner" class="spinner hidden" aria-label="Processing"></div>
+        </div>
+
+        <div class="summary">
+          <div class="kpi"><div class="k">Total Lines</div><div class="v" id="kpiTotal">—</div></div>
+          <div class="kpi"><div class="k">Captured Lines</div><div class="v" id="kpiCaptured">—</div></div>
+          <div class="kpi"><div class="k">Ignored Lines</div><div class="v" id="kpiIgnored">—</div></div>
+          <div class="kpi"><div class="k">Total Pallets</div><div class="v" id="kpiPallets">—</div></div>
+        </div>
+
+        <table id="previewTable" class="hidden" aria-label="Preview">
+          <thead>
+            <tr>
+              <th>PONum</th><th>Ref</th><th>Part</th><th>Qty</th><th>WH</th><th>Bin</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+
+        <!-- History Log -->
+        <div class="card" style="margin-top:14px; padding:14px;">
+          <div class="historyTop">
+            <div class="sectionTitle" style="margin:0;">
+              <h2>History log</h2>
+              <span class="pill" id="historyCount">0 runs</span>
+            </div>
+            <div class="historyActions">
+              <button class="linkBtn" id="exportHistoryBtn" type="button" disabled>Export history CSV</button>
+              <button class="linkBtn danger" id="clearHistoryBtn" type="button" disabled>Clear history</button>
+            </div>
+          </div>
+
+          <div id="historyEmpty" class="historyEmpty">No runs yet. Process a file and it will appear here.</div>
+
+          <table id="historyTable" class="hidden" aria-label="History table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Supplier</th>
+                <th>Input file</th>
+                <th>Output</th>
+                <th>Total</th>
+                <th>Captured</th>
+                <th>Ignored</th>
+                <th>Pallets</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+
+          <div class="note">
+            History is stored in your browser (localStorage) on this device only.
+          </div>
+        </div>
+
+        <div class="dangerZone">
+          <span class="pill">All processing is client-side. Nothing uploads anywhere.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+
+    // -----------------------------
+    // State
+    // -----------------------------
+    let selectedSupplier = null;
+    let selectedFile = null;
+
+    let lastCsvText = "";
+    let lastOutputName = "";
+    let lastRows = [];
+
+    // History persistence
+    const HISTORY_KEY = "goodsin_csv_history_v1";
+    const MAX_HISTORY = 50;
+
+    // Keep blob urls to revoke later
+    const blobUrlsToRevoke = new Set();
+
+    // -----------------------------
+    // Elements
+    // -----------------------------
+    const supplierButtons = document.querySelectorAll("[data-supplier]");
+    const selectedSupplierPill = document.getElementById("selectedSupplierPill");
+    const rightTitle = document.getElementById("rightTitle");
+
+    const refInput = document.getElementById("ref");
+    const whInput = document.getElementById("wh");
+    const binInput = document.getElementById("bin");
+
+    const pieffeOverrideRow = document.getElementById("pieffeOverrideRow");
+    const pieffeHeaderOverride = document.getElementById("pieffeHeaderOverride");
+    const pieffeOverrideHint = document.getElementById("pieffeOverrideHint");
+
+    const dropZone = document.getElementById("dropZone");
+    const chooseFileBtn = document.getElementById("chooseFileBtn");
+    const fileInput = document.getElementById("fileInput");
+    const fileName = document.getElementById("fileName");
+    const dropSub = document.getElementById("dropSub");
+
+    const processBtn = document.getElementById("processBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const clearFileBtn = document.getElementById("clearFileBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    const statusBadge = document.getElementById("statusBadge");
+    const statusLine = document.getElementById("statusLine");
+    const statusDetail = document.getElementById("statusDetail");
+    const spinner = document.getElementById("spinner");
+
+    const kpiTotal = document.getElementById("kpiTotal");
+    const kpiCaptured = document.getElementById("kpiCaptured");
+    const kpiIgnored = document.getElementById("kpiIgnored");
+    const kpiPallets = document.getElementById("kpiPallets");
+
+    const previewTable = document.getElementById("previewTable");
+    const previewBody = document.getElementById("previewBody");
+    const outputNameHint = document.getElementById("outputNameHint");
+
+    // History
+    const historyCount = document.getElementById("historyCount");
+    const historyEmpty = document.getElementById("historyEmpty");
+    const historyTable = document.getElementById("historyTable");
+    const historyBody = document.getElementById("historyBody");
+    const exportHistoryBtn = document.getElementById("exportHistoryBtn");
+    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+
+    // -----------------------------
+    // Supplier config
+    // -----------------------------
+    const supplierConfig = {
+      "Saca": {
+        title: "Saca — Excel upload",
+        accept: ".xlsx,.xls",
+        hint: "Accepted: .xlsx / .xls",
+        processor: processSacaExcel
+      },
+      "Decorative Panels": {
+        title: "Decorative Panels — PDF upload",
+        accept: ".pdf",
+        hint: "Accepted: .pdf (text PDF)",
+        processor: processDecorativePanelsPdf
+      },
+      "Italdecor": {
+        title: "Italdecor — Excel upload",
+        accept: ".xlsx,.xls",
+        hint: "Accepted: .xlsx / .xls",
+        processor: processItaldecorExcel
+      },
+      "Pieffe Union": {
+        title: "Pieffe Union — Excel upload",
+        accept: ".xlsx,.xls",
+        hint: "Accepted: .xlsx / .xls (header row auto-detect; override optional)",
+        processor: processPieffeUnionExcelAutoHeaderOrOverride
+      },
+      "Macfarlane": {
+        title: "Macfarlane — PDF upload",
+        accept: ".pdf",
+        hint: "Accepted: .pdf (text PDF)",
+        processor: processMacfarlanePdf
+      }
+    };
+
+    // -----------------------------
+    // UI helpers
+    // -----------------------------
+    function escapeHtml(s){
+      return String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
+    }
+
+    function setBadge(kind, text){
+      statusBadge.className = "badge";
+      if (kind) statusBadge.classList.add(kind);
+      statusBadge.textContent = text;
+    }
+
+    function setStatus(main, detail, busy=false, badgeKind=null, badgeText=""){
+      statusLine.innerHTML = `<strong>Status:</strong> ${escapeHtml(main)}`;
+      statusDetail.textContent = detail || "";
+      spinner.classList.toggle("hidden", !busy);
+      if (badgeText) setBadge(badgeKind, badgeText);
+    }
+
+    function normaliseInputs(){
+      // Force uppercase and trim for idiot-proofing
+      const ref = (refInput.value || "").trim().toUpperCase();
+      const wh = (whInput.value || "").trim().toUpperCase();
+      const bin = (binInput.value || "").trim().toUpperCase();
+
+      // Reflect uppercase back in UI without jumping cursor badly (best effort)
+      if (refInput.value !== ref) refInput.value = ref;
+      if (whInput.value !== wh) whInput.value = wh;
+      if (binInput.value !== bin) binInput.value = bin;
+
+      return { ref, wh, bin };
+    }
+
+    function requiredReady(){
+      const { ref, wh, bin } = normaliseInputs();
+      return Boolean(selectedSupplier && selectedFile && ref && wh && bin);
+    }
+
+    function updateOutputNameHint(){
+      const { ref } = normaliseInputs();
+      outputNameHint.textContent = `${(ref || "REF")}.csv`;
+    }
+
+    function updatePieffeOverrideUI(){
+      const isPieffe = selectedSupplier === "Pieffe Union";
+      pieffeOverrideRow.classList.toggle("hidden", !isPieffe);
+
+      if (!isPieffe){
+        pieffeHeaderOverride.value = "";
+        pieffeOverrideHint.textContent = "Auto-detect enabled";
+        return;
+      }
+
+      const v = (pieffeHeaderOverride.value || "").trim();
+      if (v){
+        pieffeOverrideHint.textContent = `Override set: row ${v}`;
+      } else {
+        pieffeOverrideHint.textContent = "Auto-detect enabled";
+      }
+    }
+
+    function updateFileUI(){
+      if (!selectedSupplier){
+        fileInput.accept = "";
+        fileName.textContent = "No file selected";
+        dropSub.textContent = "Choose a supplier first (left).";
+        clearFileBtn.disabled = true;
+        return;
+      }
+
+      fileInput.accept = supplierConfig[selectedSupplier].accept;
+      dropSub.textContent = supplierConfig[selectedSupplier].hint;
+
+      if (!selectedFile){
+        fileName.textContent = "No file selected";
+        clearFileBtn.disabled = true;
+      } else {
+        fileName.textContent = selectedFile.name;
+        clearFileBtn.disabled = false;
+      }
+    }
+
+    function updateButtons(){
+      processBtn.disabled = !requiredReady();
+      downloadBtn.disabled = !lastCsvText;
+    }
+
+    function clearResults(){
+      lastCsvText = "";
+      lastOutputName = "";
+      lastRows = [];
+      downloadBtn.disabled = true;
+
+      kpiTotal.textContent = "—";
+      kpiCaptured.textContent = "—";
+      kpiIgnored.textContent = "—";
+      kpiPallets.textContent = "—";
+
+      previewBody.innerHTML = "";
+      previewTable.classList.add("hidden");
+    }
+
+    function clearFile(){
+      selectedFile = null;
+      fileInput.value = "";
+      updateFileUI();
+      updateButtons();
+      clearResults();
+      setStatus("File cleared", "Choose a file to continue.", false, null, "Idle");
+    }
+
+    function resetAll(){
+      // Staff-proof: confirm reset only if something has been done
+      const hasWork = selectedSupplier || selectedFile || (refInput.value || whInput.value || binInput.value) || lastCsvText;
+      if (hasWork){
+        const ok = confirm("Reset everything on screen? (History log will NOT be deleted.)");
+        if (!ok) return;
+      }
+
+      selectedSupplier = null;
+      selectedFile = null;
+
+      supplierButtons.forEach(b => b.classList.remove("primary"));
+      selectedSupplierPill.textContent = "None selected";
+      rightTitle.textContent = "2) Upload file & generate CSV";
+
+      refInput.value = "";
+      whInput.value = "";
+      binInput.value = "";
+
+      pieffeHeaderOverride.value = "";
+      updatePieffeOverrideUI();
+
+      updateFileUI();
+      clearResults();
+      updateOutputNameHint();
+      updateButtons();
+
+      setStatus("Waiting", "Select supplier → fill Ref/WH/Bin → choose file → process.", false, null, "Idle");
+    }
+
+    function validateBasics(){
+      if (!selectedSupplier) throw new Error("Please select a supplier first.");
+      const { ref, wh, bin } = normaliseInputs();
+      if (!ref || !wh || !bin) throw new Error("Ref, WH and Bin are required.");
+      if (!selectedFile) throw new Error("Please choose a file (drag & drop or Choose file).");
+      return { ref, wh, bin, file: selectedFile };
+    }
+
+    function renderPreview(rows){
+      previewBody.innerHTML = "";
+      const show = rows.slice(0, 25);
+      for (const r of show){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(r.PONum)}</td>
+          <td>${escapeHtml(r.Ref)}</td>
+          <td>${escapeHtml(r.Part)}</td>
+          <td>${escapeHtml(r.Qty)}</td>
+          <td>${escapeHtml(r.WH)}</td>
+          <td>${escapeHtml(r.Bin)}</td>
+        `;
+        previewBody.appendChild(tr);
+      }
+      previewTable.classList.toggle("hidden", rows.length === 0);
+    }
+
+    // -----------------------------
+    // CSV helpers (UTF-8 with BOM)
+    // -----------------------------
+    function toCsv(rows){
+      const headers = ["PONum","Ref","Part","Qty","WH","Bin"];
+      const escapeCsv = (v) => {
+        const s = String(v ?? "");
+        if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+        return s;
+      };
+      const lines = [];
+      lines.push(headers.join(","));
+      for (const r of rows){
+        lines.push(headers.map(h => escapeCsv(r[h])).join(","));
+      }
+      return lines.join("\r\n");
+    }
+
+    function makeCsvBlobUrl(text){
+      const bom = "\uFEFF";
+      const blob = new Blob([bom + text], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      blobUrlsToRevoke.add(url);
+      return url;
+    }
+
+    function downloadCsv(text, filename){
+      const url = makeCsvBlobUrl(text);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Keep URL for history actions; revoke is handled on clear history/reset page close
+      // (Still safe - URLs are local to this session)
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    }
+
+    // -----------------------------
+    // File readers
+    // -----------------------------
+    function readFileAsArrayBuffer(file){
+      return new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = () => reject(fr.error);
+        fr.readAsArrayBuffer(file);
+      });
+    }
+
+    async function pdfToTextLines(file){
+      const buf = await readFileAsArrayBuffer(file);
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+
+      let allLines = [];
+      for (let p = 1; p <= pdf.numPages; p++){
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+
+        const items = content.items
+          .filter(it => it.str && it.str.trim() !== "")
+          .map(it => ({ str: it.str.trim(), x: it.transform[4], y: it.transform[5] }));
+
+        const byY = new Map();
+        for (const it of items){
+          const key = Math.round(it.y);
+          if (!byY.has(key)) byY.set(key, []);
+          byY.get(key).push(it);
+        }
+
+        const ys = Array.from(byY.keys()).sort((a,b) => b - a);
+        for (const y of ys){
+          const row = byY.get(y)
+            .sort((a,b) => a.x - b.x)
+            .map(it => it.str)
+            .join(" ");
+          allLines.push(row);
+        }
+      }
+      return allLines;
+    }
+
+    function excelToJsonRows(arrayBuffer, sheetIndex=0, opts={}){
+      const wb = XLSX.read(arrayBuffer, { type: "array" });
+      const sheetName = wb.SheetNames[sheetIndex];
+      const ws = wb.Sheets[sheetName];
+      return XLSX.utils.sheet_to_json(ws, opts);
+    }
+
+    function excelToMatrix(arrayBuffer, sheetIndex=0){
+      const wb = XLSX.read(arrayBuffer, { type: "array" });
+      const sheetName = wb.SheetNames[sheetIndex];
+      const ws = wb.Sheets[sheetName];
+      return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+    }
+
+    // -----------------------------
+    // Processors (mirror Python logic)
+    // -----------------------------
+    async function processMacfarlanePdf(ref, wh, bin, file){
+      const lines = await pdfToTextLines(file);
+      const data = [];
+      let totalLines = 0;
+      let captured = 0;
+      let ignored = 0;
+      let stopReading = false;
+
+      for (const line of lines){
+        if (line.includes("Outstanding goods")) stopReading = true;
+
+        if (stopReading){
+          ignored++;
+          totalLines++;
+          continue;
+        }
+
+        const parts = line.split(/\s+/);
+        if (parts.length >= 4 && /^\d+$/.test(parts[1]) && parts[1].length > 4){
+          try{
+            const po_ref = parts[1];
+            const product_code = parts[2];
+            const qty = parts[3];
+
+            if (!/^\d+$/.test(po_ref) || !/^[A-Za-z0-9]+$/.test(product_code) || !/^\d+$/.test(qty)){
+              throw new Error("Invalid");
+            }
+
+            data.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: qty, WH: wh, Bin: bin });
+            captured++;
+          }catch{
+            ignored++;
+          }
+        }else{
+          ignored++;
+        }
+        totalLines++;
+      }
+
+      return { rows: data, totalLines, captured, ignored, totalPallets: null, extraInfo: null };
+    }
+
+    async function processDecorativePanelsPdf(ref, wh, bin, file){
+      const lines = await pdfToTextLines(file);
+      const data = [];
+      let totalProductLines = 0;
+      let captured = 0;
+      let ignored = 0;
+      let totalPallets = 0;
+
+      for (const line of lines){
+        const parts = line.split(/\s+/);
+        if (parts.length >= 5 && /^\d+$/.test(parts[0]) && parts[0].length >= 5){
+          totalProductLines++;
+          try{
+            const po_ref = parts[0];
+            const product_code = parts[1];
+
+            let qPerPallet = null;
+            let numPallets = null;
+            let qty = null;
+
+            for (let i = 2; i < parts.length - 2; i++){
+              if (/^\d+$/.test(parts[i]) && /^\d+$/.test(parts[i+1]) && /^\d+$/.test(parts[i+2])){
+                qPerPallet = parseInt(parts[i], 10);
+                numPallets = parseInt(parts[i+1], 10);
+                qty = parseInt(parts[i+2], 10);
+                totalPallets += numPallets;
+                break;
+              }
+            }
+
+            if (qPerPallet === null || numPallets === null || qty === null){
+              ignored++;
+              continue;
+            }
+
+            for (let i = 0; i < numPallets; i++){
+              const finalQty = (i === numPallets - 1)
+                ? (qty - (qPerPallet * (numPallets - 1)))
+                : qPerPallet;
+
+              data.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: finalQty, WH: wh, Bin: bin });
+            }
+
+            captured++;
+          }catch{
+            ignored++;
+          }
+        }
+      }
+
+      return { rows: data, totalLines: totalProductLines, captured, ignored, totalPallets, extraInfo: null };
+    }
+
+    async function processSacaExcel(ref, wh, bin, file){
+      const buf = await readFileAsArrayBuffer(file);
+      const rows = excelToJsonRows(buf, 0, { defval: null });
+
+      const data = [];
+      const totalLines = rows.length;
+      let captured = 0;
+      let ignored = 0;
+
+      for (const r of rows){
+        try{
+          const po_ref = r["Numero conferma"];
+          const product_code = r["Articolo esterno"];
+          const qty = r["Quantità spuntata"];
+          if (po_ref == null || product_code == null || qty == null) throw new Error("Missing");
+          data.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: qty, WH: wh, Bin: bin });
+          captured++;
+        }catch{
+          ignored++;
+        }
+      }
+
+      return { rows: data, totalLines, captured, ignored, totalPallets: null, extraInfo: null };
+    }
+
+    async function processItaldecorExcel(ref, wh, bin, file){
+      const buf = await readFileAsArrayBuffer(file);
+      const matrix = excelToMatrix(buf, 0);
+
+      const data = [];
+      let currentPO = null;
+      let totalProductLines = 0;
+      let captured = 0;
+      let ignored = 0;
+
+      for (const row of matrix){
+        const c0 = row[0];
+        const c12 = row[12];
+
+        if (typeof c0 === "string"){
+          const skipKeywords = ["Codice","Descrizione","SEGUE","DPS","TIR"];
+          if (skipKeywords.some(k => c0.includes(k))) continue;
+
+          if (c0.includes("-->ORD. n.")){
+            try{
+              const after = c0.split("ORD. n.")[1];
+              currentPO = after.split("/")[0].trim();
+            }catch{
+              currentPO = null;
+            }
+          }
+        }
+
+        if (c0 != null && c12 != null){
+          totalProductLines++;
+          try{
+            data.push({ PONum: currentPO, Ref: ref, Part: c0, Qty: c12, WH: wh, Bin: bin });
+            captured++;
+          }catch{
+            ignored++;
+          }
+        }
+      }
+
+      return { rows: data, totalLines: totalProductLines, captured, ignored, totalPallets: null, extraInfo: null };
+    }
+
+    // Pieffe header detection + manual override
+    function normaliseHeaderCell(v){
+      return String(v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+    }
+
+    function findHeaderRowIndex(matrix, requiredHeaders, maxScanRows=120){
+      const target = requiredHeaders.map(h => h.toLowerCase());
+      const scanLimit = Math.min(matrix.length, maxScanRows);
+
+      for (let r = 0; r < scanLimit; r++){
+        const row = matrix[r] || [];
+        const norm = row.map(normaliseHeaderCell);
+        const hasAll = target.every(t => norm.includes(t));
+        if (hasAll) return r;
+      }
+      return -1;
+    }
+
+    async function processPieffeUnionExcelAutoHeaderOrOverride(ref, wh, bin, file){
+      const buf = await readFileAsArrayBuffer(file);
+      const matrix = excelToMatrix(buf, 0);
+
+      const required = ["Your PO", "Item Code", "Qty"];
+
+      // Manual override: user enters Excel row number (1-based)
+      const overrideText = (pieffeHeaderOverride.value || "").trim();
+      let headerRowIndex = -1;
+      let extraInfo = null;
+
+      if (overrideText){
+        const override = parseInt(overrideText, 10);
+        if (!Number.isFinite(override) || override < 1) {
+          throw new Error("Pieffe header override must be a positive Excel row number (e.g. 22).");
+        }
+        headerRowIndex = override - 1;
+        if (headerRowIndex >= matrix.length){
+          throw new Error(`Pieffe header override row ${override} is beyond the end of the sheet.`);
+        }
+        extraInfo = `Header override used (row ${override})`;
+      } else {
+        headerRowIndex = findHeaderRowIndex(matrix, required, 120);
+        if (headerRowIndex === -1){
+          throw new Error("Could not auto-detect Pieffe header row containing: 'Your PO', 'Item Code', 'Qty'. Use the header row override box and try again.");
+        }
+        extraInfo = `Header detected on row ${headerRowIndex + 1}`;
+      }
+
+      const header = (matrix[headerRowIndex] || []).map(h => String(h ?? "").trim());
+      const headerNorm = header.map(h => normaliseHeaderCell(h));
+
+      const idxYourPO = headerNorm.indexOf("your po");
+      const idxItemCode = headerNorm.indexOf("item code");
+      const idxQty = headerNorm.indexOf("qty");
+
+      if (idxYourPO === -1 || idxItemCode === -1 || idxQty === -1){
+        // If override row is wrong, message should be explicit
+        throw new Error(`Pieffe header row (row ${headerRowIndex + 1}) does not contain the required columns: 'Your PO', 'Item Code', 'Qty'.`);
+      }
+
+      const dataRows = matrix.slice(headerRowIndex + 1).filter(r => (r || []).some(v => v != null && String(v).trim() !== ""));
+      const totalLines = dataRows.length;
+
+      const out = [];
+      let captured = 0;
+      let ignored = 0;
+
+      for (const row of dataRows){
+        try{
+          const po_ref = row[idxYourPO];
+          const product_code = row[idxItemCode];
+          const qty = row[idxQty];
+          if (po_ref == null || product_code == null || qty == null) throw new Error("Missing");
+          out.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: qty, WH: wh, Bin: bin });
+          captured++;
+        }catch{
+          ignored++;
+        }
+      }
+
+      return { rows: out, totalLines, captured, ignored, totalPallets: null, extraInfo };
+    }
+
+    // -----------------------------
+    // History
+    // -----------------------------
+    function loadHistory(){
+      try{
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr;
+      }catch{
+        return [];
+      }
+    }
+
+    function saveHistory(arr){
+      try{
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+      }catch{
+        // Ignore storage failures (private mode etc.)
+      }
+    }
+
+    function addHistoryItem(item){
+      const history = loadHistory();
+      history.unshift(item);
+      if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
+      saveHistory(history);
+      renderHistory();
+    }
+
+    function renderHistory(){
+      const history = loadHistory();
+      historyCount.textContent = `${history.length} run${history.length === 1 ? "" : "s"}`;
+
+      exportHistoryBtn.disabled = history.length === 0;
+      clearHistoryBtn.disabled = history.length === 0;
+
+      if (history.length === 0){
+        historyEmpty.classList.remove("hidden");
+        historyTable.classList.add("hidden");
+        historyBody.innerHTML = "";
+        return;
+      }
+
+      historyEmpty.classList.add("hidden");
+      historyTable.classList.remove("hidden");
+      historyBody.innerHTML = "";
+
+      for (const h of history){
+        const tr = document.createElement("tr");
+        const pallets = (h.totalPallets == null ? "—" : String(h.totalPallets));
+        const outName = escapeHtml(h.outputName || "");
+        const canRedownload = Boolean(h.csvText);
+
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(h.when)}</td>
+          <td>${escapeHtml(h.supplier)}</td>
+          <td>${escapeHtml(h.inputFile)}</td>
+          <td class="mono">${outName}</td>
+          <td>${escapeHtml(h.totalLines)}</td>
+          <td>${escapeHtml(h.captured)}</td>
+          <td>${escapeHtml(h.ignored)}</td>
+          <td>${escapeHtml(pallets)}</td>
+          <td>
+            <button class="linkBtn ${canRedownload ? "" : "danger"}" type="button" data-action="download" ${canRedownload ? "" : "disabled"}>
+              Download
+            </button>
+          </td>
+        `;
+
+        const btn = tr.querySelector('button[data-action="download"]');
+        if (btn && canRedownload){
+          btn.addEventListener("click", () => {
+            downloadCsv(h.csvText, h.outputName);
+          });
+        }
+
+        historyBody.appendChild(tr);
+      }
+    }
+
+    function exportHistoryCsv(){
+      const history = loadHistory();
+      if (!history.length) return;
+
+      const headers = ["When","Supplier","InputFile","OutputName","TotalLines","Captured","Ignored","TotalPallets","ExtraInfo"];
+      const escapeCsv = (v) => {
+        const s = String(v ?? "");
+        if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+        return s;
+      };
+      const lines = [];
+      lines.push(headers.join(","));
+      for (const h of history){
+        lines.push(headers.map(k => escapeCsv(h[toCamel(k)] ?? h[k] ?? "")).join(","));
+      }
+
+      const text = lines.join("\r\n");
+      downloadCsv(text, `GoodsIn_History_${new Date().toISOString().slice(0,10)}.csv`);
+    }
+
+    function toCamel(s){
+      // "Total Lines" style not used; keep for safety
+      return s.replace(/\s+(.)/g, (_,c)=>c.toUpperCase()).replace(/^(.)/, (_,c)=>c.toLowerCase());
+    }
+
+    function clearHistory(){
+      const ok = confirm("Clear history log on this device/browser?");
+      if (!ok) return;
+      saveHistory([]);
+      renderHistory();
+    }
+
+    // -----------------------------
+    // Drag & Drop + file selection
+    // -----------------------------
+    function setSelectedFile(file){
+      // Validate extension against accept list (staff-proof)
+      if (!selectedSupplier){
+        throw new Error("Choose a supplier first, then select the file.");
+      }
+
+      const accept = supplierConfig[selectedSupplier].accept.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+      const name = (file?.name || "").toLowerCase();
+
+      const ok = accept.some(ext => name.endsWith(ext));
+      if (!ok){
+        throw new Error(`Wrong file type for ${selectedSupplier}. Expected: ${supplierConfig[selectedSupplier].accept}`);
+      }
+
+      selectedFile = file;
+      updateFileUI();
+      updateButtons();
+      clearResults(); // new file -> clear old results
+      setStatus("File selected", "Ready to process (if fields are filled).", false, null, "Idle");
+    }
+
+    function handleFilesFromEvent(files){
+      if (!files || !files.length) return;
+      try{
+        setSelectedFile(files[0]);
+      }catch(err){
+        setStatus("Error", err?.message || "Could not select file.", false, "bad", "Error");
+      }
+    }
+
+    // -----------------------------
+    // Wiring
+    // -----------------------------
+    supplierButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const supplier = btn.getAttribute("data-supplier");
+        if (!supplierConfig[supplier]) return;
+
+        selectedSupplier = supplier;
+        supplierButtons.forEach(b => b.classList.remove("primary"));
+        btn.classList.add("primary");
+
+        selectedSupplierPill.textContent = supplier;
+        rightTitle.textContent = `2) ${supplierConfig[supplier].title}`;
+
+        // Clear file/results when changing supplier (staff-proof)
+        selectedFile = null;
+        fileInput.value = "";
+        clearResults();
+
+        updatePieffeOverrideUI();
+        updateFileUI();
+        updateOutputNameHint();
+        updateButtons();
+
+        setStatus("Supplier selected", "Fill Ref/WH/Bin, then choose the correct file type for this supplier.", false, null, "Idle");
+      });
+    });
+
+    // Uppercase + button gating
+    [refInput, whInput, binInput].forEach(inp => {
+      inp.addEventListener("input", () => {
+        normaliseInputs();
+        updateOutputNameHint();
+        updateButtons();
+      });
+      inp.addEventListener("blur", () => {
+        normaliseInputs();
+        updateButtons();
+      });
+    });
+
+    pieffeHeaderOverride.addEventListener("input", () => {
+      updatePieffeOverrideUI();
+    });
+
+    chooseFileBtn.addEventListener("click", () => {
+      if (!selectedSupplier){
+        setStatus("Select supplier first", "Choose the supplier on the left before selecting a file.", false, "warn", "Waiting");
+        return;
+      }
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      handleFilesFromEvent(e.target.files);
+    });
+
+    // Drop zone events
+    ["dragenter","dragover"].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add("isDrag");
+      });
+    });
+    ["dragleave","drop"].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove("isDrag");
+      });
+    });
+    dropZone.addEventListener("drop", (e) => {
+      handleFilesFromEvent(e.dataTransfer?.files);
+    });
+
+    // Accessibility: click/enter on drop zone triggers choose file
+    dropZone.addEventListener("click", (e) => {
+      // Avoid double triggering when clicking the button
+      if (e.target === chooseFileBtn) return;
+      chooseFileBtn.click();
+    });
+    dropZone.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        chooseFileBtn.click();
+      }
+    });
+
+    clearFileBtn.addEventListener("click", clearFile);
+    resetBtn.addEventListener("click", resetAll);
+
+    exportHistoryBtn.addEventListener("click", exportHistoryCsv);
+    clearHistoryBtn.addEventListener("click", clearHistory);
+
+    downloadBtn.addEventListener("click", () => {
+      if (!lastCsvText || !lastOutputName) return;
+      downloadCsv(lastCsvText, lastOutputName);
+    });
+
+    // Main processing
+    processBtn.addEventListener("click", async () => {
+      try{
+        const { ref, wh, bin, file } = validateBasics();
+
+        setStatus("Processing…", "Reading file and generating CSV rows.", true, "warn", "Processing");
+
+        // Ensure Pieffe override UI is consistent
+        updatePieffeOverrideUI();
+
+        const cfg = supplierConfig[selectedSupplier];
+        const result = await cfg.processor(ref, wh, bin, file);
+
+        lastRows = result.rows;
+        lastCsvText = toCsv(result.rows);
+        lastOutputName = `${ref}.csv`;
+
+        kpiTotal.textContent = String(result.totalLines ?? 0);
+        kpiCaptured.textContent = String(result.captured ?? 0);
+        kpiIgnored.textContent = String(result.ignored ?? 0);
+        kpiPallets.textContent = (result.totalPallets == null ? "—" : String(result.totalPallets));
+
+        renderPreview(result.rows);
+        downloadBtn.disabled = result.rows.length === 0;
+
+        if (result.rows.length === 0){
+          setStatus(
+            "Done — no rows captured",
+            "Nothing matched the expected pattern. Double-check supplier + file selection.",
+            false,
+            "bad",
+            "No Data"
+          );
+        } else {
+          const extra = result.extraInfo ? ` (${result.extraInfo})` : "";
+          setStatus(
+            "Done",
+            `Generated ${result.rows.length} CSV rows. Click “Download CSV”.${extra}`,
+            false,
+            "ok",
+            "Ready"
+          );
+        }
+
+        // Add to history
+        addHistoryItem({
+          when: new Date().toLocaleString("en-GB"),
+          supplier: selectedSupplier,
+          inputFile: file.name,
+          outputName: lastOutputName,
+          totalLines: result.totalLines ?? 0,
+          captured: result.captured ?? 0,
+          ignored: result.ignored ?? 0,
+          totalPallets: result.totalPallets ?? null,
+          extraInfo: result.extraInfo ?? "",
+          csvText: lastCsvText
+        });
+
+      }catch(err){
+        setStatus("Error", err?.message || "Something went wrong.", false, "bad", "Error");
+      }finally{
+        spinner.classList.add("hidden");
+        updateButtons();
+      }
+    });
+
+    // -----------------------------
+    // Init
+    // -----------------------------
+    function init(){
+      setBadge(null, "Idle");
+      setStatus("Waiting", "Select supplier → fill Ref/WH/Bin → choose file → process.", false, null, "Idle");
+      updateOutputNameHint();
+      updatePieffeOverrideUI();
+      updateFileUI();
+      updateButtons();
+      renderHistory();
+    }
+
+    // Clean up blob urls on page unload (best effort)
+    window.addEventListener("beforeunload", () => {
+      for (const url of blobUrlsToRevoke){
+        try{ URL.revokeObjectURL(url); } catch {}
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
