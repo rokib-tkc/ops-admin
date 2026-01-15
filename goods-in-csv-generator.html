@@ -8,8 +8,8 @@
   <!-- SheetJS (Excel) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <!-- PDF.js (NON-module build to avoid module/CORS issues) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.js"></script>
+  <!-- PDF.js (PDF text extraction) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
 
   <style>
     :root{
@@ -18,26 +18,32 @@
       --text:#111827;
       --muted:#6b7280;
       --border:#e5e7eb;
+
       --accent:#2563eb;
       --accent2:#1d4ed8;
+
       --ok:#16a34a;
       --warn:#f59e0b;
       --bad:#ef4444;
+
       --shadow:0 10px 30px rgba(0,0,0,.08);
       --radius:16px;
       --focus: 0 0 0 4px rgba(147,197,253,.35);
     }
-    *{ box-sizing:border-box; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+
+    *{ box-sizing:border-box; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
     body{ margin:0; background:var(--bg); color:var(--text); }
 
-    .wrap{ max-width: 1280px; margin: 24px auto; padding: 0 16px 28px; }
+    .wrap{ max-width: 1200px; margin: 24px auto; padding: 0 16px 28px; }
     header{
       display:flex; gap:14px; align-items:flex-start; justify-content:space-between;
-      margin-bottom: 14px; flex-wrap: wrap;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
     }
     .brand{ display:flex; flex-direction:column; gap:6px; }
     .brand h1{ margin:0; font-size: 20px; }
     .brand p{ margin:0; color:var(--muted); font-size: 13px; line-height: 1.35; }
+
     .pill{
       font-size: 12px; color: var(--muted);
       border:1px solid var(--border);
@@ -46,10 +52,16 @@
       background:#fafafa;
       white-space: nowrap;
     }
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
-    .grid{ display:grid; grid-template-columns: 380px 1fr; gap: 14px; }
-    @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
+    .grid{
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
 
     .card{
       background:var(--card);
@@ -61,11 +73,14 @@
 
     .sectionTitle{
       display:flex; align-items:center; justify-content:space-between;
-      gap: 10px; margin-bottom: 10px; flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
     }
     .sectionTitle h2{ margin:0; font-size: 15px; }
 
     .supplierList{ display:flex; flex-direction:column; gap:10px; }
+
     .btn{
       appearance:none;
       border:1px solid var(--border);
@@ -73,8 +88,11 @@
       border-radius: 12px;
       padding: 12px 12px;
       text-align:left;
-      display:flex; align-items:center; justify-content:space-between;
-      gap: 10px; cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      cursor:pointer;
       transition: transform .05s ease, border-color .15s ease, background .15s ease, opacity .15s ease;
       user-select:none;
     }
@@ -85,10 +103,26 @@
       border-color: transparent;
       color:#fff;
     }
-    .btn:disabled{ opacity:.5; cursor:not-allowed; transform:none !important; }
+    .btn.primary:hover{ filter: brightness(1.02); }
+
+    .btn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+      transform:none !important;
+    }
 
     .btn .name{ font-weight: 800; }
     .btn .meta{ font-size:12px; opacity:.85; line-height: 1.25; }
+
+    .form{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    @media (max-width: 760px){
+      .form{ grid-template-columns: 1fr; }
+    }
 
     label{ display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
     input[type="text"], input[type="number"]{
@@ -105,31 +139,50 @@
       box-shadow: var(--focus);
     }
 
-    .form{
+    .twoCol{
       display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-top: 8px;
+      margin-top: 10px;
+      align-items: end;
     }
-    @media (max-width: 760px){ .form{ grid-template-columns: 1fr; } }
-
-    .twoCol{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; align-items:end; }
-    @media (max-width: 760px){ .twoCol{ grid-template-columns: 1fr; } }
+    @media (max-width: 760px){
+      .twoCol{ grid-template-columns: 1fr; }
+    }
 
     .dropZone{
       border:2px dashed #cbd5e1;
       border-radius: 14px;
       background: #fbfbfd;
       padding: 14px;
-      display:flex; align-items:center; justify-content:space-between;
-      gap: 12px; min-height: 74px;
-      transition: border-color .15s ease, background .15s ease;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      min-height: 74px;
+      transition: border-color .15s ease, background .15s ease, transform .05s ease;
     }
     .dropZone strong{ display:block; }
-    .dropZone .dzText{ display:flex; flex-direction:column; gap:4px; min-width: 0; }
-    .dropZone .dzSub{ color: var(--muted); font-size: 12px; line-height: 1.25; }
-    .dropZone .dzFile{ color: #374151; font-size: 12px; margin-top: 4px; word-break: break-word; }
-    .dropZone.isDrag{ border-color:#60a5fa; background: rgba(147,197,253,.18); }
+    .dropZone .dzText{
+      display:flex; flex-direction:column; gap:4px;
+      min-width: 0;
+    }
+    .dropZone .dzSub{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.25;
+    }
+    .dropZone .dzFile{
+      color: #374151;
+      font-size: 12px;
+      margin-top: 4px;
+      word-break: break-word;
+    }
+    .dropZone.isDrag{
+      border-color:#60a5fa;
+      background: rgba(147,197,253,.18);
+    }
+
     .fileHidden{ display:none; }
     .fileBtn{
       border: 1px solid var(--border);
@@ -141,7 +194,11 @@
     }
     .fileBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
 
-    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px; align-items:center; }
+    .actions{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top: 12px;
+      align-items:center;
+    }
     .actions .btn{ width:auto; padding: 11px 12px; text-align:center; }
 
     .statusRow{
@@ -174,8 +231,9 @@
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
     }
-    @media (max-width: 980px){ .summary{ grid-template-columns: repeat(2, 1fr); } }
-
+    @media (max-width: 980px){
+      .summary{ grid-template-columns: repeat(2, 1fr); }
+    }
     .kpi{
       border:1px solid var(--border);
       background:#fff;
@@ -209,6 +267,7 @@
       vertical-align: top;
     }
     tbody tr:last-child td{ border-bottom:none; }
+
     .hidden{ display:none !important; }
 
     .spinner{
@@ -226,123 +285,56 @@
       line-height: 1.5;
     }
 
-    /* Simple staff instructions */
-    .steps{
-      border:1px solid var(--border);
-      border-radius: 14px;
-      background:#fff;
-      padding: 12px;
-      margin-top: 10px;
+    .historyTop{
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 10px; flex-wrap: wrap;
     }
-    .steps h3{ margin:0 0 8px 0; font-size: 13px; }
-    .steps ol{ margin:0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.45; }
-    .steps li{ margin: 4px 0; }
-
-    /* Editor modal */
-    .modalOverlay{
-      position: fixed;
-      inset: 0;
-      background: rgba(17,24,39,.55);
-      display:none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      z-index: 9999;
-    }
-    .modalOverlay.show{ display:flex; }
-    .modal{
-      width: min(1200px, 100%);
-      max-height: 92vh;
-      overflow: hidden;
-      background: #fff;
-      border-radius: 18px;
-      box-shadow: 0 30px 80px rgba(0,0,0,.35);
-      border: 1px solid rgba(255,255,255,.2);
-      display:flex;
-      flex-direction: column;
-    }
-    .modalHeader{
-      padding: 14px 14px 10px;
-      border-bottom: 1px solid var(--border);
-      display:flex;
-      align-items:flex-start;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .modalHeader h3{ margin:0; font-size: 15px; }
-    .modalHeader p{ margin:4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.35; }
-
-    .modalBody{
-      padding: 12px 14px;
-      overflow:auto;
-      background: #fbfbfb;
-    }
-    .modalFooter{
-      padding: 12px 14px;
-      border-top: 1px solid var(--border);
-      display:flex;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      background:#fff;
-    }
-
-    .rowBtn{
+    .historyActions{ display:flex; gap: 10px; flex-wrap: wrap; }
+    .linkBtn{
       appearance:none;
-      border:1px solid var(--border);
+      border: 1px solid var(--border);
       background:#fff;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 8px 10px;
       cursor:pointer;
       font-size: 12px;
-      white-space: nowrap;
     }
-    .rowBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
-    .rowBtn:disabled{ opacity:.5; cursor:not-allowed; }
+    .linkBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
 
-    .editorTable{
-      width:100%;
-      border-collapse: collapse;
+    .historyEmpty{
+      margin-top: 10px;
+      border:1px dashed var(--border);
+      border-radius: 12px;
+      background:#fbfbfb;
+      padding: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .helpBox{
+      border: 1px solid var(--border);
       border-radius: 14px;
-      overflow:hidden;
-      border:1px solid var(--border);
-      background:#fff;
+      background: #fff;
+      padding: 12px;
+      margin-top: 10px;
     }
-    .editorTable thead th{ position: sticky; top: 0; z-index: 1; }
-    .cellInput{
-      width:100%;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 8px;
-      font-size: 13px;
-      outline:none;
-      background:#fff;
-    }
-    .cellInput:focus{ border-color:#93c5fd; box-shadow: var(--focus); }
-    .cellInput.qty{ text-align: right; }
-    .cellInput.invalid{
-      border-color: rgba(239,68,68,.6);
-      box-shadow: 0 0 0 4px rgba(239,68,68,.12);
-      background: rgba(239,68,68,.04);
-    }
+    .helpBox h3{ margin:0 0 6px 0; font-size: 13px; }
+    .helpBox ul{ margin:0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .helpBox li{ margin: 4px 0; }
 
-    .dragHandle{
-      display:inline-flex;
+    .dangerZone{
+      margin-top: 12px;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
       align-items:center;
-      justify-content:center;
-      width: 34px;
-      height: 32px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background:#fff;
-      cursor: grab;
-      user-select:none;
     }
-    tr.dragging{ opacity: .6; outline: 2px dashed #93c5fd; }
-    tr.dropTarget{ outline: 2px solid rgba(37,99,235,.35); }
-
-    .danger{ border-color: rgba(239,68,68,.35) !important; color: var(--bad); background: rgba(239,68,68,.06); }
+    .danger{
+      border-color: rgba(239,68,68,.35) !important;
+      color: var(--bad);
+      background: rgba(239,68,68,.06);
+    }
   </style>
 </head>
 
@@ -352,18 +344,17 @@
       <div class="brand">
         <h1>Goods In CSV Generator</h1>
         <p>
-          Output columns:
-          <span class="mono">PONum, Ref, Part, Qty, WH, Bin</span>
+          Static web version • runs on GitHub Pages • files stay on your computer • produces <span class="mono">PONum, Ref, Part, Qty, WH, Bin</span>
         </p>
       </div>
-      <div class="pill">CSV: <span class="mono">UTF-8 + BOM</span></div>
+      <div class="pill">CSV: <span class="mono">UTF-8 + BOM</span> (Excel-friendly)</div>
     </header>
 
     <div class="grid">
-      <!-- LEFT -->
+      <!-- LEFT: Supplier + Help -->
       <div class="card">
         <div class="sectionTitle">
-          <h2>Supplier</h2>
+          <h2>1) Choose supplier</h2>
           <span class="pill" id="selectedSupplierPill">None selected</span>
         </div>
 
@@ -371,85 +362,98 @@
           <button class="btn" data-supplier="Saca">
             <div>
               <div class="name">Saca</div>
-              <div class="meta">Excel</div>
-            </div><span>→</span>
+              <div class="meta">Excel • columns: Numero conferma / Articolo esterno / Quantità spuntata</div>
+            </div>
+            <span>→</span>
           </button>
 
           <button class="btn" data-supplier="Decorative Panels">
             <div>
               <div class="name">Decorative Panels</div>
-              <div class="meta">PDF</div>
-            </div><span>→</span>
+              <div class="meta">PDF • splits qty by pallet</div>
+            </div>
+            <span>→</span>
           </button>
 
           <button class="btn" data-supplier="Italdecor">
             <div>
               <div class="name">Italdecor</div>
-              <div class="meta">Excel</div>
-            </div><span>→</span>
+              <div class="meta">Excel • PO from “-->ORD. n.” • Part from col A • Qty from col M</div>
+            </div>
+            <span>→</span>
           </button>
 
           <button class="btn" data-supplier="Pieffe Union">
             <div>
               <div class="name">Pieffe Union</div>
-              <div class="meta">Excel (header detect + override)</div>
-            </div><span>→</span>
+              <div class="meta">Excel • auto-detect header row (Your PO / Item Code / Qty) • manual override available</div>
+            </div>
+            <span>→</span>
           </button>
 
           <button class="btn" data-supplier="Macfarlane">
             <div>
               <div class="name">Macfarlane</div>
-              <div class="meta">PDF</div>
-            </div><span>→</span>
+              <div class="meta">PDF • stops at “Outstanding goods”</div>
+            </div>
+            <span>→</span>
           </button>
 
           <button class="btn primary" id="resetBtn" type="button">
             <div>
               <div class="name">Reset</div>
-              <div class="meta">Clears screen</div>
-            </div><span>⟲</span>
+              <div class="meta">Clears supplier, file, results & preview</div>
+            </div>
+            <span>⟲</span>
           </button>
         </div>
 
-        <div class="steps">
-          <h3>Instructions</h3>
-          <ol>
-            <li>Select supplier.</li>
-            <li>Enter Ref / WH / Bin.</li>
-            <li>Upload file then click <strong>Process</strong> (or use <strong>Blank table</strong>).</li>
-            <li>Click <strong>Edit table</strong> if you need changes.</li>
-            <li>Click <strong>Generate & Download CSV</strong>.</li>
-          </ol>
+        <div class="helpBox">
+          <h3>Idiot-proof checklist</h3>
+          <ul>
+            <li>Pick the supplier (left).</li>
+            <li>Enter Ref, WH, Bin (right).</li>
+            <li>Drag & drop the file (or click “Choose file”).</li>
+            <li>Click “Process & Generate CSV”, then “Download CSV”.</li>
+            <li>For Pieffe only: if it fails, set “Header row override”.</li>
+          </ul>
+        </div>
+
+        <div class="note">
+          Tip: the app will block “Process” until everything required is filled in correctly.
         </div>
       </div>
 
-      <!-- RIGHT -->
+      <!-- RIGHT: Processing -->
       <div class="card">
         <div class="sectionTitle">
-          <h2 id="rightTitle">Upload & Process</h2>
+          <h2 id="rightTitle">2) Upload file & generate CSV</h2>
           <span class="badge" id="statusBadge">Idle</span>
         </div>
 
         <div class="form">
           <div>
-            <label for="ref">Delivery Ref *</label>
+            <label for="ref">Delivery Ref <span class="mono">*</span></label>
             <input id="ref" type="text" placeholder="e.g. SACAFAWB0558" autocomplete="off" />
           </div>
           <div>
-            <label for="wh">Warehouse (WH) *</label>
+            <label for="wh">Warehouse (WH) <span class="mono">*</span></label>
             <input id="wh" type="text" placeholder="e.g. 6Q" autocomplete="off" />
           </div>
           <div>
-            <label for="bin">Bin *</label>
+            <label for="bin">Bin <span class="mono">*</span></label>
             <input id="bin" type="text" placeholder="e.g. PRE" autocomplete="off" />
           </div>
         </div>
 
+        <!-- Pieffe override row (only shown for Pieffe) -->
         <div class="twoCol hidden" id="pieffeOverrideRow">
           <div>
             <label for="pieffeHeaderOverride">Pieffe header row override (optional)</label>
-            <input id="pieffeHeaderOverride" type="number" min="1" step="1" placeholder="e.g. 22" />
-            <div class="note" style="margin-top:6px;">Enter the Excel row number where the header is.</div>
+            <input id="pieffeHeaderOverride" type="number" min="1" step="1" placeholder="Leave blank to auto-detect" />
+            <div class="note" style="margin-top:6px;">
+              Use this only if auto-detect fails. Enter the <strong>Excel row number</strong> where the header is (e.g. 22).
+            </div>
           </div>
           <div>
             <label>&nbsp;</label>
@@ -457,37 +461,38 @@
           </div>
         </div>
 
+        <!-- Drag & Drop -->
         <div class="twoCol">
-          <div class="dropZone" id="dropZone" role="button" tabindex="0">
+          <div class="dropZone" id="dropZone" role="button" tabindex="0" aria-label="File drop area">
             <div class="dzText">
-              <strong>Drop file here (optional)</strong>
-              <div class="dzSub" id="dropSub">Or click “Choose file”.</div>
+              <strong>3) Drop file here</strong>
+              <div class="dzSub" id="dropSub">Or click “Choose file”. Accepted type depends on supplier.</div>
               <div class="dzFile mono" id="fileName">No file selected</div>
             </div>
             <button class="fileBtn" id="chooseFileBtn" type="button">Choose file</button>
           </div>
 
           <div>
-            <label>Hidden file input</label>
+            <label for="fileInput">Hidden file input</label>
             <input id="fileInput" class="fileHidden" type="file" />
-            <div class="note">Output: <span class="mono" id="outputNameHint">REF.csv</span></div>
+            <div class="note">
+              Output name: <span class="mono" id="outputNameHint">REF.csv</span>
+            </div>
           </div>
         </div>
 
         <div class="actions">
-          <button class="btn" id="blankTableBtn" type="button">Blank table</button>
-          <button class="btn primary" id="processBtn" type="button" disabled>Process</button>
-          <button class="btn" id="editBtn" type="button" disabled>Edit table</button>
-          <button class="btn primary" id="generateBtn" type="button" disabled>Generate & Download CSV</button>
+          <button class="btn primary" id="processBtn" type="button" disabled>Process & Generate CSV</button>
+          <button class="btn" id="downloadBtn" type="button" disabled>Download CSV</button>
           <button class="btn danger" id="clearFileBtn" type="button" disabled>Clear file</button>
         </div>
 
-        <div class="statusRow">
+        <div class="statusRow" id="statusRow">
           <div class="statusText">
-            <div id="statusLine"><strong>Status:</strong> Waiting</div>
-            <div class="small" id="statusDetail">Select supplier or use Blank table.</div>
+            <div id="statusLine"><strong>Status:</strong> Waiting for supplier + file</div>
+            <div class="small" id="statusDetail">Select supplier → fill Ref/WH/Bin → choose file → process.</div>
           </div>
-          <div id="spinner" class="spinner hidden"></div>
+          <div id="spinner" class="spinner hidden" aria-label="Processing"></div>
         </div>
 
         <div class="summary">
@@ -497,9 +502,7 @@
           <div class="kpi"><div class="k">Total Pallets</div><div class="v" id="kpiPallets">—</div></div>
         </div>
 
-        <div class="note">Preview (first 25 rows). Rows: <span class="mono" id="rowCount">0</span></div>
-
-        <table id="previewTable" class="hidden">
+        <table id="previewTable" class="hidden" aria-label="Preview">
           <thead>
             <tr>
               <th>PONum</th><th>Ref</th><th>Part</th><th>Qty</th><th>WH</th><th>Bin</th>
@@ -507,64 +510,54 @@
           </thead>
           <tbody id="previewBody"></tbody>
         </table>
-      </div>
-    </div>
-  </div>
 
-  <!-- Editor modal -->
-  <div class="modalOverlay" id="editorOverlay">
-    <div class="modal">
-      <div class="modalHeader">
-        <div>
-          <h3>Edit table</h3>
-          <p>Edit values, add/remove/duplicate rows, drag to reorder. Qty must be numeric.</p>
-        </div>
-        <button class="rowBtn" id="editorCloseX" type="button">Close</button>
-      </div>
-
-      <div class="modalBody">
-        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; margin-bottom:10px;">
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="rowBtn" id="addRowBtn" type="button">+ Add row</button>
-            <button class="rowBtn" id="add5RowsBtn" type="button">+ Add 5 rows</button>
-            <button class="rowBtn" id="fillDefaultsBtn" type="button">Fill blank Ref/WH/Bin</button>
+        <!-- History Log -->
+        <div class="card" style="margin-top:14px; padding:14px;">
+          <div class="historyTop">
+            <div class="sectionTitle" style="margin:0;">
+              <h2>History log</h2>
+              <span class="pill" id="historyCount">0 runs</span>
+            </div>
+            <div class="historyActions">
+              <button class="linkBtn" id="exportHistoryBtn" type="button" disabled>Export history CSV</button>
+              <button class="linkBtn danger" id="clearHistoryBtn" type="button" disabled>Clear history</button>
+            </div>
           </div>
-          <div class="pill">Rows: <span class="mono" id="editorRowKpi">0</span></div>
+
+          <div id="historyEmpty" class="historyEmpty">No runs yet. Process a file and it will appear here.</div>
+
+          <table id="historyTable" class="hidden" aria-label="History table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Supplier</th>
+                <th>Input file</th>
+                <th>Output</th>
+                <th>Total</th>
+                <th>Captured</th>
+                <th>Ignored</th>
+                <th>Pallets</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+
+          <div class="note">
+            History is stored in your browser (localStorage) on this device only.
+          </div>
         </div>
 
-        <table class="editorTable">
-          <thead>
-            <tr>
-              <th style="width:52px;">Move</th>
-              <th style="width:160px;">PONum</th>
-              <th style="width:160px;">Ref</th>
-              <th style="width:220px;">Part</th>
-              <th style="width:120px;">Qty</th>
-              <th style="width:120px;">WH</th>
-              <th style="width:120px;">Bin</th>
-              <th style="width:310px;">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="editorBody"></tbody>
-        </table>
-      </div>
-
-      <div class="modalFooter">
-        <button class="rowBtn" id="cancelEditBtn" type="button">Cancel</button>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="rowBtn danger" id="deleteAllRowsBtn" type="button">Delete all rows</button>
-          <button class="rowBtn" id="confirmEditBtn" type="button">Confirm changes</button>
+        <div class="dangerZone">
+          <span class="pill">All processing is client-side. Nothing uploads anywhere.</span>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    // PDF.js worker setup (global build)
-    if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js";
-    }
+  <script type="module">
+    import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
 
     // -----------------------------
     // State
@@ -572,8 +565,16 @@
     let selectedSupplier = null;
     let selectedFile = null;
 
-    let dataRows = [];
-    let lastMetrics = { totalLines:null, captured:null, ignored:null, totalPallets:null, extraInfo:null };
+    let lastCsvText = "";
+    let lastOutputName = "";
+    let lastRows = [];
+
+    // History persistence
+    const HISTORY_KEY = "goodsin_csv_history_v1";
+    const MAX_HISTORY = 50;
+
+    // Keep blob urls to revoke later
+    const blobUrlsToRevoke = new Set();
 
     // -----------------------------
     // Elements
@@ -596,10 +597,8 @@
     const fileName = document.getElementById("fileName");
     const dropSub = document.getElementById("dropSub");
 
-    const blankTableBtn = document.getElementById("blankTableBtn");
     const processBtn = document.getElementById("processBtn");
-    const editBtn = document.getElementById("editBtn");
-    const generateBtn = document.getElementById("generateBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
     const clearFileBtn = document.getElementById("clearFileBtn");
     const resetBtn = document.getElementById("resetBtn");
 
@@ -616,29 +615,49 @@
     const previewTable = document.getElementById("previewTable");
     const previewBody = document.getElementById("previewBody");
     const outputNameHint = document.getElementById("outputNameHint");
-    const rowCount = document.getElementById("rowCount");
 
-    // Editor modal
-    const editorOverlay = document.getElementById("editorOverlay");
-    const editorBody = document.getElementById("editorBody");
-    const editorRowKpi = document.getElementById("editorRowKpi");
-    const editorCloseX = document.getElementById("editorCloseX");
-    const addRowBtn = document.getElementById("addRowBtn");
-    const add5RowsBtn = document.getElementById("add5RowsBtn");
-    const fillDefaultsBtn = document.getElementById("fillDefaultsBtn");
-    const deleteAllRowsBtn = document.getElementById("deleteAllRowsBtn");
-    const cancelEditBtn = document.getElementById("cancelEditBtn");
-    const confirmEditBtn = document.getElementById("confirmEditBtn");
+    // History
+    const historyCount = document.getElementById("historyCount");
+    const historyEmpty = document.getElementById("historyEmpty");
+    const historyTable = document.getElementById("historyTable");
+    const historyBody = document.getElementById("historyBody");
+    const exportHistoryBtn = document.getElementById("exportHistoryBtn");
+    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
 
     // -----------------------------
     // Supplier config
     // -----------------------------
     const supplierConfig = {
-      "Saca": { title: "Saca", accept: [".xlsx",".xls"], hint: "Accepted: Excel", processor: processSacaExcel },
-      "Decorative Panels": { title: "Decorative Panels", accept: [".pdf"], hint: "Accepted: PDF (text PDF)", processor: processDecorativePanelsPdf },
-      "Italdecor": { title: "Italdecor", accept: [".xlsx",".xls"], hint: "Accepted: Excel", processor: processItaldecorExcel },
-      "Pieffe Union": { title: "Pieffe Union", accept: [".xlsx",".xls"], hint: "Accepted: Excel (header detect + override)", processor: processPieffeUnionExcelAutoHeaderOrOverride },
-      "Macfarlane": { title: "Macfarlane", accept: [".pdf"], hint: "Accepted: PDF (text PDF)", processor: processMacfarlanePdf }
+      "Saca": {
+        title: "Saca — Excel upload",
+        accept: ".xlsx,.xls",
+        hint: "Accepted: .xlsx / .xls",
+        processor: processSacaExcel
+      },
+      "Decorative Panels": {
+        title: "Decorative Panels — PDF upload",
+        accept: ".pdf",
+        hint: "Accepted: .pdf (text PDF)",
+        processor: processDecorativePanelsPdf
+      },
+      "Italdecor": {
+        title: "Italdecor — Excel upload",
+        accept: ".xlsx,.xls",
+        hint: "Accepted: .xlsx / .xls",
+        processor: processItaldecorExcel
+      },
+      "Pieffe Union": {
+        title: "Pieffe Union — Excel upload",
+        accept: ".xlsx,.xls",
+        hint: "Accepted: .xlsx / .xls (header row auto-detect; override optional)",
+        processor: processPieffeUnionExcelAutoHeaderOrOverride
+      },
+      "Macfarlane": {
+        title: "Macfarlane — PDF upload",
+        accept: ".pdf",
+        hint: "Accepted: .pdf (text PDF)",
+        processor: processMacfarlanePdf
+      }
     };
 
     // -----------------------------
@@ -647,73 +666,153 @@
     function escapeHtml(s){
       return String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
     }
+
     function setBadge(kind, text){
       statusBadge.className = "badge";
       if (kind) statusBadge.classList.add(kind);
       statusBadge.textContent = text;
     }
+
     function setStatus(main, detail, busy=false, badgeKind=null, badgeText=""){
       statusLine.innerHTML = `<strong>Status:</strong> ${escapeHtml(main)}`;
       statusDetail.textContent = detail || "";
       spinner.classList.toggle("hidden", !busy);
       if (badgeText) setBadge(badgeKind, badgeText);
     }
+
     function normaliseInputs(){
+      // Force uppercase and trim for idiot-proofing
       const ref = (refInput.value || "").trim().toUpperCase();
       const wh = (whInput.value || "").trim().toUpperCase();
       const bin = (binInput.value || "").trim().toUpperCase();
-      refInput.value = ref;
-      whInput.value = wh;
-      binInput.value = bin;
+
+      // Reflect uppercase back in UI without jumping cursor badly (best effort)
+      if (refInput.value !== ref) refInput.value = ref;
+      if (whInput.value !== wh) whInput.value = wh;
+      if (binInput.value !== bin) binInput.value = bin;
+
       return { ref, wh, bin };
     }
+
+    function requiredReady(){
+      const { ref, wh, bin } = normaliseInputs();
+      return Boolean(selectedSupplier && selectedFile && ref && wh && bin);
+    }
+
     function updateOutputNameHint(){
       const { ref } = normaliseInputs();
       outputNameHint.textContent = `${(ref || "REF")}.csv`;
     }
+
     function updatePieffeOverrideUI(){
       const isPieffe = selectedSupplier === "Pieffe Union";
       pieffeOverrideRow.classList.toggle("hidden", !isPieffe);
+
+      if (!isPieffe){
+        pieffeHeaderOverride.value = "";
+        pieffeOverrideHint.textContent = "Auto-detect enabled";
+        return;
+      }
+
       const v = (pieffeHeaderOverride.value || "").trim();
-      pieffeOverrideHint.textContent = v ? `Override set: row ${v}` : "Auto-detect enabled";
+      if (v){
+        pieffeOverrideHint.textContent = `Override set: row ${v}`;
+      } else {
+        pieffeOverrideHint.textContent = "Auto-detect enabled";
+      }
     }
+
     function updateFileUI(){
       if (!selectedSupplier){
+        fileInput.accept = "";
         fileName.textContent = "No file selected";
-        dropSub.textContent = "Select supplier or use Blank table.";
+        dropSub.textContent = "Choose a supplier first (left).";
         clearFileBtn.disabled = true;
         return;
       }
+
+      fileInput.accept = supplierConfig[selectedSupplier].accept;
       dropSub.textContent = supplierConfig[selectedSupplier].hint;
-      fileName.textContent = selectedFile ? selectedFile.name : "No file selected";
-      clearFileBtn.disabled = !selectedFile;
+
+      if (!selectedFile){
+        fileName.textContent = "No file selected";
+        clearFileBtn.disabled = true;
+      } else {
+        fileName.textContent = selectedFile.name;
+        clearFileBtn.disabled = false;
+      }
     }
-    function clearKpis(){
+
+    function updateButtons(){
+      processBtn.disabled = !requiredReady();
+      downloadBtn.disabled = !lastCsvText;
+    }
+
+    function clearResults(){
+      lastCsvText = "";
+      lastOutputName = "";
+      lastRows = [];
+      downloadBtn.disabled = true;
+
       kpiTotal.textContent = "—";
       kpiCaptured.textContent = "—";
       kpiIgnored.textContent = "—";
       kpiPallets.textContent = "—";
-    }
-    function setDataRows(rows, metrics){
-      dataRows = Array.isArray(rows) ? rows : [];
-      rowCount.textContent = String(dataRows.length);
 
-      if (metrics){
-        lastMetrics = metrics;
-        kpiTotal.textContent = String(metrics.totalLines ?? "—");
-        kpiCaptured.textContent = String(metrics.captured ?? "—");
-        kpiIgnored.textContent = String(metrics.ignored ?? "—");
-        kpiPallets.textContent = metrics.totalPallets == null ? "—" : String(metrics.totalPallets);
-      } else {
-        clearKpis();
+      previewBody.innerHTML = "";
+      previewTable.classList.add("hidden");
+    }
+
+    function clearFile(){
+      selectedFile = null;
+      fileInput.value = "";
+      updateFileUI();
+      updateButtons();
+      clearResults();
+      setStatus("File cleared", "Choose a file to continue.", false, null, "Idle");
+    }
+
+    function resetAll(){
+      // Staff-proof: confirm reset only if something has been done
+      const hasWork = selectedSupplier || selectedFile || (refInput.value || whInput.value || binInput.value) || lastCsvText;
+      if (hasWork){
+        const ok = confirm("Reset everything on screen? (History log will NOT be deleted.)");
+        if (!ok) return;
       }
 
-      renderPreview();
+      selectedSupplier = null;
+      selectedFile = null;
+
+      supplierButtons.forEach(b => b.classList.remove("primary"));
+      selectedSupplierPill.textContent = "None selected";
+      rightTitle.textContent = "2) Upload file & generate CSV";
+
+      refInput.value = "";
+      whInput.value = "";
+      binInput.value = "";
+
+      pieffeHeaderOverride.value = "";
+      updatePieffeOverrideUI();
+
+      updateFileUI();
+      clearResults();
+      updateOutputNameHint();
       updateButtons();
+
+      setStatus("Waiting", "Select supplier → fill Ref/WH/Bin → choose file → process.", false, null, "Idle");
     }
-    function renderPreview(){
+
+    function validateBasics(){
+      if (!selectedSupplier) throw new Error("Please select a supplier first.");
+      const { ref, wh, bin } = normaliseInputs();
+      if (!ref || !wh || !bin) throw new Error("Ref, WH and Bin are required.");
+      if (!selectedFile) throw new Error("Please choose a file (drag & drop or Choose file).");
+      return { ref, wh, bin, file: selectedFile };
+    }
+
+    function renderPreview(rows){
       previewBody.innerHTML = "";
-      const show = dataRows.slice(0,25);
+      const show = rows.slice(0, 25);
       for (const r of show){
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -726,57 +825,46 @@
         `;
         previewBody.appendChild(tr);
       }
-      previewTable.classList.toggle("hidden", dataRows.length === 0);
-    }
-    function updateButtons(){
-      const { ref, wh, bin } = normaliseInputs();
-      processBtn.disabled = !(selectedSupplier && selectedFile && ref && wh && bin);
-      editBtn.disabled = dataRows.length === 0;
-      generateBtn.disabled = dataRows.length === 0;
-      blankTableBtn.disabled = false;
+      previewTable.classList.toggle("hidden", rows.length === 0);
     }
 
     // -----------------------------
-    // CSV helpers
+    // CSV helpers (UTF-8 with BOM)
     // -----------------------------
     function toCsv(rows){
       const headers = ["PONum","Ref","Part","Qty","WH","Bin"];
-      const esc = (v) => {
+      const escapeCsv = (v) => {
         const s = String(v ?? "");
         if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
         return s;
       };
-      const lines = [headers.join(",")];
+      const lines = [];
+      lines.push(headers.join(","));
       for (const r of rows){
-        lines.push(headers.map(h => esc(r[h])).join(","));
+        lines.push(headers.map(h => escapeCsv(r[h])).join(","));
       }
       return lines.join("\r\n");
     }
-    function downloadCsv(text, filename){
+
+    function makeCsvBlobUrl(text){
       const bom = "\uFEFF";
-      const blob = new Blob([bom + text], { type:"text/csv;charset=utf-8" });
+      const blob = new Blob([bom + text], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
+      blobUrlsToRevoke.add(url);
+      return url;
+    }
+
+    function downloadCsv(text, filename){
+      const url = makeCsvBlobUrl(text);
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 15000);
-    }
-
-    function isDigitsOnly(s){ return /^\d+$/.test(String(s ?? "").trim()); }
-
-    function validateRowsForExport(rows){
-      for (let i=0; i<rows.length; i++){
-        const r = rows[i];
-        const req = ["PONum","Ref","Part","Qty","WH","Bin"];
-        for (const k of req){
-          if (!String(r[k] ?? "").trim()) return `Row ${i+1} is missing ${k}.`;
-        }
-        if (!isDigitsOnly(r.Qty)) return `Row ${i+1} has invalid Qty "${r.Qty}" (numbers only).`;
-      }
-      return null;
+      // Keep URL for history actions; revoke is handled on clear history/reset page close
+      // (Still safe - URLs are local to this session)
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
     }
 
     // -----------------------------
@@ -792,12 +880,11 @@
     }
 
     async function pdfToTextLines(file){
-      if (!window.pdfjsLib) throw new Error("PDF engine failed to load.");
       const buf = await readFileAsArrayBuffer(file);
       const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
 
-      const allLines = [];
-      for (let p=1; p<=pdf.numPages; p++){
+      let allLines = [];
+      for (let p = 1; p <= pdf.numPages; p++){
         const page = await pdf.getPage(p);
         const content = await page.getTextContent();
 
@@ -812,9 +899,12 @@
           byY.get(key).push(it);
         }
 
-        const ys = Array.from(byY.keys()).sort((a,b)=> b-a);
+        const ys = Array.from(byY.keys()).sort((a,b) => b - a);
         for (const y of ys){
-          const row = byY.get(y).sort((a,b)=>a.x-b.x).map(it=>it.str).join(" ");
+          const row = byY.get(y)
+            .sort((a,b) => a.x - b.x)
+            .map(it => it.str)
+            .join(" ");
           allLines.push(row);
         }
       }
@@ -822,138 +912,198 @@
     }
 
     function excelToJsonRows(arrayBuffer, sheetIndex=0, opts={}){
-      const wb = XLSX.read(arrayBuffer, { type:"array" });
-      const ws = wb.Sheets[wb.SheetNames[sheetIndex]];
+      const wb = XLSX.read(arrayBuffer, { type: "array" });
+      const sheetName = wb.SheetNames[sheetIndex];
+      const ws = wb.Sheets[sheetName];
       return XLSX.utils.sheet_to_json(ws, opts);
     }
+
     function excelToMatrix(arrayBuffer, sheetIndex=0){
-      const wb = XLSX.read(arrayBuffer, { type:"array" });
-      const ws = wb.Sheets[wb.SheetNames[sheetIndex]];
+      const wb = XLSX.read(arrayBuffer, { type: "array" });
+      const sheetName = wb.SheetNames[sheetIndex];
+      const ws = wb.Sheets[sheetName];
       return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
     }
 
     // -----------------------------
-    // Processors (same logic)
+    // Processors (mirror Python logic)
     // -----------------------------
     async function processMacfarlanePdf(ref, wh, bin, file){
       const lines = await pdfToTextLines(file);
-      const out = [];
-      let totalLines=0, captured=0, ignored=0;
-      let stop=false;
+      const data = [];
+      let totalLines = 0;
+      let captured = 0;
+      let ignored = 0;
+      let stopReading = false;
 
       for (const line of lines){
-        if (line.includes("Outstanding goods")) stop = true;
-        if (stop){ ignored++; totalLines++; continue; }
+        if (line.includes("Outstanding goods")) stopReading = true;
+
+        if (stopReading){
+          ignored++;
+          totalLines++;
+          continue;
+        }
 
         const parts = line.split(/\s+/);
         if (parts.length >= 4 && /^\d+$/.test(parts[1]) && parts[1].length > 4){
-          const po_ref = parts[1];
-          const product_code = parts[2];
-          const qty = parts[3];
-          if (/^\d+$/.test(po_ref) && /^[A-Za-z0-9]+$/.test(product_code) && /^\d+$/.test(qty)){
-            out.push({ PONum:po_ref, Ref:ref, Part:product_code, Qty:qty, WH:wh, Bin:bin });
+          try{
+            const po_ref = parts[1];
+            const product_code = parts[2];
+            const qty = parts[3];
+
+            if (!/^\d+$/.test(po_ref) || !/^[A-Za-z0-9]+$/.test(product_code) || !/^\d+$/.test(qty)){
+              throw new Error("Invalid");
+            }
+
+            data.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: qty, WH: wh, Bin: bin });
             captured++;
-          } else ignored++;
-        } else ignored++;
+          }catch{
+            ignored++;
+          }
+        }else{
+          ignored++;
+        }
         totalLines++;
       }
-      return { rows: out, metrics:{ totalLines, captured, ignored, totalPallets:null, extraInfo:null } };
+
+      return { rows: data, totalLines, captured, ignored, totalPallets: null, extraInfo: null };
     }
 
     async function processDecorativePanelsPdf(ref, wh, bin, file){
       const lines = await pdfToTextLines(file);
-      const out = [];
-      let totalProductLines=0, captured=0, ignored=0, totalPallets=0;
+      const data = [];
+      let totalProductLines = 0;
+      let captured = 0;
+      let ignored = 0;
+      let totalPallets = 0;
 
       for (const line of lines){
         const parts = line.split(/\s+/);
         if (parts.length >= 5 && /^\d+$/.test(parts[0]) && parts[0].length >= 5){
           totalProductLines++;
-          const po_ref = parts[0];
-          const product_code = parts[1];
+          try{
+            const po_ref = parts[0];
+            const product_code = parts[1];
 
-          let qPer=null, num=null, qty=null;
-          for (let i=2; i<parts.length-2; i++){
-            if (/^\d+$/.test(parts[i]) && /^\d+$/.test(parts[i+1]) && /^\d+$/.test(parts[i+2])){
-              qPer = parseInt(parts[i],10);
-              num  = parseInt(parts[i+1],10);
-              qty  = parseInt(parts[i+2],10);
-              totalPallets += num;
-              break;
+            let qPerPallet = null;
+            let numPallets = null;
+            let qty = null;
+
+            for (let i = 2; i < parts.length - 2; i++){
+              if (/^\d+$/.test(parts[i]) && /^\d+$/.test(parts[i+1]) && /^\d+$/.test(parts[i+2])){
+                qPerPallet = parseInt(parts[i], 10);
+                numPallets = parseInt(parts[i+1], 10);
+                qty = parseInt(parts[i+2], 10);
+                totalPallets += numPallets;
+                break;
+              }
             }
-          }
-          if (qPer==null || num==null || qty==null){ ignored++; continue; }
 
-          for (let i=0; i<num; i++){
-            const finalQty = (i === num-1) ? (qty - (qPer * (num-1))) : qPer;
-            out.push({ PONum:po_ref, Ref:ref, Part:product_code, Qty:String(finalQty), WH:wh, Bin:bin });
+            if (qPerPallet === null || numPallets === null || qty === null){
+              ignored++;
+              continue;
+            }
+
+            for (let i = 0; i < numPallets; i++){
+              const finalQty = (i === numPallets - 1)
+                ? (qty - (qPerPallet * (numPallets - 1)))
+                : qPerPallet;
+
+              data.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: finalQty, WH: wh, Bin: bin });
+            }
+
+            captured++;
+          }catch{
+            ignored++;
           }
-          captured++;
         }
       }
-      return { rows: out, metrics:{ totalLines: totalProductLines, captured, ignored, totalPallets, extraInfo:null } };
+
+      return { rows: data, totalLines: totalProductLines, captured, ignored, totalPallets, extraInfo: null };
     }
 
     async function processSacaExcel(ref, wh, bin, file){
       const buf = await readFileAsArrayBuffer(file);
-      const rows = excelToJsonRows(buf, 0, { defval:null });
-      const out = [];
-      let captured=0, ignored=0;
+      const rows = excelToJsonRows(buf, 0, { defval: null });
+
+      const data = [];
+      const totalLines = rows.length;
+      let captured = 0;
+      let ignored = 0;
 
       for (const r of rows){
-        const po_ref = r["Numero conferma"];
-        const product_code = r["Articolo esterno"];
-        const qty = r["Quantità spuntata"];
-        if (po_ref == null || product_code == null || qty == null){ ignored++; continue; }
-        out.push({ PONum:po_ref, Ref:ref, Part:product_code, Qty:String(qty), WH:wh, Bin:bin });
-        captured++;
+        try{
+          const po_ref = r["Numero conferma"];
+          const product_code = r["Articolo esterno"];
+          const qty = r["Quantità spuntata"];
+          if (po_ref == null || product_code == null || qty == null) throw new Error("Missing");
+          data.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: qty, WH: wh, Bin: bin });
+          captured++;
+        }catch{
+          ignored++;
+        }
       }
-      return { rows: out, metrics:{ totalLines: rows.length, captured, ignored, totalPallets:null, extraInfo:null } };
+
+      return { rows: data, totalLines, captured, ignored, totalPallets: null, extraInfo: null };
     }
 
     async function processItaldecorExcel(ref, wh, bin, file){
       const buf = await readFileAsArrayBuffer(file);
       const matrix = excelToMatrix(buf, 0);
-      const out = [];
-      let currentPO=null;
-      let total=0, captured=0, ignored=0;
+
+      const data = [];
+      let currentPO = null;
+      let totalProductLines = 0;
+      let captured = 0;
+      let ignored = 0;
 
       for (const row of matrix){
         const c0 = row[0];
         const c12 = row[12];
 
         if (typeof c0 === "string"){
-          const skip = ["Codice","Descrizione","SEGUE","DPS","TIR"];
-          if (skip.some(k => c0.includes(k))) continue;
+          const skipKeywords = ["Codice","Descrizione","SEGUE","DPS","TIR"];
+          if (skipKeywords.some(k => c0.includes(k))) continue;
+
           if (c0.includes("-->ORD. n.")){
             try{
               const after = c0.split("ORD. n.")[1];
               currentPO = after.split("/")[0].trim();
-            }catch{ currentPO=null; }
+            }catch{
+              currentPO = null;
+            }
           }
         }
 
         if (c0 != null && c12 != null){
-          total++;
+          totalProductLines++;
           try{
-            out.push({ PONum:currentPO, Ref:ref, Part:String(c0), Qty:String(c12), WH:wh, Bin:bin });
+            data.push({ PONum: currentPO, Ref: ref, Part: c0, Qty: c12, WH: wh, Bin: bin });
             captured++;
-          }catch{ ignored++; }
+          }catch{
+            ignored++;
+          }
         }
       }
-      return { rows: out, metrics:{ totalLines: total, captured, ignored, totalPallets:null, extraInfo:null } };
+
+      return { rows: data, totalLines: totalProductLines, captured, ignored, totalPallets: null, extraInfo: null };
     }
 
+    // Pieffe header detection + manual override
     function normaliseHeaderCell(v){
-      return String(v ?? "").trim().replace(/\s+/g," ").toLowerCase();
+      return String(v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
     }
-    function findHeaderRowIndex(matrix, required, maxScan=120){
-      const target = required.map(h=>h.toLowerCase());
-      const limit = Math.min(matrix.length, maxScan);
-      for (let r=0; r<limit; r++){
+
+    function findHeaderRowIndex(matrix, requiredHeaders, maxScanRows=120){
+      const target = requiredHeaders.map(h => h.toLowerCase());
+      const scanLimit = Math.min(matrix.length, maxScanRows);
+
+      for (let r = 0; r < scanLimit; r++){
         const row = matrix[r] || [];
         const norm = row.map(normaliseHeaderCell);
-        if (target.every(t => norm.includes(t))) return r;
+        const hasAll = target.every(t => norm.includes(t));
+        if (hasAll) return r;
       }
       return -1;
     }
@@ -962,250 +1112,211 @@
       const buf = await readFileAsArrayBuffer(file);
       const matrix = excelToMatrix(buf, 0);
 
-      const required = ["Your PO","Item Code","Qty"];
-      const overrideText = (pieffeHeaderOverride.value || "").trim();
+      const required = ["Your PO", "Item Code", "Qty"];
 
+      // Manual override: user enters Excel row number (1-based)
+      const overrideText = (pieffeHeaderOverride.value || "").trim();
       let headerRowIndex = -1;
       let extraInfo = null;
 
       if (overrideText){
-        const override = parseInt(overrideText,10);
-        if (!Number.isFinite(override) || override < 1) throw new Error("Pieffe override must be a row number (e.g. 22).");
+        const override = parseInt(overrideText, 10);
+        if (!Number.isFinite(override) || override < 1) {
+          throw new Error("Pieffe header override must be a positive Excel row number (e.g. 22).");
+        }
         headerRowIndex = override - 1;
-        if (headerRowIndex >= matrix.length) throw new Error("Pieffe override row is beyond the sheet.");
+        if (headerRowIndex >= matrix.length){
+          throw new Error(`Pieffe header override row ${override} is beyond the end of the sheet.`);
+        }
         extraInfo = `Header override used (row ${override})`;
       } else {
         headerRowIndex = findHeaderRowIndex(matrix, required, 120);
-        if (headerRowIndex === -1) throw new Error("Could not auto-detect Pieffe header row. Use override and try again.");
+        if (headerRowIndex === -1){
+          throw new Error("Could not auto-detect Pieffe header row containing: 'Your PO', 'Item Code', 'Qty'. Use the header row override box and try again.");
+        }
         extraInfo = `Header detected on row ${headerRowIndex + 1}`;
       }
 
       const header = (matrix[headerRowIndex] || []).map(h => String(h ?? "").trim());
-      const headerNorm = header.map(normaliseHeaderCell);
+      const headerNorm = header.map(h => normaliseHeaderCell(h));
 
-      const idxPO = headerNorm.indexOf("your po");
-      const idxItem = headerNorm.indexOf("item code");
+      const idxYourPO = headerNorm.indexOf("your po");
+      const idxItemCode = headerNorm.indexOf("item code");
       const idxQty = headerNorm.indexOf("qty");
 
-      if (idxPO === -1 || idxItem === -1 || idxQty === -1) throw new Error("Pieffe header row does not contain required columns.");
+      if (idxYourPO === -1 || idxItemCode === -1 || idxQty === -1){
+        // If override row is wrong, message should be explicit
+        throw new Error(`Pieffe header row (row ${headerRowIndex + 1}) does not contain the required columns: 'Your PO', 'Item Code', 'Qty'.`);
+      }
 
-      const dataPart = matrix.slice(headerRowIndex + 1).filter(r => (r||[]).some(v => v != null && String(v).trim() !== ""));
+      const dataRows = matrix.slice(headerRowIndex + 1).filter(r => (r || []).some(v => v != null && String(v).trim() !== ""));
+      const totalLines = dataRows.length;
+
       const out = [];
-      let captured=0, ignored=0;
+      let captured = 0;
+      let ignored = 0;
 
-      for (const row of dataPart){
-        const po = row[idxPO];
-        const item = row[idxItem];
-        const qty = row[idxQty];
-        if (po == null || item == null || qty == null){ ignored++; continue; }
-        out.push({ PONum:po, Ref:ref, Part:item, Qty:String(qty), WH:wh, Bin:bin });
-        captured++;
+      for (const row of dataRows){
+        try{
+          const po_ref = row[idxYourPO];
+          const product_code = row[idxItemCode];
+          const qty = row[idxQty];
+          if (po_ref == null || product_code == null || qty == null) throw new Error("Missing");
+          out.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: qty, WH: wh, Bin: bin });
+          captured++;
+        }catch{
+          ignored++;
+        }
       }
 
-      return { rows: out, metrics:{ totalLines: dataPart.length, captured, ignored, totalPallets:null, extraInfo } };
+      return { rows: out, totalLines, captured, ignored, totalPallets: null, extraInfo };
     }
 
     // -----------------------------
-    // File validation
+    // History
     // -----------------------------
-    function setSelectedFile(file){
-      if (!selectedSupplier) throw new Error("Select supplier first.");
-      const name = (file?.name || "").toLowerCase();
-      const allowed = supplierConfig[selectedSupplier].accept;
-      if (!allowed.some(ext => name.endsWith(ext))) {
-        throw new Error(`Wrong file type for ${selectedSupplier}. Expected: ${allowed.join(", ")}`);
+    function loadHistory(){
+      try{
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr;
+      }catch{
+        return [];
       }
-      selectedFile = file;
-      updateFileUI();
-      updateButtons();
-      setStatus("File selected", "Click Process.", false, null, "Idle");
     }
 
-    // -----------------------------
-    // Editor
-    // -----------------------------
-    let editorDraftRows = [];
-    let dragFromIndex = null;
-
-    function defaultRowTemplate(){
-      const { ref, wh, bin } = normaliseInputs();
-      return { PONum:"", Ref:ref||"", Part:"", Qty:"", WH:wh||"", Bin:bin||"" };
-    }
-
-    function openEditor(){
-      editorDraftRows = dataRows.map(r => ({
-        PONum:String(r.PONum??""), Ref:String(r.Ref??""), Part:String(r.Part??""),
-        Qty:String(r.Qty??""), WH:String(r.WH??""), Bin:String(r.Bin??"")
-      }));
-      renderEditorTable();
-      editorRowKpi.textContent = String(editorDraftRows.length);
-      editorOverlay.classList.add("show");
-      setTimeout(() => {
-        const first = editorBody.querySelector("input");
-        if (first) first.focus();
-      }, 0);
-    }
-
-    function closeEditor(){
-      editorOverlay.classList.remove("show");
-      editorDraftRows = [];
-    }
-
-    function renderEditorTable(){
-      editorBody.innerHTML = "";
-
-      for (let i=0; i<editorDraftRows.length; i++){
-        const r = editorDraftRows[i];
-        const tr = document.createElement("tr");
-        tr.setAttribute("draggable","true");
-        tr.setAttribute("data-idx", String(i));
-
-        tr.innerHTML = `
-          <td><div class="dragHandle" title="Drag to move">⋮⋮</div></td>
-          <td><input class="cellInput" data-row="${i}" data-key="PONum" value="${escapeHtml(r.PONum)}"></td>
-          <td><input class="cellInput" data-row="${i}" data-key="Ref" value="${escapeHtml(r.Ref)}"></td>
-          <td><input class="cellInput" data-row="${i}" data-key="Part" value="${escapeHtml(r.Part)}"></td>
-          <td><input class="cellInput qty" inputmode="numeric" data-row="${i}" data-key="Qty" value="${escapeHtml(r.Qty)}"></td>
-          <td><input class="cellInput" data-row="${i}" data-key="WH" value="${escapeHtml(r.WH)}"></td>
-          <td><input class="cellInput" data-row="${i}" data-key="Bin" value="${escapeHtml(r.Bin)}"></td>
-          <td style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="rowBtn" type="button" data-action="up" data-i="${i}" ${i===0?"disabled":""}>↑</button>
-            <button class="rowBtn" type="button" data-action="down" data-i="${i}" ${i===editorDraftRows.length-1?"disabled":""}>↓</button>
-            <button class="rowBtn" type="button" data-action="dup" data-i="${i}">Duplicate</button>
-            <button class="rowBtn" type="button" data-action="addAfter" data-i="${i}">Add after</button>
-            <button class="rowBtn danger" type="button" data-action="del" data-i="${i}">Delete</button>
-          </td>
-        `;
-        editorBody.appendChild(tr);
+    function saveHistory(arr){
+      try{
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+      }catch{
+        // Ignore storage failures (private mode etc.)
       }
-
-      // inputs
-      editorBody.querySelectorAll(".cellInput").forEach(inp => {
-        inp.addEventListener("input", () => {
-          const rowIdx = parseInt(inp.getAttribute("data-row"),10);
-          const key = inp.getAttribute("data-key");
-          if (!Number.isFinite(rowIdx) || !key) return;
-
-          if (key === "Qty"){
-            // digits only
-            const cleaned = inp.value.replace(/[^\d]/g,"");
-            if (inp.value !== cleaned) inp.value = cleaned;
-            inp.classList.toggle("invalid", inp.value.trim() !== "" && !isDigitsOnly(inp.value));
-          }
-
-          editorDraftRows[rowIdx][key] = inp.value;
-        });
-      });
-
-      // row actions
-      editorBody.querySelectorAll("button[data-action]").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const action = btn.getAttribute("data-action");
-          const i = parseInt(btn.getAttribute("data-i"),10);
-          if (!Number.isFinite(i)) return;
-
-          if (action === "del"){ editorDraftRows.splice(i,1); renderEditorTable(); editorRowKpi.textContent = String(editorDraftRows.length); return; }
-          if (action === "dup"){ editorDraftRows.splice(i+1,0,{...editorDraftRows[i]}); renderEditorTable(); editorRowKpi.textContent = String(editorDraftRows.length); return; }
-          if (action === "addAfter"){ editorDraftRows.splice(i+1,0,defaultRowTemplate()); renderEditorTable(); editorRowKpi.textContent = String(editorDraftRows.length); return; }
-          if (action === "up" && i>0){ const t=editorDraftRows[i-1]; editorDraftRows[i-1]=editorDraftRows[i]; editorDraftRows[i]=t; renderEditorTable(); return; }
-          if (action === "down" && i<editorDraftRows.length-1){ const t=editorDraftRows[i+1]; editorDraftRows[i+1]=editorDraftRows[i]; editorDraftRows[i]=t; renderEditorTable(); return; }
-        });
-      });
-
-      // drag and drop reorder
-      const rowsEls = editorBody.querySelectorAll("tr[draggable='true']");
-      rowsEls.forEach(tr => {
-        tr.addEventListener("dragstart", (e) => {
-          dragFromIndex = parseInt(tr.getAttribute("data-idx"),10);
-          tr.classList.add("dragging");
-          e.dataTransfer.effectAllowed = "move";
-          try{ e.dataTransfer.setData("text/plain", String(dragFromIndex)); }catch{}
-        });
-        tr.addEventListener("dragend", () => {
-          dragFromIndex = null;
-          rowsEls.forEach(r => r.classList.remove("dragging","dropTarget"));
-        });
-        tr.addEventListener("dragover", (e) => {
-          e.preventDefault();
-          tr.classList.add("dropTarget");
-        });
-        tr.addEventListener("dragleave", () => tr.classList.remove("dropTarget"));
-        tr.addEventListener("drop", (e) => {
-          e.preventDefault();
-          tr.classList.remove("dropTarget");
-          let from = dragFromIndex;
-          if (!Number.isFinite(from)) from = parseInt(e.dataTransfer.getData("text/plain"),10);
-          const to = parseInt(tr.getAttribute("data-idx"),10);
-          if (!Number.isFinite(from) || !Number.isFinite(to) || from===to) return;
-
-          const [moved] = editorDraftRows.splice(from,1);
-          editorDraftRows.splice(to,0,moved);
-          renderEditorTable();
-        });
-      });
     }
 
-    // -----------------------------
-    // Processing + export
-    // -----------------------------
-    async function processFile(){
-      const { ref, wh, bin } = normaliseInputs();
-      if (!selectedSupplier) throw new Error("Select supplier first.");
-      if (!selectedFile) throw new Error("Choose a file first.");
-      if (!ref || !wh || !bin) throw new Error("Ref, WH and Bin are required.");
-
-      setStatus("Processing…", "Reading file and building table.", true, "warn", "Processing");
-      const result = await supplierConfig[selectedSupplier].processor(ref, wh, bin, selectedFile);
-
-      setStatus("Processed", `Loaded ${result.rows.length} rows. Edit table if needed.`, false, "ok", "Ready");
-      setDataRows(result.rows, result.metrics);
+    function addHistoryItem(item){
+      const history = loadHistory();
+      history.unshift(item);
+      if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
+      saveHistory(history);
+      renderHistory();
     }
 
-    function generateAndDownload(){
-      const { ref } = normaliseInputs();
-      if (!dataRows.length) return;
+    function renderHistory(){
+      const history = loadHistory();
+      historyCount.textContent = `${history.length} run${history.length === 1 ? "" : "s"}`;
 
-      const err = validateRowsForExport(dataRows);
-      if (err){
-        alert(err + "\n\nOpen Edit table and fix it.");
+      exportHistoryBtn.disabled = history.length === 0;
+      clearHistoryBtn.disabled = history.length === 0;
+
+      if (history.length === 0){
+        historyEmpty.classList.remove("hidden");
+        historyTable.classList.add("hidden");
+        historyBody.innerHTML = "";
         return;
       }
 
-      const csvText = toCsv(dataRows);
-      downloadCsv(csvText, `${(ref || "REF")}.csv`);
-      setStatus("Downloaded", "CSV downloaded.", false, "ok", "Done");
+      historyEmpty.classList.add("hidden");
+      historyTable.classList.remove("hidden");
+      historyBody.innerHTML = "";
+
+      for (const h of history){
+        const tr = document.createElement("tr");
+        const pallets = (h.totalPallets == null ? "—" : String(h.totalPallets));
+        const outName = escapeHtml(h.outputName || "");
+        const canRedownload = Boolean(h.csvText);
+
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(h.when)}</td>
+          <td>${escapeHtml(h.supplier)}</td>
+          <td>${escapeHtml(h.inputFile)}</td>
+          <td class="mono">${outName}</td>
+          <td>${escapeHtml(h.totalLines)}</td>
+          <td>${escapeHtml(h.captured)}</td>
+          <td>${escapeHtml(h.ignored)}</td>
+          <td>${escapeHtml(pallets)}</td>
+          <td>
+            <button class="linkBtn ${canRedownload ? "" : "danger"}" type="button" data-action="download" ${canRedownload ? "" : "disabled"}>
+              Download
+            </button>
+          </td>
+        `;
+
+        const btn = tr.querySelector('button[data-action="download"]');
+        if (btn && canRedownload){
+          btn.addEventListener("click", () => {
+            downloadCsv(h.csvText, h.outputName);
+          });
+        }
+
+        historyBody.appendChild(tr);
+      }
     }
 
-    function startBlankTable(){
-      const base = [];
-      for (let i=0; i<5; i++) base.push(defaultRowTemplate());
-      setDataRows(base, { totalLines:5, captured:5, ignored:0, totalPallets:null, extraInfo:"Blank table" });
-      openEditor();
-      setStatus("Blank table", "Enter rows, confirm changes, then download CSV.", false, "warn", "Manual");
+    function exportHistoryCsv(){
+      const history = loadHistory();
+      if (!history.length) return;
+
+      const headers = ["When","Supplier","InputFile","OutputName","TotalLines","Captured","Ignored","TotalPallets","ExtraInfo"];
+      const escapeCsv = (v) => {
+        const s = String(v ?? "");
+        if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+        return s;
+      };
+      const lines = [];
+      lines.push(headers.join(","));
+      for (const h of history){
+        lines.push(headers.map(k => escapeCsv(h[toCamel(k)] ?? h[k] ?? "")).join(","));
+      }
+
+      const text = lines.join("\r\n");
+      downloadCsv(text, `GoodsIn_History_${new Date().toISOString().slice(0,10)}.csv`);
     }
 
-    function clearFile(){
-      selectedFile = null;
-      fileInput.value = "";
+    function toCamel(s){
+      // "Total Lines" style not used; keep for safety
+      return s.replace(/\s+(.)/g, (_,c)=>c.toUpperCase()).replace(/^(.)/, (_,c)=>c.toLowerCase());
+    }
+
+    function clearHistory(){
+      const ok = confirm("Clear history log on this device/browser?");
+      if (!ok) return;
+      saveHistory([]);
+      renderHistory();
+    }
+
+    // -----------------------------
+    // Drag & Drop + file selection
+    // -----------------------------
+    function setSelectedFile(file){
+      // Validate extension against accept list (staff-proof)
+      if (!selectedSupplier){
+        throw new Error("Choose a supplier first, then select the file.");
+      }
+
+      const accept = supplierConfig[selectedSupplier].accept.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+      const name = (file?.name || "").toLowerCase();
+
+      const ok = accept.some(ext => name.endsWith(ext));
+      if (!ok){
+        throw new Error(`Wrong file type for ${selectedSupplier}. Expected: ${supplierConfig[selectedSupplier].accept}`);
+      }
+
+      selectedFile = file;
       updateFileUI();
       updateButtons();
-      setStatus("File cleared", "Choose another file or use Blank table.", false, null, "Idle");
+      clearResults(); // new file -> clear old results
+      setStatus("File selected", "Ready to process (if fields are filled).", false, null, "Idle");
     }
 
-    function resetAll(){
-      selectedSupplier = null;
-      selectedFile = null;
-      supplierButtons.forEach(b => b.classList.remove("primary"));
-      selectedSupplierPill.textContent = "None selected";
-      rightTitle.textContent = "Upload & Process";
-      refInput.value = ""; whInput.value=""; binInput.value="";
-      pieffeHeaderOverride.value = "";
-      updatePieffeOverrideUI();
-      updateFileUI();
-      clearKpis();
-      setDataRows([], null);
-      updateOutputNameHint();
-      setStatus("Waiting", "Select supplier or use Blank table.", false, null, "Idle");
+    function handleFilesFromEvent(files){
+      if (!files || !files.length) return;
+      try{
+        setSelectedFile(files[0]);
+      }catch(err){
+        setStatus("Error", err?.message || "Could not select file.", false, "bad", "Error");
+      }
     }
 
     // -----------------------------
@@ -1214,139 +1325,188 @@
     supplierButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         const supplier = btn.getAttribute("data-supplier");
-        selectedSupplier = supplier;
+        if (!supplierConfig[supplier]) return;
 
+        selectedSupplier = supplier;
         supplierButtons.forEach(b => b.classList.remove("primary"));
         btn.classList.add("primary");
 
         selectedSupplierPill.textContent = supplier;
-        rightTitle.textContent = supplier;
+        rightTitle.textContent = `2) ${supplierConfig[supplier].title}`;
 
+        // Clear file/results when changing supplier (staff-proof)
         selectedFile = null;
         fileInput.value = "";
+        clearResults();
+
         updatePieffeOverrideUI();
         updateFileUI();
+        updateOutputNameHint();
         updateButtons();
-        setStatus("Supplier selected", "Choose a file or use Blank table.", false, null, "Idle");
+
+        setStatus("Supplier selected", "Fill Ref/WH/Bin, then choose the correct file type for this supplier.", false, null, "Idle");
       });
     });
 
+    // Uppercase + button gating
     [refInput, whInput, binInput].forEach(inp => {
-      inp.addEventListener("input", () => { normaliseInputs(); updateOutputNameHint(); updateButtons(); });
-      inp.addEventListener("blur", () => { normaliseInputs(); updateOutputNameHint(); updateButtons(); });
+      inp.addEventListener("input", () => {
+        normaliseInputs();
+        updateOutputNameHint();
+        updateButtons();
+      });
+      inp.addEventListener("blur", () => {
+        normaliseInputs();
+        updateButtons();
+      });
     });
-    pieffeHeaderOverride.addEventListener("input", updatePieffeOverrideUI);
+
+    pieffeHeaderOverride.addEventListener("input", () => {
+      updatePieffeOverrideUI();
+    });
 
     chooseFileBtn.addEventListener("click", () => {
       if (!selectedSupplier){
-        setStatus("Select supplier first", "Or use Blank table.", false, "warn", "Waiting");
+        setStatus("Select supplier first", "Choose the supplier on the left before selecting a file.", false, "warn", "Waiting");
         return;
       }
-      // set accept based on supplier
-      fileInput.accept = supplierConfig[selectedSupplier].accept.join(",");
       fileInput.click();
     });
 
     fileInput.addEventListener("change", (e) => {
-      const f = e.target.files?.[0];
-      if (!f) return;
-      try{ setSelectedFile(f); }
-      catch(err){ setStatus("Error", err.message, false, "bad", "Error"); }
+      handleFilesFromEvent(e.target.files);
     });
 
-    // Drag & drop
-    ["dragenter","dragover"].forEach(ev => dropZone.addEventListener(ev, (e) => {
-      e.preventDefault(); e.stopPropagation();
-      dropZone.classList.add("isDrag");
-    }));
-    ["dragleave","drop"].forEach(ev => dropZone.addEventListener(ev, (e) => {
-      e.preventDefault(); e.stopPropagation();
-      dropZone.classList.remove("isDrag");
-    }));
+    // Drop zone events
+    ["dragenter","dragover"].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add("isDrag");
+      });
+    });
+    ["dragleave","drop"].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove("isDrag");
+      });
+    });
     dropZone.addEventListener("drop", (e) => {
-      if (!selectedSupplier){
-        setStatus("Select supplier first", "Or use Blank table.", false, "warn", "Waiting");
-        return;
-      }
-      const f = e.dataTransfer?.files?.[0];
-      if (!f) return;
-      try{ setSelectedFile(f); }
-      catch(err){ setStatus("Error", err.message, false, "bad", "Error"); }
+      handleFilesFromEvent(e.dataTransfer?.files);
     });
 
-    blankTableBtn.addEventListener("click", startBlankTable);
+    // Accessibility: click/enter on drop zone triggers choose file
+    dropZone.addEventListener("click", (e) => {
+      // Avoid double triggering when clicking the button
+      if (e.target === chooseFileBtn) return;
+      chooseFileBtn.click();
+    });
+    dropZone.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        chooseFileBtn.click();
+      }
+    });
+
     clearFileBtn.addEventListener("click", clearFile);
     resetBtn.addEventListener("click", resetAll);
 
+    exportHistoryBtn.addEventListener("click", exportHistoryCsv);
+    clearHistoryBtn.addEventListener("click", clearHistory);
+
+    downloadBtn.addEventListener("click", () => {
+      if (!lastCsvText || !lastOutputName) return;
+      downloadCsv(lastCsvText, lastOutputName);
+    });
+
+    // Main processing
     processBtn.addEventListener("click", async () => {
-      try{ await processFile(); }
-      catch(err){ setStatus("Error", err.message || "Something went wrong.", false, "bad", "Error"); }
-    });
+      try{
+        const { ref, wh, bin, file } = validateBasics();
 
-    editBtn.addEventListener("click", () => {
-      if (!dataRows.length) return;
-      openEditor();
-    });
+        setStatus("Processing…", "Reading file and generating CSV rows.", true, "warn", "Processing");
 
-    generateBtn.addEventListener("click", generateAndDownload);
+        // Ensure Pieffe override UI is consistent
+        updatePieffeOverrideUI();
 
-    // Editor controls
-    editorCloseX.addEventListener("click", closeEditor);
-    cancelEditBtn.addEventListener("click", closeEditor);
-    confirmEditBtn.addEventListener("click", () => {
-      // clean + apply
-      const cleaned = editorDraftRows
-        .map(r => ({
-          PONum: String(r.PONum ?? "").trim(),
-          Ref: String(r.Ref ?? "").trim().toUpperCase(),
-          Part: String(r.Part ?? "").trim(),
-          Qty: String(r.Qty ?? "").trim(),
-          WH: String(r.WH ?? "").trim().toUpperCase(),
-          Bin: String(r.Bin ?? "").trim().toUpperCase()
-        }))
-        .filter(r => Object.values(r).some(v => String(v).trim() !== ""));
-      setDataRows(cleaned, lastMetrics);
-      closeEditor();
-      setStatus("Table updated", "Now you can download the CSV.", false, "ok", "Ready");
-    });
+        const cfg = supplierConfig[selectedSupplier];
+        const result = await cfg.processor(ref, wh, bin, file);
 
-    addRowBtn.addEventListener("click", () => {
-      editorDraftRows.push(defaultRowTemplate());
-      renderEditorTable();
-      editorRowKpi.textContent = String(editorDraftRows.length);
-    });
-    add5RowsBtn.addEventListener("click", () => {
-      for (let i=0; i<5; i++) editorDraftRows.push(defaultRowTemplate());
-      renderEditorTable();
-      editorRowKpi.textContent = String(editorDraftRows.length);
-    });
-    fillDefaultsBtn.addEventListener("click", () => {
-      const { ref, wh, bin } = normaliseInputs();
-      for (const r of editorDraftRows){
-        if (!String(r.Ref ?? "").trim() && ref) r.Ref = ref;
-        if (!String(r.WH ?? "").trim() && wh) r.WH = wh;
-        if (!String(r.Bin ?? "").trim() && bin) r.Bin = bin;
+        lastRows = result.rows;
+        lastCsvText = toCsv(result.rows);
+        lastOutputName = `${ref}.csv`;
+
+        kpiTotal.textContent = String(result.totalLines ?? 0);
+        kpiCaptured.textContent = String(result.captured ?? 0);
+        kpiIgnored.textContent = String(result.ignored ?? 0);
+        kpiPallets.textContent = (result.totalPallets == null ? "—" : String(result.totalPallets));
+
+        renderPreview(result.rows);
+        downloadBtn.disabled = result.rows.length === 0;
+
+        if (result.rows.length === 0){
+          setStatus(
+            "Done — no rows captured",
+            "Nothing matched the expected pattern. Double-check supplier + file selection.",
+            false,
+            "bad",
+            "No Data"
+          );
+        } else {
+          const extra = result.extraInfo ? ` (${result.extraInfo})` : "";
+          setStatus(
+            "Done",
+            `Generated ${result.rows.length} CSV rows. Click “Download CSV”.${extra}`,
+            false,
+            "ok",
+            "Ready"
+          );
+        }
+
+        // Add to history
+        addHistoryItem({
+          when: new Date().toLocaleString("en-GB"),
+          supplier: selectedSupplier,
+          inputFile: file.name,
+          outputName: lastOutputName,
+          totalLines: result.totalLines ?? 0,
+          captured: result.captured ?? 0,
+          ignored: result.ignored ?? 0,
+          totalPallets: result.totalPallets ?? null,
+          extraInfo: result.extraInfo ?? "",
+          csvText: lastCsvText
+        });
+
+      }catch(err){
+        setStatus("Error", err?.message || "Something went wrong.", false, "bad", "Error");
+      }finally{
+        spinner.classList.add("hidden");
+        updateButtons();
       }
-      renderEditorTable();
-    });
-    deleteAllRowsBtn.addEventListener("click", () => {
-      if (!confirm("Delete all rows?")) return;
-      editorDraftRows = [];
-      renderEditorTable();
-      editorRowKpi.textContent = "0";
     });
 
-    editorOverlay.addEventListener("click", (e) => { if (e.target === editorOverlay) closeEditor(); });
-    window.addEventListener("keydown", (e) => { if (e.key === "Escape" && editorOverlay.classList.contains("show")) closeEditor(); });
-
+    // -----------------------------
     // Init
-    setBadge(null, "Idle");
-    setStatus("Waiting", "Select supplier or use Blank table.", false, null, "Idle");
-    updateOutputNameHint();
-    updatePieffeOverrideUI();
-    updateFileUI();
-    setDataRows([], null);
-    updateButtons();
+    // -----------------------------
+    function init(){
+      setBadge(null, "Idle");
+      setStatus("Waiting", "Select supplier → fill Ref/WH/Bin → choose file → process.", false, null, "Idle");
+      updateOutputNameHint();
+      updatePieffeOverrideUI();
+      updateFileUI();
+      updateButtons();
+      renderHistory();
+    }
+
+    // Clean up blob urls on page unload (best effort)
+    window.addEventListener("beforeunload", () => {
+      for (const url of blobUrlsToRevoke){
+        try{ URL.revokeObjectURL(url); } catch {}
+      }
+    });
+
+    init();
   </script>
 </body>
 </html>
