@@ -8,8 +8,8 @@
   <!-- SheetJS (Excel) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <!-- PDF.js (PDF text extraction) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
+  <!-- PDF.js (NON-module build to avoid module/CORS issues) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.js"></script>
 
   <style>
     :root{
@@ -27,20 +27,17 @@
       --radius:16px;
       --focus: 0 0 0 4px rgba(147,197,253,.35);
     }
-
-    *{ box-sizing:border-box; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
+    *{ box-sizing:border-box; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
     body{ margin:0; background:var(--bg); color:var(--text); }
 
     .wrap{ max-width: 1280px; margin: 24px auto; padding: 0 16px 28px; }
     header{
       display:flex; gap:14px; align-items:flex-start; justify-content:space-between;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
+      margin-bottom: 14px; flex-wrap: wrap;
     }
     .brand{ display:flex; flex-direction:column; gap:6px; }
     .brand h1{ margin:0; font-size: 20px; }
     .brand p{ margin:0; color:var(--muted); font-size: 13px; line-height: 1.35; }
-
     .pill{
       font-size: 12px; color: var(--muted);
       border:1px solid var(--border);
@@ -49,16 +46,10 @@
       background:#fafafa;
       white-space: nowrap;
     }
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace; }
 
-    .grid{
-      display:grid;
-      grid-template-columns: 380px 1fr;
-      gap: 14px;
-    }
-    @media (max-width: 980px){
-      .grid{ grid-template-columns: 1fr; }
-    }
+    .grid{ display:grid; grid-template-columns: 380px 1fr; gap: 14px; }
+    @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
 
     .card{
       background:var(--card);
@@ -70,14 +61,11 @@
 
     .sectionTitle{
       display:flex; align-items:center; justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
+      gap: 10px; margin-bottom: 10px; flex-wrap: wrap;
     }
     .sectionTitle h2{ margin:0; font-size: 15px; }
 
     .supplierList{ display:flex; flex-direction:column; gap:10px; }
-
     .btn{
       appearance:none;
       border:1px solid var(--border);
@@ -85,11 +73,8 @@
       border-radius: 12px;
       padding: 12px 12px;
       text-align:left;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      cursor:pointer;
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 10px; cursor:pointer;
       transition: transform .05s ease, border-color .15s ease, background .15s ease, opacity .15s ease;
       user-select:none;
     }
@@ -100,21 +85,10 @@
       border-color: transparent;
       color:#fff;
     }
-    .btn.primary:hover{ filter: brightness(1.02); }
     .btn:disabled{ opacity:.5; cursor:not-allowed; transform:none !important; }
 
     .btn .name{ font-weight: 800; }
     .btn .meta{ font-size:12px; opacity:.85; line-height: 1.25; }
-
-    .form{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
-      margin-top: 8px;
-    }
-    @media (max-width: 760px){
-      .form{ grid-template-columns: 1fr; }
-    }
 
     label{ display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
     input[type="text"], input[type="number"]{
@@ -131,50 +105,31 @@
       box-shadow: var(--focus);
     }
 
-    .twoCol{
+    .form{
       display:grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 12px;
-      margin-top: 10px;
-      align-items: end;
+      margin-top: 8px;
     }
-    @media (max-width: 760px){
-      .twoCol{ grid-template-columns: 1fr; }
-    }
+    @media (max-width: 760px){ .form{ grid-template-columns: 1fr; } }
+
+    .twoCol{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; align-items:end; }
+    @media (max-width: 760px){ .twoCol{ grid-template-columns: 1fr; } }
 
     .dropZone{
       border:2px dashed #cbd5e1;
       border-radius: 14px;
       background: #fbfbfd;
       padding: 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 12px;
-      min-height: 74px;
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 12px; min-height: 74px;
       transition: border-color .15s ease, background .15s ease;
     }
     .dropZone strong{ display:block; }
-    .dropZone .dzText{
-      display:flex; flex-direction:column; gap:4px;
-      min-width: 0;
-    }
-    .dropZone .dzSub{
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.25;
-    }
-    .dropZone .dzFile{
-      color: #374151;
-      font-size: 12px;
-      margin-top: 4px;
-      word-break: break-word;
-    }
-    .dropZone.isDrag{
-      border-color:#60a5fa;
-      background: rgba(147,197,253,.18);
-    }
-
+    .dropZone .dzText{ display:flex; flex-direction:column; gap:4px; min-width: 0; }
+    .dropZone .dzSub{ color: var(--muted); font-size: 12px; line-height: 1.25; }
+    .dropZone .dzFile{ color: #374151; font-size: 12px; margin-top: 4px; word-break: break-word; }
+    .dropZone.isDrag{ border-color:#60a5fa; background: rgba(147,197,253,.18); }
     .fileHidden{ display:none; }
     .fileBtn{
       border: 1px solid var(--border);
@@ -186,11 +141,7 @@
     }
     .fileBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
 
-    .actions{
-      display:flex; gap:10px; flex-wrap:wrap;
-      margin-top: 12px;
-      align-items:center;
-    }
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px; align-items:center; }
     .actions .btn{ width:auto; padding: 11px 12px; text-align:center; }
 
     .statusRow{
@@ -223,9 +174,8 @@
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
     }
-    @media (max-width: 980px){
-      .summary{ grid-template-columns: repeat(2, 1fr); }
-    }
+    @media (max-width: 980px){ .summary{ grid-template-columns: repeat(2, 1fr); } }
+
     .kpi{
       border:1px solid var(--border);
       background:#fff;
@@ -276,61 +226,19 @@
       line-height: 1.5;
     }
 
-    .historyTop{
-      display:flex; align-items:center; justify-content:space-between;
-      gap: 10px; flex-wrap: wrap;
-    }
-    .historyActions{ display:flex; gap: 10px; flex-wrap: wrap; }
-    .linkBtn{
-      appearance:none;
-      border: 1px solid var(--border);
-      background:#fff;
-      border-radius: 12px;
-      padding: 8px 10px;
-      cursor:pointer;
-      font-size: 12px;
-    }
-    .linkBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
-    .historyEmpty{
-      margin-top: 10px;
-      border:1px dashed var(--border);
-      border-radius: 12px;
-      background:#fbfbfb;
-      padding: 12px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .helpBox{
-      border: 1px solid var(--border);
+    /* Simple staff instructions */
+    .steps{
+      border:1px solid var(--border);
       border-radius: 14px;
-      background: #fff;
+      background:#fff;
       padding: 12px;
       margin-top: 10px;
     }
-    .helpBox h3{ margin:0 0 6px 0; font-size: 13px; }
-    .helpBox ul{ margin:0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.45; }
-    .helpBox li{ margin: 4px 0; }
+    .steps h3{ margin:0 0 8px 0; font-size: 13px; }
+    .steps ol{ margin:0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .steps li{ margin: 4px 0; }
 
-    .danger{
-      border-color: rgba(239,68,68,.35) !important;
-      color: var(--bad);
-      background: rgba(239,68,68,.06);
-    }
-
-    .previewHeader{
-      margin-top: 12px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .previewHeader .rightActions{
-      display:flex; gap:10px; flex-wrap: wrap; align-items:center;
-    }
-
-    /* --- Modal editor --- */
+    /* Editor modal */
     .modalOverlay{
       position: fixed;
       inset: 0;
@@ -364,36 +272,11 @@
     }
     .modalHeader h3{ margin:0; font-size: 15px; }
     .modalHeader p{ margin:4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.35; }
-    .modalHeader .mhRight{
-      display:flex; gap:10px; flex-wrap: wrap; align-items:center;
-    }
+
     .modalBody{
       padding: 12px 14px;
       overflow:auto;
       background: #fbfbfb;
-    }
-    .editorToolbar{
-      display:flex;
-      gap:10px;
-      flex-wrap: wrap;
-      align-items:center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    .editorToolbar .left{
-      display:flex; gap:10px; flex-wrap: wrap; align-items:center;
-    }
-    .editorToolbar .right{
-      display:flex; gap:10px; flex-wrap: wrap; align-items:center;
-    }
-    .editorKpi{
-      font-size:12px;
-      color: var(--muted);
-      border:1px solid var(--border);
-      background:#fff;
-      border-radius: 999px;
-      padding: 6px 10px;
-      white-space: nowrap;
     }
     .modalFooter{
       padding: 12px 14px;
@@ -403,41 +286,6 @@
       gap: 10px;
       flex-wrap: wrap;
       background:#fff;
-    }
-    .editorTable{
-      width:100%;
-      border-collapse: collapse;
-      border-radius: 14px;
-      overflow:hidden;
-      border:1px solid var(--border);
-      background:#fff;
-    }
-    .editorTable thead th{
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-
-    .cellInput{
-      width:100%;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 8px;
-      font-size: 13px;
-      outline:none;
-      background:#fff;
-    }
-    .cellInput:focus{
-      border-color:#93c5fd;
-      box-shadow: var(--focus);
-    }
-    .cellInput.qty{
-      text-align: right;
-    }
-    .cellInput.invalid{
-      border-color: rgba(239,68,68,.6);
-      box-shadow: 0 0 0 4px rgba(239,68,68,.12);
-      background: rgba(239,68,68,.04);
     }
 
     .rowBtn{
@@ -453,6 +301,32 @@
     .rowBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
     .rowBtn:disabled{ opacity:.5; cursor:not-allowed; }
 
+    .editorTable{
+      width:100%;
+      border-collapse: collapse;
+      border-radius: 14px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      background:#fff;
+    }
+    .editorTable thead th{ position: sticky; top: 0; z-index: 1; }
+    .cellInput{
+      width:100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 8px;
+      font-size: 13px;
+      outline:none;
+      background:#fff;
+    }
+    .cellInput:focus{ border-color:#93c5fd; box-shadow: var(--focus); }
+    .cellInput.qty{ text-align: right; }
+    .cellInput.invalid{
+      border-color: rgba(239,68,68,.6);
+      box-shadow: 0 0 0 4px rgba(239,68,68,.12);
+      background: rgba(239,68,68,.04);
+    }
+
     .dragHandle{
       display:inline-flex;
       align-items:center;
@@ -465,28 +339,10 @@
       cursor: grab;
       user-select:none;
     }
-    .dragHandle:active{ cursor: grabbing; }
-    tr.dragging{
-      opacity: .6;
-      outline: 2px dashed #93c5fd;
-    }
-    tr.dropTarget{
-      outline: 2px solid rgba(37,99,235,.35);
-    }
+    tr.dragging{ opacity: .6; outline: 2px dashed #93c5fd; }
+    tr.dropTarget{ outline: 2px solid rgba(37,99,235,.35); }
 
-    .toast{
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: #fff;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.35;
-    }
-    .toast.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.06); color: #7f1d1d; }
-    .toast.ok{ border-color: rgba(22,163,74,.25); background: rgba(22,163,74,.07); color: #14532d; }
-    .toast.warn{ border-color: rgba(245,158,11,.25); background: rgba(245,158,11,.08); color: #7c2d12; }
+    .danger{ border-color: rgba(239,68,68,.35) !important; color: var(--bad); background: rgba(239,68,68,.06); }
   </style>
 </head>
 
@@ -496,18 +352,18 @@
       <div class="brand">
         <h1>Goods In CSV Generator</h1>
         <p>
-          Static web version • runs on GitHub Pages • files stay on your computer • output columns:
+          Output columns:
           <span class="mono">PONum, Ref, Part, Qty, WH, Bin</span>
         </p>
       </div>
-      <div class="pill">CSV: <span class="mono">UTF-8 + BOM</span> (Excel-friendly)</div>
+      <div class="pill">CSV: <span class="mono">UTF-8 + BOM</span></div>
     </header>
 
     <div class="grid">
       <!-- LEFT -->
       <div class="card">
         <div class="sectionTitle">
-          <h2>1) Choose supplier</h2>
+          <h2>Supplier</h2>
           <span class="pill" id="selectedSupplierPill">None selected</span>
         </div>
 
@@ -515,75 +371,76 @@
           <button class="btn" data-supplier="Saca">
             <div>
               <div class="name">Saca</div>
-              <div class="meta">Excel • Numero conferma / Articolo esterno / Quantità spuntata</div>
+              <div class="meta">Excel</div>
             </div><span>→</span>
           </button>
 
           <button class="btn" data-supplier="Decorative Panels">
             <div>
               <div class="name">Decorative Panels</div>
-              <div class="meta">PDF • splits qty by pallet</div>
+              <div class="meta">PDF</div>
             </div><span>→</span>
           </button>
 
           <button class="btn" data-supplier="Italdecor">
             <div>
               <div class="name">Italdecor</div>
-              <div class="meta">Excel • PO from “-->ORD. n.” • Part col A • Qty col M</div>
+              <div class="meta">Excel</div>
             </div><span>→</span>
           </button>
 
           <button class="btn" data-supplier="Pieffe Union">
             <div>
               <div class="name">Pieffe Union</div>
-              <div class="meta">Excel • header detect + override</div>
+              <div class="meta">Excel (header detect + override)</div>
             </div><span>→</span>
           </button>
 
           <button class="btn" data-supplier="Macfarlane">
             <div>
               <div class="name">Macfarlane</div>
-              <div class="meta">PDF • stops at “Outstanding goods”</div>
+              <div class="meta">PDF</div>
             </div><span>→</span>
           </button>
 
           <button class="btn primary" id="resetBtn" type="button">
             <div>
               <div class="name">Reset</div>
-              <div class="meta">Clears supplier/file/results (history stays)</div>
+              <div class="meta">Clears screen</div>
             </div><span>⟲</span>
           </button>
         </div>
 
-        <div class="helpBox">
-          <h3>Editor upgrades</h3>
-          <ul>
-            <li><strong>Qty numeric only</strong> (invalid values highlighted + export blocked).</li>
-            <li><strong>Duplicate row</strong> to speed up repetitive entries.</li>
-            <li><strong>Add row after</strong> to insert rows in the right place.</li>
-            <li><strong>Move rows</strong> via drag handle (grab dots) or quick up/down buttons.</li>
-          </ul>
+        <div class="steps">
+          <h3>Instructions</h3>
+          <ol>
+            <li>Select supplier.</li>
+            <li>Enter Ref / WH / Bin.</li>
+            <li>Upload file then click <strong>Process</strong> (or use <strong>Blank table</strong>).</li>
+            <li>Click <strong>Edit table</strong> if you need changes.</li>
+            <li>Click <strong>Generate & Download CSV</strong>.</li>
+          </ol>
         </div>
       </div>
 
       <!-- RIGHT -->
       <div class="card">
         <div class="sectionTitle">
-          <h2 id="rightTitle">2) Upload file & generate CSV</h2>
+          <h2 id="rightTitle">Upload & Process</h2>
           <span class="badge" id="statusBadge">Idle</span>
         </div>
 
         <div class="form">
           <div>
-            <label for="ref">Delivery Ref <span class="mono">*</span></label>
+            <label for="ref">Delivery Ref *</label>
             <input id="ref" type="text" placeholder="e.g. SACAFAWB0558" autocomplete="off" />
           </div>
           <div>
-            <label for="wh">Warehouse (WH) <span class="mono">*</span></label>
+            <label for="wh">Warehouse (WH) *</label>
             <input id="wh" type="text" placeholder="e.g. 6Q" autocomplete="off" />
           </div>
           <div>
-            <label for="bin">Bin <span class="mono">*</span></label>
+            <label for="bin">Bin *</label>
             <input id="bin" type="text" placeholder="e.g. PRE" autocomplete="off" />
           </div>
         </div>
@@ -591,10 +448,8 @@
         <div class="twoCol hidden" id="pieffeOverrideRow">
           <div>
             <label for="pieffeHeaderOverride">Pieffe header row override (optional)</label>
-            <input id="pieffeHeaderOverride" type="number" min="1" step="1" placeholder="Leave blank to auto-detect" />
-            <div class="note" style="margin-top:6px;">
-              Enter the <strong>Excel row number</strong> where the header is (e.g. 22).
-            </div>
+            <input id="pieffeHeaderOverride" type="number" min="1" step="1" placeholder="e.g. 22" />
+            <div class="note" style="margin-top:6px;">Enter the Excel row number where the header is.</div>
           </div>
           <div>
             <label>&nbsp;</label>
@@ -603,9 +458,9 @@
         </div>
 
         <div class="twoCol">
-          <div class="dropZone" id="dropZone" role="button" tabindex="0" aria-label="File drop area">
+          <div class="dropZone" id="dropZone" role="button" tabindex="0">
             <div class="dzText">
-              <strong>3) Drop supplier file here (optional)</strong>
+              <strong>Drop file here (optional)</strong>
               <div class="dzSub" id="dropSub">Or click “Choose file”.</div>
               <div class="dzFile mono" id="fileName">No file selected</div>
             </div>
@@ -613,11 +468,9 @@
           </div>
 
           <div>
-            <label for="fileInput">Hidden file input</label>
+            <label>Hidden file input</label>
             <input id="fileInput" class="fileHidden" type="file" />
-            <div class="note">
-              Output name: <span class="mono" id="outputNameHint">REF.csv</span>
-            </div>
+            <div class="note">Output: <span class="mono" id="outputNameHint">REF.csv</span></div>
           </div>
         </div>
 
@@ -629,12 +482,12 @@
           <button class="btn danger" id="clearFileBtn" type="button" disabled>Clear file</button>
         </div>
 
-        <div class="statusRow" id="statusRow">
+        <div class="statusRow">
           <div class="statusText">
             <div id="statusLine"><strong>Status:</strong> Waiting</div>
-            <div class="small" id="statusDetail">Select supplier OR use Blank table. Enter Ref/WH/Bin. Upload file if needed.</div>
+            <div class="small" id="statusDetail">Select supplier or use Blank table.</div>
           </div>
-          <div id="spinner" class="spinner hidden" aria-label="Processing"></div>
+          <div id="spinner" class="spinner hidden"></div>
         </div>
 
         <div class="summary">
@@ -644,14 +497,9 @@
           <div class="kpi"><div class="k">Total Pallets</div><div class="v" id="kpiPallets">—</div></div>
         </div>
 
-        <div class="previewHeader">
-          <div class="pill">Preview (first 25 rows)</div>
-          <div class="rightActions">
-            <span class="pill">Rows: <span class="mono" id="rowCount">0</span></span>
-          </div>
-        </div>
+        <div class="note">Preview (first 25 rows). Rows: <span class="mono" id="rowCount">0</span></div>
 
-        <table id="previewTable" class="hidden" aria-label="Preview">
+        <table id="previewTable" class="hidden">
           <thead>
             <tr>
               <th>PONum</th><th>Ref</th><th>Part</th><th>Qty</th><th>WH</th><th>Bin</th>
@@ -659,75 +507,32 @@
           </thead>
           <tbody id="previewBody"></tbody>
         </table>
-
-        <!-- History -->
-        <div class="card" style="margin-top:14px; padding:14px;">
-          <div class="historyTop">
-            <div class="sectionTitle" style="margin:0;">
-              <h2>History log</h2>
-              <span class="pill" id="historyCount">0 runs</span>
-            </div>
-            <div class="historyActions">
-              <button class="linkBtn" id="exportHistoryBtn" type="button" disabled>Export history CSV</button>
-              <button class="linkBtn danger" id="clearHistoryBtn" type="button" disabled>Clear history</button>
-            </div>
-          </div>
-
-          <div id="historyEmpty" class="historyEmpty">No runs yet. Generate a CSV and it will appear here.</div>
-
-          <table id="historyTable" class="hidden" aria-label="History table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Supplier/Mode</th>
-                <th>Input file</th>
-                <th>Output</th>
-                <th>Total</th>
-                <th>Captured</th>
-                <th>Ignored</th>
-                <th>Pallets</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="historyBody"></tbody>
-          </table>
-
-          <div class="note">
-            History is stored in your browser on this device only.
-          </div>
-        </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal editor -->
-  <div class="modalOverlay" id="editorOverlay" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-label="Edit table">
+  <!-- Editor modal -->
+  <div class="modalOverlay" id="editorOverlay">
+    <div class="modal">
       <div class="modalHeader">
         <div>
           <h3>Edit table</h3>
-          <p id="editorSub">Edit fields, duplicate/insert rows, drag to reorder, then confirm changes.</p>
+          <p>Edit values, add/remove/duplicate rows, drag to reorder. Qty must be numeric.</p>
         </div>
-        <div class="mhRight">
-          <span class="editorKpi" id="editorRowKpi">Rows: 0</span>
-          <button class="rowBtn" id="editorCloseX" type="button">Close</button>
-        </div>
+        <button class="rowBtn" id="editorCloseX" type="button">Close</button>
       </div>
 
       <div class="modalBody">
-        <div class="editorToolbar">
-          <div class="left">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; margin-bottom:10px;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="rowBtn" id="addRowBtn" type="button">+ Add row</button>
             <button class="rowBtn" id="add5RowsBtn" type="button">+ Add 5 rows</button>
             <button class="rowBtn" id="fillDefaultsBtn" type="button">Fill blank Ref/WH/Bin</button>
-            <span class="editorKpi">Qty must be digits only (e.g. 12)</span>
           </div>
-          <div class="right">
-            <span class="editorKpi" id="editorIssuesKpi">Issues: 0</span>
-          </div>
+          <div class="pill">Rows: <span class="mono" id="editorRowKpi">0</span></div>
         </div>
 
-        <table class="editorTable" aria-label="Editor table">
+        <table class="editorTable">
           <thead>
             <tr>
               <th style="width:52px;">Move</th>
@@ -737,29 +542,29 @@
               <th style="width:120px;">Qty</th>
               <th style="width:120px;">WH</th>
               <th style="width:120px;">Bin</th>
-              <th style="width:310px;">Row actions</th>
+              <th style="width:310px;">Actions</th>
             </tr>
           </thead>
           <tbody id="editorBody"></tbody>
         </table>
-
-        <div id="editorToast" class="toast hidden"></div>
       </div>
 
       <div class="modalFooter">
-        <div class="pill" id="editorHint">Tip: Grab the dots to drag rows. Or use ↑ / ↓ for quick moves.</div>
+        <button class="rowBtn" id="cancelEditBtn" type="button">Cancel</button>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="rowBtn" id="cancelEditBtn" type="button">Cancel</button>
           <button class="rowBtn danger" id="deleteAllRowsBtn" type="button">Delete all rows</button>
-          <button class="rowBtn" id="confirmEditBtn" type="button" style="border-color: rgba(37,99,235,.35);">Confirm changes</button>
+          <button class="rowBtn" id="confirmEditBtn" type="button">Confirm changes</button>
         </div>
       </div>
     </div>
   </div>
 
-  <script type="module">
-    import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+  <script>
+    // PDF.js worker setup (global build)
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js";
+    }
 
     // -----------------------------
     // State
@@ -767,11 +572,8 @@
     let selectedSupplier = null;
     let selectedFile = null;
 
-    let dataRows = []; // working dataset
+    let dataRows = [];
     let lastMetrics = { totalLines:null, captured:null, ignored:null, totalPallets:null, extraInfo:null };
-
-    const HISTORY_KEY = "goodsin_csv_history_v3";
-    const MAX_HISTORY = 50;
 
     // -----------------------------
     // Elements
@@ -816,21 +618,10 @@
     const outputNameHint = document.getElementById("outputNameHint");
     const rowCount = document.getElementById("rowCount");
 
-    const historyCount = document.getElementById("historyCount");
-    const historyEmpty = document.getElementById("historyEmpty");
-    const historyTable = document.getElementById("historyTable");
-    const historyBody = document.getElementById("historyBody");
-    const exportHistoryBtn = document.getElementById("exportHistoryBtn");
-    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
-
     // Editor modal
     const editorOverlay = document.getElementById("editorOverlay");
     const editorBody = document.getElementById("editorBody");
     const editorRowKpi = document.getElementById("editorRowKpi");
-    const editorIssuesKpi = document.getElementById("editorIssuesKpi");
-    const editorSub = document.getElementById("editorSub");
-    const editorToast = document.getElementById("editorToast");
-
     const editorCloseX = document.getElementById("editorCloseX");
     const addRowBtn = document.getElementById("addRowBtn");
     const add5RowsBtn = document.getElementById("add5RowsBtn");
@@ -843,11 +634,11 @@
     // Supplier config
     // -----------------------------
     const supplierConfig = {
-      "Saca": { title: "Saca — Excel upload", accept: ".xlsx,.xls", hint: "Accepted: .xlsx / .xls", processor: processSacaExcel },
-      "Decorative Panels": { title: "Decorative Panels — PDF upload", accept: ".pdf", hint: "Accepted: .pdf (text PDF)", processor: processDecorativePanelsPdf },
-      "Italdecor": { title: "Italdecor — Excel upload", accept: ".xlsx,.xls", hint: "Accepted: .xlsx / .xls", processor: processItaldecorExcel },
-      "Pieffe Union": { title: "Pieffe Union — Excel upload", accept: ".xlsx,.xls", hint: "Accepted: .xlsx / .xls (header detect + override)", processor: processPieffeUnionExcelAutoHeaderOrOverride },
-      "Macfarlane": { title: "Macfarlane — PDF upload", accept: ".pdf", hint: "Accepted: .pdf (text PDF)", processor: processMacfarlanePdf }
+      "Saca": { title: "Saca", accept: [".xlsx",".xls"], hint: "Accepted: Excel", processor: processSacaExcel },
+      "Decorative Panels": { title: "Decorative Panels", accept: [".pdf"], hint: "Accepted: PDF (text PDF)", processor: processDecorativePanelsPdf },
+      "Italdecor": { title: "Italdecor", accept: [".xlsx",".xls"], hint: "Accepted: Excel", processor: processItaldecorExcel },
+      "Pieffe Union": { title: "Pieffe Union", accept: [".xlsx",".xls"], hint: "Accepted: Excel (header detect + override)", processor: processPieffeUnionExcelAutoHeaderOrOverride },
+      "Macfarlane": { title: "Macfarlane", accept: [".pdf"], hint: "Accepted: PDF (text PDF)", processor: processMacfarlanePdf }
     };
 
     // -----------------------------
@@ -856,107 +647,73 @@
     function escapeHtml(s){
       return String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
     }
-
     function setBadge(kind, text){
       statusBadge.className = "badge";
       if (kind) statusBadge.classList.add(kind);
       statusBadge.textContent = text;
     }
-
     function setStatus(main, detail, busy=false, badgeKind=null, badgeText=""){
       statusLine.innerHTML = `<strong>Status:</strong> ${escapeHtml(main)}`;
       statusDetail.textContent = detail || "";
       spinner.classList.toggle("hidden", !busy);
       if (badgeText) setBadge(badgeKind, badgeText);
     }
-
     function normaliseInputs(){
       const ref = (refInput.value || "").trim().toUpperCase();
       const wh = (whInput.value || "").trim().toUpperCase();
       const bin = (binInput.value || "").trim().toUpperCase();
-      if (refInput.value !== ref) refInput.value = ref;
-      if (whInput.value !== wh) whInput.value = wh;
-      if (binInput.value !== bin) binInput.value = bin;
+      refInput.value = ref;
+      whInput.value = wh;
+      binInput.value = bin;
       return { ref, wh, bin };
     }
-
     function updateOutputNameHint(){
       const { ref } = normaliseInputs();
       outputNameHint.textContent = `${(ref || "REF")}.csv`;
     }
-
     function updatePieffeOverrideUI(){
       const isPieffe = selectedSupplier === "Pieffe Union";
       pieffeOverrideRow.classList.toggle("hidden", !isPieffe);
-      if (!isPieffe){
-        pieffeHeaderOverride.value = "";
-        pieffeOverrideHint.textContent = "Auto-detect enabled";
-        return;
-      }
       const v = (pieffeHeaderOverride.value || "").trim();
       pieffeOverrideHint.textContent = v ? `Override set: row ${v}` : "Auto-detect enabled";
     }
-
     function updateFileUI(){
       if (!selectedSupplier){
-        fileInput.accept = "";
         fileName.textContent = "No file selected";
-        dropSub.textContent = "Choose a supplier first (left), or use “Blank table”.";
+        dropSub.textContent = "Select supplier or use Blank table.";
         clearFileBtn.disabled = true;
         return;
       }
-      fileInput.accept = supplierConfig[selectedSupplier].accept;
       dropSub.textContent = supplierConfig[selectedSupplier].hint;
-
-      if (!selectedFile){
-        fileName.textContent = "No file selected";
-        clearFileBtn.disabled = true;
-      } else {
-        fileName.textContent = selectedFile.name;
-        clearFileBtn.disabled = false;
-      }
+      fileName.textContent = selectedFile ? selectedFile.name : "No file selected";
+      clearFileBtn.disabled = !selectedFile;
     }
-
     function clearKpis(){
       kpiTotal.textContent = "—";
       kpiCaptured.textContent = "—";
       kpiIgnored.textContent = "—";
       kpiPallets.textContent = "—";
-      lastMetrics = { totalLines:null, captured:null, ignored:null, totalPallets:null, extraInfo:null };
     }
-
-    function updateKpisFromMetrics(){
-      const m = lastMetrics;
-      kpiTotal.textContent = (m.totalLines == null ? "—" : String(m.totalLines));
-      kpiCaptured.textContent = (m.captured == null ? "—" : String(m.captured));
-      kpiIgnored.textContent = (m.ignored == null ? "—" : String(m.ignored));
-      kpiPallets.textContent = (m.totalPallets == null ? "—" : String(m.totalPallets));
-    }
-
-    function setDataRows(rows, metrics = null){
+    function setDataRows(rows, metrics){
       dataRows = Array.isArray(rows) ? rows : [];
       rowCount.textContent = String(dataRows.length);
 
       if (metrics){
         lastMetrics = metrics;
-        updateKpisFromMetrics();
+        kpiTotal.textContent = String(metrics.totalLines ?? "—");
+        kpiCaptured.textContent = String(metrics.captured ?? "—");
+        kpiIgnored.textContent = String(metrics.ignored ?? "—");
+        kpiPallets.textContent = metrics.totalPallets == null ? "—" : String(metrics.totalPallets);
       } else {
         clearKpis();
-        lastMetrics.totalLines = dataRows.length;
-        lastMetrics.captured = dataRows.length;
-        lastMetrics.ignored = 0;
-        lastMetrics.totalPallets = null;
-        lastMetrics.extraInfo = "Manual";
-        updateKpisFromMetrics();
       }
 
-      renderPreview(dataRows);
+      renderPreview();
       updateButtons();
     }
-
-    function renderPreview(rows){
+    function renderPreview(){
       previewBody.innerHTML = "";
-      const show = rows.slice(0, 25);
+      const show = dataRows.slice(0,25);
       for (const r of show){
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -969,56 +726,14 @@
         `;
         previewBody.appendChild(tr);
       }
-      previewTable.classList.toggle("hidden", rows.length === 0);
+      previewTable.classList.toggle("hidden", dataRows.length === 0);
     }
-
-    function clearResults(){
-      setDataRows([], null);
-      clearKpis();
-      previewBody.innerHTML = "";
-      previewTable.classList.add("hidden");
-      rowCount.textContent = "0";
-    }
-
     function updateButtons(){
       const { ref, wh, bin } = normaliseInputs();
-      const processReady = Boolean(selectedSupplier && selectedFile && ref && wh && bin);
-      const editReady = dataRows.length > 0;
-      const generateReady = dataRows.length > 0;
-
-      processBtn.disabled = !processReady;
-      editBtn.disabled = !editReady;
-      generateBtn.disabled = !generateReady;
+      processBtn.disabled = !(selectedSupplier && selectedFile && ref && wh && bin);
+      editBtn.disabled = dataRows.length === 0;
+      generateBtn.disabled = dataRows.length === 0;
       blankTableBtn.disabled = false;
-    }
-
-    function clearFile(){
-      selectedFile = null;
-      fileInput.value = "";
-      updateFileUI();
-      updateButtons();
-      setStatus("File cleared", "Upload another file, or use Blank table.", false, null, "Idle");
-    }
-
-    function resetAll(){
-      const hasWork = selectedSupplier || selectedFile || (refInput.value || whInput.value || binInput.value) || (dataRows.length > 0);
-      if (hasWork){
-        const ok = confirm("Reset everything on screen? (History will NOT be deleted.)");
-        if (!ok) return;
-      }
-      selectedSupplier = null;
-      selectedFile = null;
-      supplierButtons.forEach(b => b.classList.remove("primary"));
-      selectedSupplierPill.textContent = "None selected";
-      rightTitle.textContent = "2) Upload file & generate CSV";
-      refInput.value = ""; whInput.value = ""; binInput.value = "";
-      pieffeHeaderOverride.value = "";
-      updatePieffeOverrideUI();
-      updateFileUI();
-      clearResults();
-      updateOutputNameHint();
-      updateButtons();
-      setStatus("Waiting", "Select supplier OR use Blank table. Enter Ref/WH/Bin. Upload file if needed.", false, null, "Idle");
     }
 
     // -----------------------------
@@ -1026,22 +741,20 @@
     // -----------------------------
     function toCsv(rows){
       const headers = ["PONum","Ref","Part","Qty","WH","Bin"];
-      const escapeCsv = (v) => {
+      const esc = (v) => {
         const s = String(v ?? "");
         if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
         return s;
       };
-      const lines = [];
-      lines.push(headers.join(","));
+      const lines = [headers.join(",")];
       for (const r of rows){
-        lines.push(headers.map(h => escapeCsv(r[h])).join(","));
+        lines.push(headers.map(h => esc(r[h])).join(","));
       }
       return lines.join("\r\n");
     }
-
     function downloadCsv(text, filename){
       const bom = "\uFEFF";
-      const blob = new Blob([bom + text], { type: "text/csv;charset=utf-8" });
+      const blob = new Blob([bom + text], { type:"text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -1049,35 +762,21 @@
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      setTimeout(() => URL.revokeObjectURL(url), 15000);
     }
 
-    // -----------------------------
-    // Validation
-    // -----------------------------
-    function isDigitsOnly(s){
-      return /^\d+$/.test(String(s ?? "").trim());
-    }
+    function isDigitsOnly(s){ return /^\d+$/.test(String(s ?? "").trim()); }
 
     function validateRowsForExport(rows){
-      const missing = [];
-      const invalidQty = [];
-      const req = ["PONum","Ref","Part","Qty","WH","Bin"];
-
-      for (let i = 0; i < rows.length; i++){
-        const r = rows[i] || {};
+      for (let i=0; i<rows.length; i++){
+        const r = rows[i];
+        const req = ["PONum","Ref","Part","Qty","WH","Bin"];
         for (const k of req){
-          const v = String(r[k] ?? "").trim();
-          if (!v) missing.push({ row: i+1, field: k });
+          if (!String(r[k] ?? "").trim()) return `Row ${i+1} is missing ${k}.`;
         }
-        const q = String(r.Qty ?? "").trim();
-        if (q && !isDigitsOnly(q)){
-          invalidQty.push({ row: i+1, value: q });
-        }
-        if (missing.length >= 10 || invalidQty.length >= 10) break;
+        if (!isDigitsOnly(r.Qty)) return `Row ${i+1} has invalid Qty "${r.Qty}" (numbers only).`;
       }
-
-      return { missing, invalidQty };
+      return null;
     }
 
     // -----------------------------
@@ -1093,11 +792,12 @@
     }
 
     async function pdfToTextLines(file){
+      if (!window.pdfjsLib) throw new Error("PDF engine failed to load.");
       const buf = await readFileAsArrayBuffer(file);
       const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
 
-      let allLines = [];
-      for (let p = 1; p <= pdf.numPages; p++){
+      const allLines = [];
+      for (let p=1; p<=pdf.numPages; p++){
         const page = await pdf.getPage(p);
         const content = await page.getTextContent();
 
@@ -1112,12 +812,9 @@
           byY.get(key).push(it);
         }
 
-        const ys = Array.from(byY.keys()).sort((a,b) => b - a);
+        const ys = Array.from(byY.keys()).sort((a,b)=> b-a);
         for (const y of ys){
-          const row = byY.get(y)
-            .sort((a,b) => a.x - b.x)
-            .map(it => it.str)
-            .join(" ");
+          const row = byY.get(y).sort((a,b)=>a.x-b.x).map(it=>it.str).join(" ");
           allLines.push(row);
         }
       }
@@ -1125,161 +822,138 @@
     }
 
     function excelToJsonRows(arrayBuffer, sheetIndex=0, opts={}){
-      const wb = XLSX.read(arrayBuffer, { type: "array" });
-      const sheetName = wb.SheetNames[sheetIndex];
-      const ws = wb.Sheets[sheetName];
+      const wb = XLSX.read(arrayBuffer, { type:"array" });
+      const ws = wb.Sheets[wb.SheetNames[sheetIndex]];
       return XLSX.utils.sheet_to_json(ws, opts);
     }
-
     function excelToMatrix(arrayBuffer, sheetIndex=0){
-      const wb = XLSX.read(arrayBuffer, { type: "array" });
-      const sheetName = wb.SheetNames[sheetIndex];
-      const ws = wb.Sheets[sheetName];
+      const wb = XLSX.read(arrayBuffer, { type:"array" });
+      const ws = wb.Sheets[wb.SheetNames[sheetIndex]];
       return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
     }
 
     // -----------------------------
-    // Processors
+    // Processors (same logic)
     // -----------------------------
     async function processMacfarlanePdf(ref, wh, bin, file){
       const lines = await pdfToTextLines(file);
       const out = [];
-      let totalLines = 0, captured = 0, ignored = 0;
-      let stopReading = false;
+      let totalLines=0, captured=0, ignored=0;
+      let stop=false;
 
       for (const line of lines){
-        if (line.includes("Outstanding goods")) stopReading = true;
-        if (stopReading){ ignored++; totalLines++; continue; }
+        if (line.includes("Outstanding goods")) stop = true;
+        if (stop){ ignored++; totalLines++; continue; }
 
         const parts = line.split(/\s+/);
         if (parts.length >= 4 && /^\d+$/.test(parts[1]) && parts[1].length > 4){
-          try{
-            const po_ref = parts[1];
-            const product_code = parts[2];
-            const qty = parts[3];
-            if (!/^\d+$/.test(po_ref) || !/^[A-Za-z0-9]+$/.test(product_code) || !/^\d+$/.test(qty)) throw new Error("Invalid");
-            out.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: qty, WH: wh, Bin: bin });
+          const po_ref = parts[1];
+          const product_code = parts[2];
+          const qty = parts[3];
+          if (/^\d+$/.test(po_ref) && /^[A-Za-z0-9]+$/.test(product_code) && /^\d+$/.test(qty)){
+            out.push({ PONum:po_ref, Ref:ref, Part:product_code, Qty:qty, WH:wh, Bin:bin });
             captured++;
-          }catch{ ignored++; }
-        }else{
-          ignored++;
-        }
+          } else ignored++;
+        } else ignored++;
         totalLines++;
       }
-
-      return { rows: out, metrics: { totalLines, captured, ignored, totalPallets: null, extraInfo: null } };
+      return { rows: out, metrics:{ totalLines, captured, ignored, totalPallets:null, extraInfo:null } };
     }
 
     async function processDecorativePanelsPdf(ref, wh, bin, file){
       const lines = await pdfToTextLines(file);
       const out = [];
-      let totalProductLines = 0, captured = 0, ignored = 0, totalPallets = 0;
+      let totalProductLines=0, captured=0, ignored=0, totalPallets=0;
 
       for (const line of lines){
         const parts = line.split(/\s+/);
         if (parts.length >= 5 && /^\d+$/.test(parts[0]) && parts[0].length >= 5){
           totalProductLines++;
-          try{
-            const po_ref = parts[0];
-            const product_code = parts[1];
+          const po_ref = parts[0];
+          const product_code = parts[1];
 
-            let qPerPallet = null, numPallets = null, qty = null;
-            for (let i = 2; i < parts.length - 2; i++){
-              if (/^\d+$/.test(parts[i]) && /^\d+$/.test(parts[i+1]) && /^\d+$/.test(parts[i+2])){
-                qPerPallet = parseInt(parts[i], 10);
-                numPallets = parseInt(parts[i+1], 10);
-                qty = parseInt(parts[i+2], 10);
-                totalPallets += numPallets;
-                break;
-              }
+          let qPer=null, num=null, qty=null;
+          for (let i=2; i<parts.length-2; i++){
+            if (/^\d+$/.test(parts[i]) && /^\d+$/.test(parts[i+1]) && /^\d+$/.test(parts[i+2])){
+              qPer = parseInt(parts[i],10);
+              num  = parseInt(parts[i+1],10);
+              qty  = parseInt(parts[i+2],10);
+              totalPallets += num;
+              break;
             }
-            if (qPerPallet === null || numPallets === null || qty === null){ ignored++; continue; }
+          }
+          if (qPer==null || num==null || qty==null){ ignored++; continue; }
 
-            for (let i = 0; i < numPallets; i++){
-              const finalQty = (i === numPallets - 1)
-                ? (qty - (qPerPallet * (numPallets - 1)))
-                : qPerPallet;
-
-              out.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: String(finalQty), WH: wh, Bin: bin });
-            }
-            captured++;
-          }catch{ ignored++; }
+          for (let i=0; i<num; i++){
+            const finalQty = (i === num-1) ? (qty - (qPer * (num-1))) : qPer;
+            out.push({ PONum:po_ref, Ref:ref, Part:product_code, Qty:String(finalQty), WH:wh, Bin:bin });
+          }
+          captured++;
         }
       }
-
-      return { rows: out, metrics: { totalLines: totalProductLines, captured, ignored, totalPallets, extraInfo: null } };
+      return { rows: out, metrics:{ totalLines: totalProductLines, captured, ignored, totalPallets, extraInfo:null } };
     }
 
     async function processSacaExcel(ref, wh, bin, file){
       const buf = await readFileAsArrayBuffer(file);
-      const rows = excelToJsonRows(buf, 0, { defval: null });
-
+      const rows = excelToJsonRows(buf, 0, { defval:null });
       const out = [];
-      const totalLines = rows.length;
-      let captured = 0, ignored = 0;
+      let captured=0, ignored=0;
 
       for (const r of rows){
-        try{
-          const po_ref = r["Numero conferma"];
-          const product_code = r["Articolo esterno"];
-          const qty = r["Quantità spuntata"];
-          if (po_ref == null || product_code == null || qty == null) throw new Error("Missing");
-          out.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: String(qty), WH: wh, Bin: bin });
-          captured++;
-        }catch{ ignored++; }
+        const po_ref = r["Numero conferma"];
+        const product_code = r["Articolo esterno"];
+        const qty = r["Quantità spuntata"];
+        if (po_ref == null || product_code == null || qty == null){ ignored++; continue; }
+        out.push({ PONum:po_ref, Ref:ref, Part:product_code, Qty:String(qty), WH:wh, Bin:bin });
+        captured++;
       }
-
-      return { rows: out, metrics: { totalLines, captured, ignored, totalPallets: null, extraInfo: null } };
+      return { rows: out, metrics:{ totalLines: rows.length, captured, ignored, totalPallets:null, extraInfo:null } };
     }
 
     async function processItaldecorExcel(ref, wh, bin, file){
       const buf = await readFileAsArrayBuffer(file);
       const matrix = excelToMatrix(buf, 0);
-
       const out = [];
-      let currentPO = null;
-      let totalProductLines = 0, captured = 0, ignored = 0;
+      let currentPO=null;
+      let total=0, captured=0, ignored=0;
 
       for (const row of matrix){
         const c0 = row[0];
         const c12 = row[12];
 
         if (typeof c0 === "string"){
-          const skipKeywords = ["Codice","Descrizione","SEGUE","DPS","TIR"];
-          if (skipKeywords.some(k => c0.includes(k))) continue;
-
+          const skip = ["Codice","Descrizione","SEGUE","DPS","TIR"];
+          if (skip.some(k => c0.includes(k))) continue;
           if (c0.includes("-->ORD. n.")){
             try{
               const after = c0.split("ORD. n.")[1];
               currentPO = after.split("/")[0].trim();
-            }catch{ currentPO = null; }
+            }catch{ currentPO=null; }
           }
         }
 
         if (c0 != null && c12 != null){
-          totalProductLines++;
+          total++;
           try{
-            out.push({ PONum: currentPO, Ref: ref, Part: String(c0), Qty: String(c12), WH: wh, Bin: bin });
+            out.push({ PONum:currentPO, Ref:ref, Part:String(c0), Qty:String(c12), WH:wh, Bin:bin });
             captured++;
           }catch{ ignored++; }
         }
       }
-
-      return { rows: out, metrics: { totalLines: totalProductLines, captured, ignored, totalPallets: null, extraInfo: null } };
+      return { rows: out, metrics:{ totalLines: total, captured, ignored, totalPallets:null, extraInfo:null } };
     }
 
     function normaliseHeaderCell(v){
-      return String(v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+      return String(v ?? "").trim().replace(/\s+/g," ").toLowerCase();
     }
-
-    function findHeaderRowIndex(matrix, requiredHeaders, maxScanRows=120){
-      const target = requiredHeaders.map(h => h.toLowerCase());
-      const scanLimit = Math.min(matrix.length, maxScanRows);
-      for (let r = 0; r < scanLimit; r++){
+    function findHeaderRowIndex(matrix, required, maxScan=120){
+      const target = required.map(h=>h.toLowerCase());
+      const limit = Math.min(matrix.length, maxScan);
+      for (let r=0; r<limit; r++){
         const row = matrix[r] || [];
         const norm = row.map(normaliseHeaderCell);
-        const hasAll = target.every(t => norm.includes(t));
-        if (hasAll) return r;
+        if (target.every(t => norm.includes(t))) return r;
       }
       return -1;
     }
@@ -1288,17 +962,17 @@
       const buf = await readFileAsArrayBuffer(file);
       const matrix = excelToMatrix(buf, 0);
 
-      const required = ["Your PO", "Item Code", "Qty"];
-
+      const required = ["Your PO","Item Code","Qty"];
       const overrideText = (pieffeHeaderOverride.value || "").trim();
+
       let headerRowIndex = -1;
       let extraInfo = null;
 
       if (overrideText){
-        const override = parseInt(overrideText, 10);
-        if (!Number.isFinite(override) || override < 1) throw new Error("Pieffe header override must be a positive row number (e.g. 22).");
+        const override = parseInt(overrideText,10);
+        if (!Number.isFinite(override) || override < 1) throw new Error("Pieffe override must be a row number (e.g. 22).");
         headerRowIndex = override - 1;
-        if (headerRowIndex >= matrix.length) throw new Error(`Pieffe override row ${override} is beyond the end of the sheet.`);
+        if (headerRowIndex >= matrix.length) throw new Error("Pieffe override row is beyond the sheet.");
         extraInfo = `Header override used (row ${override})`;
       } else {
         headerRowIndex = findHeaderRowIndex(matrix, required, 120);
@@ -1307,210 +981,65 @@
       }
 
       const header = (matrix[headerRowIndex] || []).map(h => String(h ?? "").trim());
-      const headerNorm = header.map(h => normaliseHeaderCell(h));
+      const headerNorm = header.map(normaliseHeaderCell);
 
-      const idxYourPO = headerNorm.indexOf("your po");
-      const idxItemCode = headerNorm.indexOf("item code");
+      const idxPO = headerNorm.indexOf("your po");
+      const idxItem = headerNorm.indexOf("item code");
       const idxQty = headerNorm.indexOf("qty");
-      if (idxYourPO === -1 || idxItemCode === -1 || idxQty === -1){
-        throw new Error(`Pieffe header row (row ${headerRowIndex + 1}) does not contain required columns.`);
-      }
 
-      const dataPart = matrix.slice(headerRowIndex + 1).filter(r => (r || []).some(v => v != null && String(v).trim() !== ""));
-      const totalLines = dataPart.length;
+      if (idxPO === -1 || idxItem === -1 || idxQty === -1) throw new Error("Pieffe header row does not contain required columns.");
 
+      const dataPart = matrix.slice(headerRowIndex + 1).filter(r => (r||[]).some(v => v != null && String(v).trim() !== ""));
       const out = [];
-      let captured = 0, ignored = 0;
+      let captured=0, ignored=0;
 
       for (const row of dataPart){
-        try{
-          const po_ref = row[idxYourPO];
-          const product_code = row[idxItemCode];
-          const qty = row[idxQty];
-          if (po_ref == null || product_code == null || qty == null) throw new Error("Missing");
-          out.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: String(qty), WH: wh, Bin: bin });
-          captured++;
-        }catch{ ignored++; }
+        const po = row[idxPO];
+        const item = row[idxItem];
+        const qty = row[idxQty];
+        if (po == null || item == null || qty == null){ ignored++; continue; }
+        out.push({ PONum:po, Ref:ref, Part:item, Qty:String(qty), WH:wh, Bin:bin });
+        captured++;
       }
 
-      return { rows: out, metrics: { totalLines, captured, ignored, totalPallets: null, extraInfo } };
+      return { rows: out, metrics:{ totalLines: dataPart.length, captured, ignored, totalPallets:null, extraInfo } };
     }
 
     // -----------------------------
-    // History
-    // -----------------------------
-    function loadHistory(){
-      try{
-        const raw = localStorage.getItem(HISTORY_KEY);
-        if (!raw) return [];
-        const arr = JSON.parse(raw);
-        if (!Array.isArray(arr)) return [];
-        return arr;
-      }catch{ return []; }
-    }
-
-    function saveHistory(arr){
-      try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(arr)); }catch{}
-    }
-
-    function addHistoryItem(item){
-      const history = loadHistory();
-      history.unshift(item);
-      if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
-      saveHistory(history);
-      renderHistory();
-    }
-
-    function renderHistory(){
-      const history = loadHistory();
-      historyCount.textContent = `${history.length} run${history.length === 1 ? "" : "s"}`;
-      exportHistoryBtn.disabled = history.length === 0;
-      clearHistoryBtn.disabled = history.length === 0;
-
-      if (history.length === 0){
-        historyEmpty.classList.remove("hidden");
-        historyTable.classList.add("hidden");
-        historyBody.innerHTML = "";
-        return;
-      }
-
-      historyEmpty.classList.add("hidden");
-      historyTable.classList.remove("hidden");
-      historyBody.innerHTML = "";
-
-      for (const h of history){
-        const tr = document.createElement("tr");
-        const pallets = (h.totalPallets == null ? "—" : String(h.totalPallets));
-        const canRedownload = Boolean(h.csvText);
-
-        tr.innerHTML = `
-          <td class="mono">${escapeHtml(h.when)}</td>
-          <td>${escapeHtml(h.mode)}</td>
-          <td>${escapeHtml(h.inputFile || "—")}</td>
-          <td class="mono">${escapeHtml(h.outputName || "")}</td>
-          <td>${escapeHtml(h.totalLines)}</td>
-          <td>${escapeHtml(h.captured)}</td>
-          <td>${escapeHtml(h.ignored)}</td>
-          <td>${escapeHtml(pallets)}</td>
-          <td><button class="linkBtn ${canRedownload ? "" : "danger"}" type="button" ${canRedownload ? "" : "disabled"}>Download</button></td>
-        `;
-
-        const btn = tr.querySelector("button");
-        if (btn && canRedownload){
-          btn.addEventListener("click", () => downloadCsv(h.csvText, h.outputName));
-        }
-        historyBody.appendChild(tr);
-      }
-    }
-
-    function exportHistoryCsv(){
-      const history = loadHistory();
-      if (!history.length) return;
-
-      const headers = ["When","Mode","InputFile","OutputName","TotalLines","Captured","Ignored","TotalPallets","ExtraInfo"];
-      const escapeCsv = (v) => {
-        const s = String(v ?? "");
-        if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
-        return s;
-      };
-
-      const lines = [];
-      lines.push(headers.join(","));
-      for (const h of history){
-        const row = [
-          h.when, h.mode, h.inputFile || "", h.outputName || "",
-          h.totalLines ?? "", h.captured ?? "", h.ignored ?? "",
-          (h.totalPallets == null ? "" : h.totalPallets),
-          h.extraInfo || ""
-        ];
-        lines.push(row.map(escapeCsv).join(","));
-      }
-
-      downloadCsv(lines.join("\r\n"), `GoodsIn_History_${new Date().toISOString().slice(0,10)}.csv`);
-    }
-
-    function clearHistory(){
-      const ok = confirm("Clear history log on this device/browser?");
-      if (!ok) return;
-      saveHistory([]);
-      renderHistory();
-    }
-
-    // -----------------------------
-    // File selection
+    // File validation
     // -----------------------------
     function setSelectedFile(file){
-      if (!selectedSupplier) throw new Error("Choose a supplier first, then select the file.");
-      const accept = supplierConfig[selectedSupplier].accept.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+      if (!selectedSupplier) throw new Error("Select supplier first.");
       const name = (file?.name || "").toLowerCase();
-      const ok = accept.some(ext => name.endsWith(ext));
-      if (!ok) throw new Error(`Wrong file type for ${selectedSupplier}. Expected: ${supplierConfig[selectedSupplier].accept}`);
+      const allowed = supplierConfig[selectedSupplier].accept;
+      if (!allowed.some(ext => name.endsWith(ext))) {
+        throw new Error(`Wrong file type for ${selectedSupplier}. Expected: ${allowed.join(", ")}`);
+      }
       selectedFile = file;
       updateFileUI();
       updateButtons();
-      setStatus("File selected", "Click Process to load lines, then Edit table if needed.", false, null, "Idle");
-    }
-
-    function handleFilesFromEvent(files){
-      if (!files || !files.length) return;
-      try{ setSelectedFile(files[0]); }
-      catch(err){ setStatus("Error", err?.message || "Could not select file.", false, "bad", "Error"); }
+      setStatus("File selected", "Click Process.", false, null, "Idle");
     }
 
     // -----------------------------
-    // Editor modal
+    // Editor
     // -----------------------------
     let editorDraftRows = [];
-    let editorIssues = { missing: 0, invalidQty: 0 };
+    let dragFromIndex = null;
 
     function defaultRowTemplate(){
       const { ref, wh, bin } = normaliseInputs();
-      return { PONum:"", Ref: ref || "", Part:"", Qty:"", WH: wh || "", Bin: bin || "" };
+      return { PONum:"", Ref:ref||"", Part:"", Qty:"", WH:wh||"", Bin:bin||"" };
     }
 
-    function showEditorToast(kind, msg){
-      editorToast.classList.remove("hidden","bad","ok","warn");
-      if (kind) editorToast.classList.add(kind);
-      editorToast.textContent = msg;
-    }
-    function hideEditorToast(){
-      editorToast.classList.add("hidden");
-      editorToast.textContent = "";
-      editorToast.classList.remove("bad","ok","warn");
-    }
-
-    function countEditorIssues(){
-      let missing = 0, invalidQty = 0;
-      for (const r of editorDraftRows){
-        const req = ["PONum","Ref","Part","Qty","WH","Bin"];
-        for (const k of req){
-          if (!String(r[k] ?? "").trim()) missing++;
-        }
-        const q = String(r.Qty ?? "").trim();
-        if (q && !isDigitsOnly(q)) invalidQty++;
-      }
-      editorIssues = { missing, invalidQty };
-      editorIssuesKpi.textContent = `Issues: ${missing + invalidQty}`;
-    }
-
-    function openEditor(reasonLabel){
+    function openEditor(){
       editorDraftRows = dataRows.map(r => ({
-        PONum: String(r.PONum ?? ""),
-        Ref: String(r.Ref ?? ""),
-        Part: String(r.Part ?? ""),
-        Qty: String(r.Qty ?? ""),
-        WH: String(r.WH ?? ""),
-        Bin: String(r.Bin ?? "")
+        PONum:String(r.PONum??""), Ref:String(r.Ref??""), Part:String(r.Part??""),
+        Qty:String(r.Qty??""), WH:String(r.WH??""), Bin:String(r.Bin??"")
       }));
-
-      editorSub.textContent = reasonLabel || "Edit fields, duplicate/insert rows, drag to reorder, then confirm changes.";
       renderEditorTable();
-      updateEditorKpi();
-      hideEditorToast();
-      countEditorIssues();
-
+      editorRowKpi.textContent = String(editorDraftRows.length);
       editorOverlay.classList.add("show");
-      editorOverlay.setAttribute("aria-hidden", "false");
       setTimeout(() => {
         const first = editorBody.querySelector("input");
         if (first) first.focus();
@@ -1519,231 +1048,101 @@
 
     function closeEditor(){
       editorOverlay.classList.remove("show");
-      editorOverlay.setAttribute("aria-hidden", "true");
       editorDraftRows = [];
-      hideEditorToast();
     }
-
-    function updateEditorKpi(){
-      editorRowKpi.textContent = `Rows: ${editorDraftRows.length}`;
-    }
-
-    function qtyInputHandler(inp){
-      // allow empty while typing, but if not empty, keep digits only
-      const raw = inp.value;
-      const cleaned = raw.replace(/[^\d]/g, "");
-      if (raw !== cleaned) inp.value = cleaned;
-
-      const rowIdx = parseInt(inp.getAttribute("data-row"), 10);
-      const key = inp.getAttribute("data-key");
-      if (!Number.isFinite(rowIdx) || !key) return;
-      editorDraftRows[rowIdx][key] = inp.value;
-
-      // highlight invalid (non-empty but not digits) — since we cleanse, invalid only happens if blank is ok
-      const q = inp.value.trim();
-      const invalid = q !== "" && !isDigitsOnly(q);
-      inp.classList.toggle("invalid", invalid);
-
-      countEditorIssues();
-    }
-
-    function genericInputHandler(inp){
-      const rowIdx = parseInt(inp.getAttribute("data-row"), 10);
-      const key = inp.getAttribute("data-key");
-      if (!Number.isFinite(rowIdx) || !key) return;
-      editorDraftRows[rowIdx][key] = inp.value;
-      countEditorIssues();
-    }
-
-    // Drag and drop reorder (HTML5 DnD)
-    let dragFromIndex = null;
 
     function renderEditorTable(){
       editorBody.innerHTML = "";
 
-      for (let i = 0; i < editorDraftRows.length; i++){
+      for (let i=0; i<editorDraftRows.length; i++){
         const r = editorDraftRows[i];
         const tr = document.createElement("tr");
-        tr.setAttribute("draggable", "true");
+        tr.setAttribute("draggable","true");
         tr.setAttribute("data-idx", String(i));
 
         tr.innerHTML = `
-          <td>
-            <div class="dragHandle" title="Drag to move" aria-label="Drag to move">⋮⋮</div>
-          </td>
-          <td><input class="cellInput" data-row="${i}" data-key="PONum" value="${escapeHtml(r.PONum)}" /></td>
-          <td><input class="cellInput" data-row="${i}" data-key="Ref" value="${escapeHtml(r.Ref)}" /></td>
-          <td><input class="cellInput" data-row="${i}" data-key="Part" value="${escapeHtml(r.Part)}" /></td>
-          <td><input class="cellInput qty" inputmode="numeric" pattern="\\d*" data-row="${i}" data-key="Qty" value="${escapeHtml(r.Qty)}" /></td>
-          <td><input class="cellInput" data-row="${i}" data-key="WH" value="${escapeHtml(r.WH)}" /></td>
-          <td><input class="cellInput" data-row="${i}" data-key="Bin" value="${escapeHtml(r.Bin)}" /></td>
+          <td><div class="dragHandle" title="Drag to move">⋮⋮</div></td>
+          <td><input class="cellInput" data-row="${i}" data-key="PONum" value="${escapeHtml(r.PONum)}"></td>
+          <td><input class="cellInput" data-row="${i}" data-key="Ref" value="${escapeHtml(r.Ref)}"></td>
+          <td><input class="cellInput" data-row="${i}" data-key="Part" value="${escapeHtml(r.Part)}"></td>
+          <td><input class="cellInput qty" inputmode="numeric" data-row="${i}" data-key="Qty" value="${escapeHtml(r.Qty)}"></td>
+          <td><input class="cellInput" data-row="${i}" data-key="WH" value="${escapeHtml(r.WH)}"></td>
+          <td><input class="cellInput" data-row="${i}" data-key="Bin" value="${escapeHtml(r.Bin)}"></td>
           <td style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="rowBtn" type="button" data-action="up" data-i="${i}" ${i===0 ? "disabled":""}>↑</button>
-            <button class="rowBtn" type="button" data-action="down" data-i="${i}" ${i===editorDraftRows.length-1 ? "disabled":""}>↓</button>
+            <button class="rowBtn" type="button" data-action="up" data-i="${i}" ${i===0?"disabled":""}>↑</button>
+            <button class="rowBtn" type="button" data-action="down" data-i="${i}" ${i===editorDraftRows.length-1?"disabled":""}>↓</button>
             <button class="rowBtn" type="button" data-action="dup" data-i="${i}">Duplicate</button>
             <button class="rowBtn" type="button" data-action="addAfter" data-i="${i}">Add after</button>
             <button class="rowBtn danger" type="button" data-action="del" data-i="${i}">Delete</button>
           </td>
         `;
-
         editorBody.appendChild(tr);
       }
 
-      // Inputs
+      // inputs
       editorBody.querySelectorAll(".cellInput").forEach(inp => {
-        const key = inp.getAttribute("data-key");
-        if (key === "Qty"){
-          // enforce digits as they type
-          inp.addEventListener("input", () => qtyInputHandler(inp));
-          // initial invalid style if needed
-          const q = inp.value.trim();
-          inp.classList.toggle("invalid", q !== "" && !isDigitsOnly(q));
-        } else {
-          inp.addEventListener("input", () => genericInputHandler(inp));
-        }
-      });
+        inp.addEventListener("input", () => {
+          const rowIdx = parseInt(inp.getAttribute("data-row"),10);
+          const key = inp.getAttribute("data-key");
+          if (!Number.isFinite(rowIdx) || !key) return;
 
-      // Row actions
-      editorBody.querySelectorAll("button[data-action]").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const action = btn.getAttribute("data-action");
-          const i = parseInt(btn.getAttribute("data-i"), 10);
-          if (!Number.isFinite(i)) return;
+          if (key === "Qty"){
+            // digits only
+            const cleaned = inp.value.replace(/[^\d]/g,"");
+            if (inp.value !== cleaned) inp.value = cleaned;
+            inp.classList.toggle("invalid", inp.value.trim() !== "" && !isDigitsOnly(inp.value));
+          }
 
-          if (action === "del"){
-            editorDraftRows.splice(i, 1);
-            renderEditorTable(); updateEditorKpi(); countEditorIssues();
-            showEditorToast("warn", "Row deleted. Confirm changes when you’re happy.");
-            return;
-          }
-          if (action === "dup"){
-            const copy = { ...editorDraftRows[i] };
-            editorDraftRows.splice(i+1, 0, copy);
-            renderEditorTable(); updateEditorKpi(); countEditorIssues();
-            showEditorToast("ok", "Row duplicated (inserted below).");
-            return;
-          }
-          if (action === "addAfter"){
-            editorDraftRows.splice(i+1, 0, defaultRowTemplate());
-            renderEditorTable(); updateEditorKpi(); countEditorIssues();
-            showEditorToast("ok", "Blank row added after this line.");
-            return;
-          }
-          if (action === "up" && i > 0){
-            const tmp = editorDraftRows[i-1];
-            editorDraftRows[i-1] = editorDraftRows[i];
-            editorDraftRows[i] = tmp;
-            renderEditorTable(); updateEditorKpi(); countEditorIssues();
-            return;
-          }
-          if (action === "down" && i < editorDraftRows.length - 1){
-            const tmp = editorDraftRows[i+1];
-            editorDraftRows[i+1] = editorDraftRows[i];
-            editorDraftRows[i] = tmp;
-            renderEditorTable(); updateEditorKpi(); countEditorIssues();
-            return;
-          }
+          editorDraftRows[rowIdx][key] = inp.value;
         });
       });
 
-      // Drag and drop reorder
+      // row actions
+      editorBody.querySelectorAll("button[data-action]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const action = btn.getAttribute("data-action");
+          const i = parseInt(btn.getAttribute("data-i"),10);
+          if (!Number.isFinite(i)) return;
+
+          if (action === "del"){ editorDraftRows.splice(i,1); renderEditorTable(); editorRowKpi.textContent = String(editorDraftRows.length); return; }
+          if (action === "dup"){ editorDraftRows.splice(i+1,0,{...editorDraftRows[i]}); renderEditorTable(); editorRowKpi.textContent = String(editorDraftRows.length); return; }
+          if (action === "addAfter"){ editorDraftRows.splice(i+1,0,defaultRowTemplate()); renderEditorTable(); editorRowKpi.textContent = String(editorDraftRows.length); return; }
+          if (action === "up" && i>0){ const t=editorDraftRows[i-1]; editorDraftRows[i-1]=editorDraftRows[i]; editorDraftRows[i]=t; renderEditorTable(); return; }
+          if (action === "down" && i<editorDraftRows.length-1){ const t=editorDraftRows[i+1]; editorDraftRows[i+1]=editorDraftRows[i]; editorDraftRows[i]=t; renderEditorTable(); return; }
+        });
+      });
+
+      // drag and drop reorder
       const rowsEls = editorBody.querySelectorAll("tr[draggable='true']");
       rowsEls.forEach(tr => {
         tr.addEventListener("dragstart", (e) => {
-          dragFromIndex = parseInt(tr.getAttribute("data-idx"), 10);
+          dragFromIndex = parseInt(tr.getAttribute("data-idx"),10);
           tr.classList.add("dragging");
           e.dataTransfer.effectAllowed = "move";
           try{ e.dataTransfer.setData("text/plain", String(dragFromIndex)); }catch{}
         });
-
         tr.addEventListener("dragend", () => {
           dragFromIndex = null;
           rowsEls.forEach(r => r.classList.remove("dragging","dropTarget"));
         });
-
         tr.addEventListener("dragover", (e) => {
           e.preventDefault();
           tr.classList.add("dropTarget");
-          e.dataTransfer.dropEffect = "move";
         });
-
-        tr.addEventListener("dragleave", () => {
-          tr.classList.remove("dropTarget");
-        });
-
+        tr.addEventListener("dragleave", () => tr.classList.remove("dropTarget"));
         tr.addEventListener("drop", (e) => {
           e.preventDefault();
           tr.classList.remove("dropTarget");
-
           let from = dragFromIndex;
-          if (!Number.isFinite(from)){
-            const t = e.dataTransfer.getData("text/plain");
-            from = parseInt(t, 10);
-          }
-          const to = parseInt(tr.getAttribute("data-idx"), 10);
-          if (!Number.isFinite(from) || !Number.isFinite(to) || from === to) return;
+          if (!Number.isFinite(from)) from = parseInt(e.dataTransfer.getData("text/plain"),10);
+          const to = parseInt(tr.getAttribute("data-idx"),10);
+          if (!Number.isFinite(from) || !Number.isFinite(to) || from===to) return;
 
-          const [moved] = editorDraftRows.splice(from, 1);
-          editorDraftRows.splice(to, 0, moved);
-
+          const [moved] = editorDraftRows.splice(from,1);
+          editorDraftRows.splice(to,0,moved);
           renderEditorTable();
-          updateEditorKpi();
-          countEditorIssues();
-          showEditorToast("ok", "Row moved.");
         });
       });
-    }
-
-    function addRows(n=1){
-      for (let i = 0; i < n; i++) editorDraftRows.push(defaultRowTemplate());
-      renderEditorTable(); updateEditorKpi(); countEditorIssues();
-      showEditorToast("ok", n === 1 ? "Row added." : `${n} rows added.`);
-    }
-
-    function fillBlankDefaults(){
-      const { ref, wh, bin } = normaliseInputs();
-      let changed = 0;
-      for (const r of editorDraftRows){
-        if (!String(r.Ref ?? "").trim() && ref) { r.Ref = ref; changed++; }
-        if (!String(r.WH ?? "").trim() && wh) { r.WH = wh; changed++; }
-        if (!String(r.Bin ?? "").trim() && bin) { r.Bin = bin; changed++; }
-      }
-      renderEditorTable(); updateEditorKpi(); countEditorIssues();
-      showEditorToast("ok", changed ? "Filled blank Ref/WH/Bin from main page values." : "No blanks to fill (or main values are blank).");
-    }
-
-    function confirmEditorChanges(){
-      const cleaned = editorDraftRows.map(r => ({
-        PONum: String(r.PONum ?? "").trim(),
-        Ref: String(r.Ref ?? "").trim().toUpperCase(),
-        Part: String(r.Part ?? "").trim(),
-        Qty: String(r.Qty ?? "").trim(), // numeric enforced in editor
-        WH: String(r.WH ?? "").trim().toUpperCase(),
-        Bin: String(r.Bin ?? "").trim().toUpperCase()
-      }));
-
-      const filtered = cleaned.filter(r => Object.values(r).some(v => String(v).trim() !== ""));
-      setDataRows(filtered, lastMetrics);
-      closeEditor();
-      setStatus("Table updated", "Preview updated. Edit again or generate the CSV.", false, "ok", "Ready");
-    }
-
-    // -----------------------------
-    // Blank table mode
-    // -----------------------------
-    function startBlankTable(){
-      const { ref, wh, bin } = normaliseInputs();
-      if (!ref || !wh || !bin){
-        const ok = confirm("Ref/WH/Bin are blank. You can continue, but you’ll need to fill them before exporting. Continue?");
-        if (!ok) return;
-      }
-
-      const base = [];
-      for (let i = 0; i < 5; i++) base.push(defaultRowTemplate());
-
-      setDataRows(base, null);
-      openEditor("Blank table mode — enter your rows, then confirm changes.");
-      setStatus("Blank table started", "Enter rows in the editor, confirm changes, then Generate & Download CSV.", false, "warn", "Manual");
     }
 
     // -----------------------------
@@ -1751,73 +1150,62 @@
     // -----------------------------
     async function processFile(){
       const { ref, wh, bin } = normaliseInputs();
-      if (!selectedSupplier) throw new Error("Please select a supplier first.");
-      if (!selectedFile) throw new Error("Please choose a file first.");
+      if (!selectedSupplier) throw new Error("Select supplier first.");
+      if (!selectedFile) throw new Error("Choose a file first.");
       if (!ref || !wh || !bin) throw new Error("Ref, WH and Bin are required.");
 
       setStatus("Processing…", "Reading file and building table.", true, "warn", "Processing");
-      const cfg = supplierConfig[selectedSupplier];
-      const result = await cfg.processor(ref, wh, bin, selectedFile);
+      const result = await supplierConfig[selectedSupplier].processor(ref, wh, bin, selectedFile);
 
+      setStatus("Processed", `Loaded ${result.rows.length} rows. Edit table if needed.`, false, "ok", "Ready");
       setDataRows(result.rows, result.metrics);
-
-      if (dataRows.length === 0){
-        setStatus("Done — no rows captured", "Nothing matched. Use Blank table or Edit table to add rows manually.", false, "bad", "No Data");
-      } else {
-        const extra = result.metrics?.extraInfo ? ` • ${result.metrics.extraInfo}` : "";
-        setStatus("Processed", `Loaded ${dataRows.length} rows. Click Edit table if you need to amend anything.${extra}`, false, "ok", "Ready");
-      }
     }
 
     function generateAndDownload(){
       const { ref } = normaliseInputs();
-      const outputName = `${(ref || "REF")}.csv`;
+      if (!dataRows.length) return;
 
-      if (dataRows.length === 0){
-        setStatus("Nothing to export", "Create rows using Process or Blank table first.", false, "bad", "Error");
-        return;
-      }
-
-      const { missing, invalidQty } = validateRowsForExport(dataRows);
-
-      if (missing.length || invalidQty.length){
-        let msg = "";
-        if (missing.length){
-          msg += "Missing required fields (examples):\n" + missing.slice(0,10).map(m => `• Row ${m.row} missing ${m.field}`).join("\n") + "\n\n";
-        }
-        if (invalidQty.length){
-          msg += "Qty must be numeric only (examples):\n" + invalidQty.slice(0,10).map(m => `• Row ${m.row} has Qty="${m.value}"`).join("\n") + "\n\n";
-        }
-        const ok = confirm(msg + "Open the editor to fix this now?");
-        if (ok) openEditor("Fix issues (missing fields / Qty not numeric), then confirm changes.");
+      const err = validateRowsForExport(dataRows);
+      if (err){
+        alert(err + "\n\nOpen Edit table and fix it.");
         return;
       }
 
       const csvText = toCsv(dataRows);
-      downloadCsv(csvText, outputName);
+      downloadCsv(csvText, `${(ref || "REF")}.csv`);
+      setStatus("Downloaded", "CSV downloaded.", false, "ok", "Done");
+    }
 
-      const mode = selectedFile ? (selectedSupplier || "Unknown") : "Blank table";
-      const inputFile = selectedFile ? selectedFile.name : null;
+    function startBlankTable(){
+      const base = [];
+      for (let i=0; i<5; i++) base.push(defaultRowTemplate());
+      setDataRows(base, { totalLines:5, captured:5, ignored:0, totalPallets:null, extraInfo:"Blank table" });
+      openEditor();
+      setStatus("Blank table", "Enter rows, confirm changes, then download CSV.", false, "warn", "Manual");
+    }
 
-      const m = lastMetrics || {};
-      const totalLines = (m.totalLines == null ? dataRows.length : m.totalLines);
-      const captured = (m.captured == null ? dataRows.length : m.captured);
-      const ignored = (m.ignored == null ? 0 : m.ignored);
+    function clearFile(){
+      selectedFile = null;
+      fileInput.value = "";
+      updateFileUI();
+      updateButtons();
+      setStatus("File cleared", "Choose another file or use Blank table.", false, null, "Idle");
+    }
 
-      addHistoryItem({
-        when: new Date().toLocaleString("en-GB"),
-        mode: inputFile ? mode : "Blank table",
-        inputFile,
-        outputName,
-        totalLines,
-        captured,
-        ignored,
-        totalPallets: (m.totalPallets ?? null),
-        extraInfo: (m.extraInfo ?? ""),
-        csvText
-      });
-
-      setStatus("Downloaded", `CSV downloaded as ${outputName}.`, false, "ok", "Done");
+    function resetAll(){
+      selectedSupplier = null;
+      selectedFile = null;
+      supplierButtons.forEach(b => b.classList.remove("primary"));
+      selectedSupplierPill.textContent = "None selected";
+      rightTitle.textContent = "Upload & Process";
+      refInput.value = ""; whInput.value=""; binInput.value="";
+      pieffeHeaderOverride.value = "";
+      updatePieffeOverrideUI();
+      updateFileUI();
+      clearKpis();
+      setDataRows([], null);
+      updateOutputNameHint();
+      setStatus("Waiting", "Select supplier or use Blank table.", false, null, "Idle");
     }
 
     // -----------------------------
@@ -1826,143 +1214,139 @@
     supplierButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         const supplier = btn.getAttribute("data-supplier");
-        if (!supplierConfig[supplier]) return;
-
         selectedSupplier = supplier;
+
         supplierButtons.forEach(b => b.classList.remove("primary"));
         btn.classList.add("primary");
 
         selectedSupplierPill.textContent = supplier;
-        rightTitle.textContent = `2) ${supplierConfig[supplier].title}`;
+        rightTitle.textContent = supplier;
 
         selectedFile = null;
         fileInput.value = "";
-
         updatePieffeOverrideUI();
         updateFileUI();
         updateButtons();
-
-        setStatus("Supplier selected", "Upload the correct file type, then click Process (or use Blank table).", false, null, "Idle");
+        setStatus("Supplier selected", "Choose a file or use Blank table.", false, null, "Idle");
       });
     });
 
     [refInput, whInput, binInput].forEach(inp => {
-      inp.addEventListener("input", () => {
-        normaliseInputs();
-        updateOutputNameHint();
-        updateButtons();
-      });
-      inp.addEventListener("blur", () => {
-        normaliseInputs();
-        updateButtons();
-      });
+      inp.addEventListener("input", () => { normaliseInputs(); updateOutputNameHint(); updateButtons(); });
+      inp.addEventListener("blur", () => { normaliseInputs(); updateOutputNameHint(); updateButtons(); });
     });
-
     pieffeHeaderOverride.addEventListener("input", updatePieffeOverrideUI);
 
     chooseFileBtn.addEventListener("click", () => {
       if (!selectedSupplier){
-        setStatus("Select supplier first", "Choose the supplier on the left before selecting a file (or use Blank table).", false, "warn", "Waiting");
+        setStatus("Select supplier first", "Or use Blank table.", false, "warn", "Waiting");
         return;
       }
+      // set accept based on supplier
+      fileInput.accept = supplierConfig[selectedSupplier].accept.join(",");
       fileInput.click();
     });
 
-    fileInput.addEventListener("change", (e) => handleFilesFromEvent(e.target.files));
+    fileInput.addEventListener("change", (e) => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      try{ setSelectedFile(f); }
+      catch(err){ setStatus("Error", err.message, false, "bad", "Error"); }
+    });
 
-    ["dragenter","dragover"].forEach(ev => {
-      dropZone.addEventListener(ev, (e) => {
-        e.preventDefault(); e.stopPropagation();
-        dropZone.classList.add("isDrag");
-      });
-    });
-    ["dragleave","drop"].forEach(ev => {
-      dropZone.addEventListener(ev, (e) => {
-        e.preventDefault(); e.stopPropagation();
-        dropZone.classList.remove("isDrag");
-      });
-    });
-    dropZone.addEventListener("drop", (e) => handleFilesFromEvent(e.dataTransfer?.files));
-    dropZone.addEventListener("click", (e) => { if (e.target !== chooseFileBtn) chooseFileBtn.click(); });
-    dropZone.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " "){
-        e.preventDefault();
-        chooseFileBtn.click();
+    // Drag & drop
+    ["dragenter","dragover"].forEach(ev => dropZone.addEventListener(ev, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dropZone.classList.add("isDrag");
+    }));
+    ["dragleave","drop"].forEach(ev => dropZone.addEventListener(ev, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dropZone.classList.remove("isDrag");
+    }));
+    dropZone.addEventListener("drop", (e) => {
+      if (!selectedSupplier){
+        setStatus("Select supplier first", "Or use Blank table.", false, "warn", "Waiting");
+        return;
       }
+      const f = e.dataTransfer?.files?.[0];
+      if (!f) return;
+      try{ setSelectedFile(f); }
+      catch(err){ setStatus("Error", err.message, false, "bad", "Error"); }
     });
 
-    function handleFilesFromEvent(files){
-      if (!files || !files.length) return;
-      try{ setSelectedFile(files[0]); }
-      catch(err){ setStatus("Error", err?.message || "Could not select file.", false, "bad", "Error"); }
-    }
-
+    blankTableBtn.addEventListener("click", startBlankTable);
     clearFileBtn.addEventListener("click", clearFile);
     resetBtn.addEventListener("click", resetAll);
 
-    blankTableBtn.addEventListener("click", startBlankTable);
-
     processBtn.addEventListener("click", async () => {
       try{ await processFile(); }
-      catch(err){ setStatus("Error", err?.message || "Something went wrong.", false, "bad", "Error"); }
-      finally{ spinner.classList.add("hidden"); updateButtons(); }
+      catch(err){ setStatus("Error", err.message || "Something went wrong.", false, "bad", "Error"); }
     });
 
     editBtn.addEventListener("click", () => {
-      if (dataRows.length === 0){
-        setStatus("Nothing to edit", "Create a table using Process or Blank table first.", false, "warn", "Waiting");
-        return;
-      }
-      openEditor("Edit mode — amend values, duplicate/insert rows, drag to reorder, then confirm changes.");
+      if (!dataRows.length) return;
+      openEditor();
     });
 
     generateBtn.addEventListener("click", generateAndDownload);
 
-    // Editor modal buttons
+    // Editor controls
     editorCloseX.addEventListener("click", closeEditor);
     cancelEditBtn.addEventListener("click", closeEditor);
-    confirmEditBtn.addEventListener("click", confirmEditorChanges);
+    confirmEditBtn.addEventListener("click", () => {
+      // clean + apply
+      const cleaned = editorDraftRows
+        .map(r => ({
+          PONum: String(r.PONum ?? "").trim(),
+          Ref: String(r.Ref ?? "").trim().toUpperCase(),
+          Part: String(r.Part ?? "").trim(),
+          Qty: String(r.Qty ?? "").trim(),
+          WH: String(r.WH ?? "").trim().toUpperCase(),
+          Bin: String(r.Bin ?? "").trim().toUpperCase()
+        }))
+        .filter(r => Object.values(r).some(v => String(v).trim() !== ""));
+      setDataRows(cleaned, lastMetrics);
+      closeEditor();
+      setStatus("Table updated", "Now you can download the CSV.", false, "ok", "Ready");
+    });
 
-    addRowBtn.addEventListener("click", () => addRows(1));
-    add5RowsBtn.addEventListener("click", () => addRows(5));
-    fillDefaultsBtn.addEventListener("click", fillBlankDefaults);
-
+    addRowBtn.addEventListener("click", () => {
+      editorDraftRows.push(defaultRowTemplate());
+      renderEditorTable();
+      editorRowKpi.textContent = String(editorDraftRows.length);
+    });
+    add5RowsBtn.addEventListener("click", () => {
+      for (let i=0; i<5; i++) editorDraftRows.push(defaultRowTemplate());
+      renderEditorTable();
+      editorRowKpi.textContent = String(editorDraftRows.length);
+    });
+    fillDefaultsBtn.addEventListener("click", () => {
+      const { ref, wh, bin } = normaliseInputs();
+      for (const r of editorDraftRows){
+        if (!String(r.Ref ?? "").trim() && ref) r.Ref = ref;
+        if (!String(r.WH ?? "").trim() && wh) r.WH = wh;
+        if (!String(r.Bin ?? "").trim() && bin) r.Bin = bin;
+      }
+      renderEditorTable();
+    });
     deleteAllRowsBtn.addEventListener("click", () => {
-      const ok = confirm("Delete all rows in the editor?");
-      if (!ok) return;
+      if (!confirm("Delete all rows?")) return;
       editorDraftRows = [];
       renderEditorTable();
-      updateEditorKpi();
-      countEditorIssues();
-      showEditorToast("warn", "All rows deleted. Add rows or Cancel.");
+      editorRowKpi.textContent = "0";
     });
 
-    editorOverlay.addEventListener("click", (e) => {
-      if (e.target === editorOverlay) closeEditor();
-    });
+    editorOverlay.addEventListener("click", (e) => { if (e.target === editorOverlay) closeEditor(); });
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape" && editorOverlay.classList.contains("show")) closeEditor(); });
 
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && editorOverlay.classList.contains("show")) closeEditor();
-    });
-
-    exportHistoryBtn.addEventListener("click", exportHistoryCsv);
-    clearHistoryBtn.addEventListener("click", clearHistory);
-
-    // -----------------------------
     // Init
-    // -----------------------------
-    function init(){
-      setBadge(null, "Idle");
-      setStatus("Waiting", "Select supplier OR use Blank table. Enter Ref/WH/Bin. Upload file if needed.", false, null, "Idle");
-      updateOutputNameHint();
-      updatePieffeOverrideUI();
-      updateFileUI();
-      clearResults();
-      updateButtons();
-      renderHistory();
-    }
-
-    init();
+    setBadge(null, "Idle");
+    setStatus("Waiting", "Select supplier or use Blank table.", false, null, "Idle");
+    updateOutputNameHint();
+    updatePieffeOverrideUI();
+    updateFileUI();
+    setDataRows([], null);
+    updateButtons();
   </script>
 </body>
 </html>
