@@ -375,13 +375,6 @@
             <span>→</span>
           </button>
 
-          <button class="btn" data-supplier="Italdecor">
-            <div>
-              <div class="name">Italdecor</div>
-              <div class="meta">Excel • PO from “-->ORD. n.” • Part from col A • Qty from col M</div>
-            </div>
-            <span>→</span>
-          </button>
 
           <button class="btn" data-supplier="Pieffe Union">
             <div>
@@ -639,12 +632,6 @@
         accept: ".pdf",
         hint: "Accepted: .pdf (text PDF)",
         processor: processDecorativePanelsPdf
-      },
-      "Italdecor": {
-        title: "Italdecor — Excel upload",
-        accept: ".xlsx,.xls",
-        hint: "Accepted: .xlsx / .xls",
-        processor: processItaldecorExcel
       },
       "Pieffe Union": {
         title: "Pieffe Union — Excel upload",
@@ -1046,48 +1033,6 @@
       }
 
       return { rows: data, totalLines, captured, ignored, totalPallets: null, extraInfo: null };
-    }
-
-    async function processItaldecorExcel(ref, wh, bin, file){
-      const buf = await readFileAsArrayBuffer(file);
-      const matrix = excelToMatrix(buf, 0);
-
-      const data = [];
-      let currentPO = null;
-      let totalProductLines = 0;
-      let captured = 0;
-      let ignored = 0;
-
-      for (const row of matrix){
-        const c0 = row[0];
-        const c12 = row[12];
-
-        if (typeof c0 === "string"){
-          const skipKeywords = ["Codice","Descrizione","SEGUE","DPS","TIR"];
-          if (skipKeywords.some(k => c0.includes(k))) continue;
-
-          if (c0.includes("-->ORD. n.")){
-            try{
-              const after = c0.split("ORD. n.")[1];
-              currentPO = after.split("/")[0].trim();
-            }catch{
-              currentPO = null;
-            }
-          }
-        }
-
-        if (c0 != null && c12 != null){
-          totalProductLines++;
-          try{
-            data.push({ PONum: currentPO, Ref: ref, Part: c0, Qty: c12, WH: wh, Bin: bin });
-            captured++;
-          }catch{
-            ignored++;
-          }
-        }
-      }
-
-      return { rows: data, totalLines: totalProductLines, captured, ignored, totalPallets: null, extraInfo: null };
     }
 
     // Pieffe header detection + manual override
