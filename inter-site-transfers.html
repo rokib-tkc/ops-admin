@@ -752,32 +752,39 @@
         </div>
       </section>
 
-<!-- Daily Summary (always at bottom) -->
+<!-- Daily Summary (collapsible) -->
 <section class="card summary-card" id="summaryCard">
   <div class="cardhead">
     <div>
       <h2>Daily Transfer Summary</h2>
       <div class="sub">Snapshot for the selected date and direction.</div>
     </div>
+    <div class="row-actions">
+      <button class="btn" id="btnToggleSummary">Show</button>
+    </div>
   </div>
 
-  <div class="summary-kpis" id="summaryKpis"></div>
+  <!-- Collapsible content -->
+  <div id="summaryWrap" style="display:none;">
+    <div class="summary-kpis" id="summaryKpis"></div>
 
-  <div style="position:relative; border:1px solid #eef0f3; border-radius:12px; overflow:hidden;">
-    <table id="summaryTable">
-      <thead>
-        <tr>
-          <th style="width:140px;">TYPE</th>
-          <th style="width:120px;">REQUESTED</th>
-          <th style="width:120px;">SENT</th>
-          <th style="width:140px;">OUTSTANDING</th>
-          <th>NOTES</th>
-        </tr>
-      </thead>
-      <tbody id="summaryBody"></tbody>
-    </table>
+    <div style="position:relative; border:1px solid #eef0f3; border-radius:12px; overflow:hidden;">
+      <table id="summaryTable">
+        <thead>
+          <tr>
+            <th style="width:140px;">TYPE</th>
+            <th style="width:120px;">REQUESTED</th>
+            <th style="width:120px;">SENT</th>
+            <th style="width:140px;">OUTSTANDING</th>
+            <th>NOTES</th>
+          </tr>
+        </thead>
+        <tbody id="summaryBody"></tbody>
+      </table>
+    </div>
   </div>
 </section>
+
       
     </div>
   </main>
@@ -951,6 +958,8 @@ const sentCard = document.getElementById("sentCard");
 
     
     // Summary
+    const summaryWrap = document.getElementById("summaryWrap");
+    const btnToggleSummary = document.getElementById("btnToggleSummary");
     const summaryKpis = document.getElementById("summaryKpis");
     const summaryBody = document.getElementById("summaryBody");
 
@@ -1929,6 +1938,14 @@ productSearch.addEventListener("keydown", (e) => {
       sentWrap.style.display = hidden ? "block" : "none";
       btnToggleSent.textContent = hidden ? "Hide" : "Show";
     });
+
+    
+    btnToggleSummary.addEventListener("click", () => {
+    const hidden = summaryWrap.style.display === "none";
+    summaryWrap.style.display = hidden ? "block" : "none";
+    btnToggleSummary.textContent = hidden ? "Hide" : "Show";
+    });
+
 
     // ====== CANCELLED ACTIONS ======
     btnReverseCancel.addEventListener("click", async () => {
