@@ -906,12 +906,10 @@ tr.dragOver{ outline: 2px dashed rgba(37,99,235,.45); outline-offset: -2px; }
     dropSub.textContent = "Choose a supplier first (left).";
     clearFileBtn.disabled = true;
     chooseFileBtn.disabled = false;
-    dropZone.classList.remove("hidden");
     return;
   }
 
   if (selectedSupplier === "__MANUAL__"){
-    // No file needed
     fileInput.accept = "";
     fileName.textContent = "No file needed (Manual Entry)";
     dropSub.textContent = "Manual Entry mode: click “Edit Table” to create rows.";
@@ -933,6 +931,7 @@ tr.dragOver{ outline: 2px dashed rgba(37,99,235,.45); outline-offset: -2px; }
     clearFileBtn.disabled = false;
   }
 }
+
 
       fileInput.accept = supplierConfig[selectedSupplier].accept;
       dropSub.textContent = supplierConfig[selectedSupplier].hint;
@@ -1983,13 +1982,6 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-      }catch(err){
-        setStatus("Error", err?.message || "Something went wrong.", false, "bad", "Error");
-      }finally{
-        spinner.classList.add("hidden");
-        updateButtons();
-      }
-    });
 
     // -----------------------------
     // Init
