@@ -335,6 +335,123 @@
       color: var(--bad);
       background: rgba(239,68,68,.06);
     }
+
+
+    /* Manual supplier button colour */
+.btn.manual{
+  background: rgba(245,158,11,.12);
+  border-color: rgba(245,158,11,.35);
+}
+.btn.manual:hover{ background: rgba(245,158,11,.16); border-color: rgba(245,158,11,.45); }
+
+/* Overlay editor */
+.overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(17,24,39,.55);
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 9999;
+}
+.overlayCard{
+  width: min(1100px, 100%);
+  max-height: min(84vh, 900px);
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  display:flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.overlayTop{
+  padding: 14px 14px 10px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.overlayTitle{ font-weight: 900; font-size: 14px; }
+.overlaySub{ color: var(--muted); font-size: 12px; margin-top: 4px; }
+.overlayActions{ display:flex; gap: 8px; flex-wrap: wrap; }
+
+.overlayBody{
+  padding: 12px 14px 14px;
+  overflow:auto;
+}
+
+.editTable{
+  width:100%;
+  border-collapse: collapse;
+  border:1px solid var(--border);
+  border-radius: 14px;
+  overflow:hidden;
+}
+.editTable thead th{
+  background:#f3f4f6;
+  text-align:left;
+  font-size: 12px;
+  color:#374151;
+  padding: 10px;
+  border-bottom:1px solid var(--border);
+}
+.editTable tbody td{
+  padding: 8px 10px;
+  border-bottom:1px solid var(--border);
+  font-size: 13px;
+  vertical-align: middle;
+  background:#fff;
+}
+.editTable tbody tr:last-child td{ border-bottom:none; }
+
+.rowGrip{
+  cursor: grab;
+  user-select:none;
+  font-size: 16px;
+  line-height: 1;
+  opacity: .65;
+}
+tr.dragging{ opacity: .4; }
+tr.dragOver{ outline: 2px dashed rgba(37,99,235,.45); outline-offset: -2px; }
+
+.cellInput{
+  width:100%;
+  padding: 8px 8px;
+  border-radius: 10px;
+  border:1px solid var(--border);
+  outline:none;
+  font-size: 13px;
+}
+.cellInput:focus{
+  border-color:#93c5fd;
+  box-shadow: var(--focus);
+}
+
+.rowBtns{
+  display:flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.rowBtn{
+  appearance:none;
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius: 10px;
+  padding: 6px 8px;
+  cursor:pointer;
+  font-size: 12px;
+}
+.rowBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
+.rowBtn.danger{
+  border-color: rgba(239,68,68,.35);
+  color: var(--bad);
+  background: rgba(239,68,68,.06);
+}
+    
   </style>
 </head>
 
@@ -392,6 +509,16 @@
             <span>→</span>
           </button>
 
+
+          <button class="btn manual" id="manualEntryBtn" type="button">
+            <div>
+              <div class="name">Manual Entry</div>
+              <div class="meta">No file • create/edit rows manually • generate CSV</div>
+            </div>
+            <span>＋</span>
+          </button>
+
+
           <button class="btn primary" id="resetBtn" type="button">
             <div>
               <div class="name">Reset</div>
@@ -402,13 +529,14 @@
         </div>
 
         <div class="helpBox">
-          <h3>Idiot-proof checklist</h3>
+          <h3>Instructions</h3>
           <ul>
             <li>Pick the supplier (left).</li>
             <li>Enter Ref, WH, Bin (right).</li>
-            <li>Drag & drop the file (or click “Choose file”).</li>
-            <li>Click “Process & Generate CSV”, then “Download CSV”.</li>
-            <li>For Pieffe only: if it fails, set “Header row override”.</li>
+            <li>Drag & drop a supplier file (or click “Choose file”).</li>
+            <li>Click “Process”, then optionally 'Edit Table', then 'Generate & Download CSV'.</li>
+            <li>For Pieffe only: if upload fails, set “Header row override”.</li>
+            <li>If no file to upload: choose Manual Entry.</li>
           </ul>
         </div>
 
@@ -475,8 +603,9 @@
         </div>
 
         <div class="actions">
-          <button class="btn primary" id="processBtn" type="button" disabled>Process & Generate CSV</button>
-          <button class="btn" id="downloadBtn" type="button" disabled>Download CSV</button>
+          <button class="btn primary" id="processBtn" type="button" disabled>Process</button>
+          <button class="btn" id="editBtn" type="button" disabled>Edit Table</button>
+          <button class="btn" id="downloadBtn" type="button" disabled>Generate & Download CSV</button>
           <button class="btn danger" id="clearFileBtn" type="button" disabled>Clear file</button>
         </div>
 
@@ -548,6 +677,47 @@
     </div>
   </div>
 
+  <!-- EDIT TABLE OVERLAY -->
+<div class="overlay hidden" id="editOverlay" role="dialog" aria-modal="true" aria-label="Edit table">
+  <div class="overlayCard">
+    <div class="overlayTop">
+      <div>
+        <div class="overlayTitle">Edit CSV Rows</div>
+        <div class="overlaySub" id="overlaySub">Drag rows to reorder • double-check PO / Part / Qty</div>
+      </div>
+
+      <div class="overlayActions">
+        <button class="linkBtn" id="addRowTopBtn" type="button">Add row</button>
+        <button class="linkBtn" id="add5RowsBtn" type="button">Add 5 rows</button>
+        <button class="linkBtn danger" id="clearAllRowsBtn" type="button">Clear rows</button>
+        <button class="linkBtn" id="closeEditorBtn" type="button">Done</button>
+      </div>
+    </div>
+
+    <div class="overlayBody">
+      <table class="editTable" aria-label="Editable rows">
+        <thead>
+          <tr>
+            <th style="width:36px;"></th>
+            <th style="width:180px;">PONum</th>
+            <th style="width:260px;">Part</th>
+            <th style="width:120px;">Qty</th>
+            <th style="width:80px;">WH</th>
+            <th style="width:80px;">Bin</th>
+            <th style="width:120px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="editTbody"></tbody>
+      </table>
+
+      <div class="note" style="margin-top:10px;">
+        Tip: WH + Bin are auto-filled from the boxes on the right. You can still edit them per row if needed.
+      </div>
+    </div>
+  </div>
+</div>
+
+
   <script type="module">
     import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
@@ -591,6 +761,7 @@
     const dropSub = document.getElementById("dropSub");
 
     const processBtn = document.getElementById("processBtn");
+    const editBtn = document.getElementById("editBtn");
     const downloadBtn = document.getElementById("downloadBtn");
     const clearFileBtn = document.getElementById("clearFileBtn");
     const resetBtn = document.getElementById("resetBtn");
@@ -617,6 +788,18 @@
     const exportHistoryBtn = document.getElementById("exportHistoryBtn");
     const clearHistoryBtn = document.getElementById("clearHistoryBtn");
 
+    // Manual entry button
+    const manualEntryBtn = document.getElementById("manualEntryBtn");
+
+    // Editor overlay
+    const editOverlay = document.getElementById("editOverlay");
+    const editTbody = document.getElementById("editTbody");
+    const closeEditorBtn = document.getElementById("closeEditorBtn");
+    const addRowTopBtn = document.getElementById("addRowTopBtn");
+    const add5RowsBtn = document.getElementById("add5RowsBtn");
+    const clearAllRowsBtn = document.getElementById("clearAllRowsBtn");
+    const overlaySub = document.getElementById("overlaySub");
+    
     // -----------------------------
     // Supplier config
     // -----------------------------
@@ -681,10 +864,17 @@
       return { ref, wh, bin };
     }
 
-    function requiredReady(){
-      const { ref, wh, bin } = normaliseInputs();
-      return Boolean(selectedSupplier && selectedFile && ref && wh && bin);
+     function requiredReady(){
+    const { ref, wh, bin } = normaliseInputs();
+    if (!selectedSupplier) return false;
+
+    // Manual Entry doesn't require a file
+    if (selectedSupplier === "__MANUAL__"){
+      return Boolean(ref && wh && bin);
     }
+
+    return Boolean(selectedFile && ref && wh && bin);
+  }
 
     function updateOutputNameHint(){
       const { ref } = normaliseInputs();
@@ -710,13 +900,39 @@
     }
 
     function updateFileUI(){
-      if (!selectedSupplier){
-        fileInput.accept = "";
-        fileName.textContent = "No file selected";
-        dropSub.textContent = "Choose a supplier first (left).";
-        clearFileBtn.disabled = true;
-        return;
-      }
+  if (!selectedSupplier){
+    fileInput.accept = "";
+    fileName.textContent = "No file selected";
+    dropSub.textContent = "Choose a supplier first (left).";
+    clearFileBtn.disabled = true;
+    chooseFileBtn.disabled = false;
+    dropZone.classList.remove("hidden");
+    return;
+  }
+
+  if (selectedSupplier === "__MANUAL__"){
+    // No file needed
+    fileInput.accept = "";
+    fileName.textContent = "No file needed (Manual Entry)";
+    dropSub.textContent = "Manual Entry mode: click “Edit Table” to create rows.";
+    clearFileBtn.disabled = true;
+    chooseFileBtn.disabled = true;
+    return;
+  }
+
+  // Normal suppliers
+  fileInput.accept = supplierConfig[selectedSupplier].accept;
+  dropSub.textContent = supplierConfig[selectedSupplier].hint;
+  chooseFileBtn.disabled = false;
+
+  if (!selectedFile){
+    fileName.textContent = "No file selected";
+    clearFileBtn.disabled = true;
+  } else {
+    fileName.textContent = selectedFile.name;
+    clearFileBtn.disabled = false;
+  }
+}
 
       fileInput.accept = supplierConfig[selectedSupplier].accept;
       dropSub.textContent = supplierConfig[selectedSupplier].hint;
@@ -731,9 +947,15 @@
     }
 
     function updateButtons(){
-      processBtn.disabled = !requiredReady();
-      downloadBtn.disabled = !lastCsvText;
-    }
+  processBtn.disabled = !requiredReady();
+
+  // Edit enabled once rows exist OR manual mode (so they can start creating rows)
+  const canEdit = (selectedSupplier === "__MANUAL__") || (Array.isArray(lastRows) && lastRows.length > 0);
+  editBtn.disabled = !canEdit;
+
+  // Generate enabled once rows exist
+  downloadBtn.disabled = !(Array.isArray(lastRows) && lastRows.length > 0);
+}
 
     function clearResults(){
       lastCsvText = "";
@@ -790,12 +1012,16 @@
     }
 
     function validateBasics(){
-      if (!selectedSupplier) throw new Error("Please select a supplier first.");
-      const { ref, wh, bin } = normaliseInputs();
-      if (!ref || !wh || !bin) throw new Error("Ref, WH and Bin are required.");
-      if (!selectedFile) throw new Error("Please choose a file (drag & drop or Choose file).");
-      return { ref, wh, bin, file: selectedFile };
-    }
+  if (!selectedSupplier) throw new Error("Please select a supplier first.");
+  const { ref, wh, bin } = normaliseInputs();
+  if (!ref || !wh || !bin) throw new Error("Ref, WH and Bin are required.");
+
+  if (selectedSupplier !== "__MANUAL__"){
+    if (!selectedFile) throw new Error("Please choose a file (drag & drop or Choose file).");
+  }
+
+  return { ref, wh, bin, file: selectedFile };
+}
 
     function renderPreview(rows){
       previewBody.innerHTML = "";
@@ -814,6 +1040,183 @@
       }
       previewTable.classList.toggle("hidden", rows.length === 0);
     }
+
+
+    // -----------------------------
+// Editor: rows + overlay
+// -----------------------------
+function makeEmptyRow({ ref, wh, bin }){
+  return { PONum: "", Ref: ref, Part: "", Qty: "", WH: wh, Bin: bin };
+}
+
+function sanitiseRow(r){
+  // Ensure all required keys exist
+  return {
+    PONum: (r?.PONum ?? ""),
+    Ref: (r?.Ref ?? ""),
+    Part: (r?.Part ?? ""),
+    Qty: (r?.Qty ?? ""),
+    WH: (r?.WH ?? ""),
+    Bin: (r?.Bin ?? "")
+  };
+}
+
+function openEditor(){
+  const { ref, wh, bin } = normaliseInputs();
+
+  // In manual mode, if no rows yet, seed a few blanks
+  if (selectedSupplier === "__MANUAL__" && (!lastRows || lastRows.length === 0)){
+    lastRows = [makeEmptyRow({ ref, wh, bin }), makeEmptyRow({ ref, wh, bin }), makeEmptyRow({ ref, wh, bin })];
+  }
+
+  // Always refresh WH/Bin/Ref defaults into blanks (don’t overwrite if user typed something)
+  lastRows = (lastRows || []).map(r => {
+    const rr = sanitiseRow(r);
+    if (!rr.Ref) rr.Ref = ref;
+    if (!rr.WH) rr.WH = wh;
+    if (!rr.Bin) rr.Bin = bin;
+    return rr;
+  });
+
+  overlaySub.textContent = (selectedSupplier === "__MANUAL__")
+    ? "Manual Entry: add rows, type values, drag to reorder"
+    : "Edit parsed data: drag rows to reorder, fix anything that looks off";
+
+  renderEditorTable();
+  editOverlay.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function closeEditor(){
+  // Pull latest edits from DOM into lastRows before closing
+  syncEditorToRows();
+  editOverlay.classList.add("hidden");
+  document.body.style.overflow = "";
+  // Update preview + KPI with edited result
+  refreshPreviewAndKpisFromLastRows();
+  updateButtons();
+}
+
+function refreshPreviewAndKpisFromLastRows(){
+  const rows = (lastRows || []).map(sanitiseRow);
+
+  // total/captured/ignored become simple counts in this version
+  const total = rows.length;
+  const captured = rows.filter(r =>
+    String(r.PONum || "").trim() !== "" &&
+    String(r.Part || "").trim() !== "" &&
+    String(r.Qty || "").trim() !== ""
+  ).length;
+  const ignored = total - captured;
+
+  kpiTotal.textContent = String(total);
+  kpiCaptured.textContent = String(captured);
+  kpiIgnored.textContent = String(ignored);
+
+  // Pallets can remain as previously set by processor (e.g. Decorative Panels),
+  // so we do NOT overwrite kpiPallets here.
+  renderPreview(rows);
+}
+
+function syncEditorToRows(){
+  const trs = Array.from(editTbody.querySelectorAll("tr"));
+  const rows = [];
+  for (const tr of trs){
+    const get = (sel) => tr.querySelector(sel)?.value ?? "";
+    rows.push({
+      PONum: get('input[data-col="PONum"]').trim(),
+      Ref: get('input[data-col="Ref"]').trim(),
+      Part: get('input[data-col="Part"]').trim(),
+      Qty: get('input[data-col="Qty"]').trim(),
+      WH: get('input[data-col="WH"]').trim(),
+      Bin: get('input[data-col="Bin"]').trim()
+    });
+  }
+  lastRows = rows;
+}
+
+function renderEditorTable(){
+  editTbody.innerHTML = "";
+  const rows = (lastRows || []).map(sanitiseRow);
+
+  rows.forEach((r, idx) => {
+    const tr = document.createElement("tr");
+    tr.draggable = true;
+    tr.dataset.index = String(idx);
+
+    tr.innerHTML = `
+      <td title="Drag to reorder"><span class="rowGrip" aria-label="Drag handle">⠿</span></td>
+
+      <td><input class="cellInput" data-col="PONum" value="${escapeHtml(r.PONum)}" /></td>
+      <td><input class="cellInput" data-col="Part" value="${escapeHtml(r.Part)}" /></td>
+      <td><input class="cellInput" data-col="Qty" value="${escapeHtml(r.Qty)}" /></td>
+
+      <td><input class="cellInput" data-col="WH" value="${escapeHtml(r.WH)}" /></td>
+      <td><input class="cellInput" data-col="Bin" value="${escapeHtml(r.Bin)}" /></td>
+
+      <td>
+        <div class="rowBtns">
+          <button class="rowBtn" type="button" data-action="addAfter">Add after</button>
+          <button class="rowBtn danger" type="button" data-action="delete">Delete</button>
+        </div>
+      </td>
+    `;
+
+    // Hidden Ref field stored in DOM (not displayed as a column to keep it tidy)
+    // but still editable via per-row WH/Bin etc; we keep Ref synced in generation.
+    const refInputEl = document.createElement("input");
+    refInputEl.type = "hidden";
+    refInputEl.className = "cellInput";
+    refInputEl.dataset.col = "Ref";
+    refInputEl.value = r.Ref ?? "";
+    tr.appendChild(refInputEl);
+
+    // Row actions
+    tr.querySelector('[data-action="addAfter"]').addEventListener("click", () => {
+      syncEditorToRows();
+      const { ref, wh, bin } = normaliseInputs();
+      lastRows.splice(idx + 1, 0, makeEmptyRow({ ref, wh, bin }));
+      renderEditorTable();
+    });
+
+    tr.querySelector('[data-action="delete"]').addEventListener("click", () => {
+      syncEditorToRows();
+      lastRows.splice(idx, 1);
+      renderEditorTable();
+    });
+
+    // Drag reorder
+    tr.addEventListener("dragstart", () => {
+      tr.classList.add("dragging");
+    });
+    tr.addEventListener("dragend", () => {
+      tr.classList.remove("dragging");
+      Array.from(editTbody.querySelectorAll("tr")).forEach(x => x.classList.remove("dragOver"));
+      syncEditorToRows();
+    });
+
+    tr.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      const dragging = editTbody.querySelector("tr.dragging");
+      if (!dragging || dragging === tr) return;
+
+      tr.classList.add("dragOver");
+
+      const rect = tr.getBoundingClientRect();
+      const after = (e.clientY - rect.top) > rect.height / 2;
+      if (after){
+        tr.after(dragging);
+      } else {
+        tr.before(dragging);
+      }
+    });
+    tr.addEventListener("dragleave", () => tr.classList.remove("dragOver"));
+    tr.addEventListener("drop", () => tr.classList.remove("dragOver"));
+
+    editTbody.appendChild(tr);
+  });
+}
+
 
     // -----------------------------
     // CSV helpers (UTF-8 with BOM)
@@ -1276,6 +1679,8 @@
         supplierButtons.forEach(b => b.classList.remove("primary"));
         btn.classList.add("primary");
 
+        if (selectedSupplier === "__MANUAL__") return;
+
         selectedSupplierPill.textContent = supplier;
         rightTitle.textContent = `2) ${supplierConfig[supplier].title}`;
 
@@ -1283,6 +1688,10 @@
         selectedFile = null;
         fileInput.value = "";
         clearResults();
+
+        lastRows = [];
+        kpiPallets.textContent = "—";
+
 
         updatePieffeOverrideUI();
         updateFileUI();
@@ -1292,6 +1701,93 @@
         setStatus("Supplier selected", "Fill Ref/WH/Bin, then choose the correct file type for this supplier.", false, null, "Idle");
       });
     });
+
+
+    editBtn.addEventListener("click", () => {
+  try{
+    const { ref, wh, bin } = validateBasics();
+
+    // If there are no rows (non-manual), stop
+    if (selectedSupplier !== "__MANUAL__" && (!lastRows || !lastRows.length)){
+      setStatus("Nothing to edit", "Process a file first, then edit.", false, "warn", "Waiting");
+      return;
+    }
+
+    // Ensure defaults exist for editor
+    lastRows = (lastRows || []).map(r => {
+      const rr = sanitiseRow(r);
+      if (!rr.Ref) rr.Ref = ref;
+      if (!rr.WH) rr.WH = wh;
+      if (!rr.Bin) rr.Bin = bin;
+      return rr;
+    });
+
+    openEditor();
+  }catch(err){
+    setStatus("Error", err?.message || "Cannot open editor.", false, "bad", "Error");
+  }
+});
+
+closeEditorBtn.addEventListener("click", closeEditor);
+
+addRowTopBtn.addEventListener("click", () => {
+  syncEditorToRows();
+  const { ref, wh, bin } = normaliseInputs();
+  lastRows.push(makeEmptyRow({ ref, wh, bin }));
+  renderEditorTable();
+});
+
+add5RowsBtn.addEventListener("click", () => {
+  syncEditorToRows();
+  const { ref, wh, bin } = normaliseInputs();
+  for (let i = 0; i < 5; i++) lastRows.push(makeEmptyRow({ ref, wh, bin }));
+  renderEditorTable();
+});
+
+clearAllRowsBtn.addEventListener("click", () => {
+  const ok = confirm("Clear all rows in the editor?");
+  if (!ok) return;
+  lastRows = [];
+  renderEditorTable();
+});
+
+// Click outside card closes overlay (staff-friendly)
+editOverlay.addEventListener("click", (e) => {
+  if (e.target === editOverlay) closeEditor();
+});
+
+// Escape closes overlay
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !editOverlay.classList.contains("hidden")){
+    closeEditor();
+  }
+});
+
+
+    manualEntryBtn.addEventListener("click", () => {
+  // Select Manual Entry pseudo-supplier
+  selectedSupplier = "__MANUAL__";
+
+  supplierButtons.forEach(b => b.classList.remove("primary"));
+  selectedSupplierPill.textContent = "Manual Entry";
+  rightTitle.textContent = "2) Manual Entry — no file";
+
+  selectedFile = null;
+  fileInput.value = "";
+
+  clearResults();
+  lastRows = [];
+  kpiPallets.textContent = "—";
+
+  updatePieffeOverrideUI(); // hides Pieffe override
+  updateFileUI();
+  updateOutputNameHint();
+  updateButtons();
+
+  setStatus("Manual Entry selected", "Fill Ref/WH/Bin, then click Edit Table to add rows.", false, "ok", "Ready");
+});
+
+    
 
     // Uppercase + button gating
     [refInput, whInput, binInput].forEach(inp => {
@@ -1361,67 +1857,131 @@
     clearHistoryBtn.addEventListener("click", clearHistory);
 
     downloadBtn.addEventListener("click", () => {
-      if (!lastCsvText || !lastOutputName) return;
-      downloadCsv(lastCsvText, lastOutputName);
+  try{
+    const { ref, wh, bin } = validateBasics();
+
+    // Ensure editor changes are included if overlay is open
+    if (!editOverlay.classList.contains("hidden")){
+      syncEditorToRows();
+    }
+
+    // Finalise rows: enforce Ref/WH/Bin defaults if blank
+    const rows = (lastRows || []).map(r => {
+      const rr = sanitiseRow(r);
+      if (!rr.Ref) rr.Ref = ref;
+      if (!rr.WH) rr.WH = wh;
+      if (!rr.Bin) rr.Bin = bin;
+      return rr;
     });
+
+    // Filter out completely empty rows (staff-proof)
+    const finalRows = rows.filter(r =>
+      String(r.PONum || "").trim() !== "" ||
+      String(r.Part || "").trim() !== "" ||
+      String(r.Qty || "").trim() !== ""
+    );
+
+    if (!finalRows.length){
+      setStatus("No data", "There are no rows to export. Add rows or fix blanks, then try again.", false, "bad", "No Data");
+      return;
+    }
+
+    const csvText = toCsv(finalRows);
+    const outputName = `${ref}.csv`;
+
+    // Store for history redownload
+    lastCsvText = csvText;
+    lastOutputName = outputName;
+
+    downloadCsv(csvText, outputName);
+
+    setStatus("Downloaded", `CSV generated from ${finalRows.length} row(s).`, false, "ok", "Done");
+
+    // Add to history NOW (at generation stage)
+    addHistoryItem({
+      when: new Date().toLocaleString("en-GB"),
+      supplier: (selectedSupplier === "__MANUAL__" ? "Manual Entry" : selectedSupplier),
+      inputFile: (selectedSupplier === "__MANUAL__" ? "—" : (selectedFile?.name || "—")),
+      outputName,
+      totalLines: finalRows.length,
+      captured: finalRows.length,
+      ignored: 0,
+      totalPallets: (kpiPallets.textContent === "—" ? null : Number(kpiPallets.textContent) || null),
+      extraInfo: (selectedSupplier === "__MANUAL__" ? "Manual entry" : ""),
+      csvText
+    });
+
+    updateButtons();
+
+  }catch(err){
+    setStatus("Error", err?.message || "Could not generate CSV.", false, "bad", "Error");
+  }
+});
 
     // Main processing
     processBtn.addEventListener("click", async () => {
-      try{
-        const { ref, wh, bin, file } = validateBasics();
+  try{
+    const { ref, wh, bin, file } = validateBasics();
 
-        setStatus("Processing…", "Reading file and generating CSV rows.", true, "warn", "Processing");
+    // Manual entry: no parsing, just open editor
+    if (selectedSupplier === "__MANUAL__"){
+      clearResults();
+      lastRows = []; // editor will seed rows
+      kpiPallets.textContent = "—";
+      setStatus("Manual Entry", "Use Edit Table to add rows, then Generate & Download CSV.", false, "ok", "Ready");
+      openEditor();
+      updateButtons();
+      return;
+    }
 
-        // Ensure Pieffe override UI is consistent
-        updatePieffeOverrideUI();
+    setStatus("Processing…", "Reading file and building editable rows.", true, "warn", "Processing");
 
-        const cfg = supplierConfig[selectedSupplier];
-        const result = await cfg.processor(ref, wh, bin, file);
+    updatePieffeOverrideUI();
 
-        lastRows = result.rows;
-        lastCsvText = toCsv(result.rows);
-        lastOutputName = `${ref}.csv`;
+    const cfg = supplierConfig[selectedSupplier];
+    const result = await cfg.processor(ref, wh, bin, file);
 
-        kpiTotal.textContent = String(result.totalLines ?? 0);
-        kpiCaptured.textContent = String(result.captured ?? 0);
-        kpiIgnored.textContent = String(result.ignored ?? 0);
-        kpiPallets.textContent = (result.totalPallets == null ? "—" : String(result.totalPallets));
+    // Store rows only (no CSV yet)
+    lastRows = (result.rows || []).map(sanitiseRow);
+    lastCsvText = "";
+    lastOutputName = `${ref}.csv`;
 
-        renderPreview(result.rows);
-        downloadBtn.disabled = result.rows.length === 0;
+    // KPIs based on processor output
+    kpiTotal.textContent = String(result.totalLines ?? lastRows.length ?? 0);
+    kpiCaptured.textContent = String(result.captured ?? lastRows.length ?? 0);
+    kpiIgnored.textContent = String(result.ignored ?? 0);
+    kpiPallets.textContent = (result.totalPallets == null ? "—" : String(result.totalPallets));
 
-        if (result.rows.length === 0){
-          setStatus(
-            "Done — no rows captured",
-            "Nothing matched the expected pattern. Double-check supplier + file selection.",
-            false,
-            "bad",
-            "No Data"
-          );
-        } else {
-          const extra = result.extraInfo ? ` (${result.extraInfo})` : "";
-          setStatus(
-            "Done",
-            `Generated ${result.rows.length} CSV rows. Click “Download CSV”.${extra}`,
-            false,
-            "ok",
-            "Ready"
-          );
-        }
+    renderPreview(lastRows);
 
-        // Add to history
-        addHistoryItem({
-          when: new Date().toLocaleString("en-GB"),
-          supplier: selectedSupplier,
-          inputFile: file.name,
-          outputName: lastOutputName,
-          totalLines: result.totalLines ?? 0,
-          captured: result.captured ?? 0,
-          ignored: result.ignored ?? 0,
-          totalPallets: result.totalPallets ?? null,
-          extraInfo: result.extraInfo ?? "",
-          csvText: lastCsvText
-        });
+    if (!lastRows.length){
+      setStatus(
+        "Done — no rows captured",
+        "Nothing matched the expected pattern. Double-check supplier + file selection.",
+        false,
+        "bad",
+        "No Data"
+      );
+    } else {
+      const extra = result.extraInfo ? ` (${result.extraInfo})` : "";
+      setStatus(
+        "Ready to edit",
+        `Loaded ${lastRows.length} rows. Click “Edit Table” if you need changes, then “Generate & Download CSV”.${extra}`,
+        false,
+        "ok",
+        "Ready"
+      );
+    }
+
+    updateButtons();
+
+  }catch(err){
+    setStatus("Error", err?.message || "Something went wrong.", false, "bad", "Error");
+  }finally{
+    spinner.classList.add("hidden");
+    updateButtons();
+  }
+});
 
       }catch(err){
         setStatus("Error", err?.message || "Something went wrong.", false, "bad", "Error");
