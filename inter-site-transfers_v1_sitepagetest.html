@@ -74,6 +74,30 @@
       transform: translateY(-1px);
     }
 
+
+    /* ===== Tab notification badge (outstanding count) ===== */
+.tab .badge{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  min-width:18px;
+  height:18px;
+  padding:0 6px;
+  border-radius:999px;
+  background: var(--cancel);   /* red */
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  line-height:18px;
+  text-align:center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+  display:none; /* default hidden */
+  pointer-events:none;
+}
+
+.tab .badge.show{ display:inline-block; }
+
+
     /* ===== Buttons ===== */
     .btn{
       border:1px solid var(--border);
@@ -275,7 +299,48 @@
   background: rgba(239,68,68,0.18) !important;
 }
 
-    
+   /* ===== Daily Summary ===== */
+.summary-card{
+  border-color: rgba(17,24,39,0.18) !important;
+  background: rgba(17,24,39,0.03) !important; /* light neutral tint */
+}
+.summary-card .cardhead h2{
+  color:#111827;
+}
+
+/* KPI tiles */
+.summary-kpis{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap:10px;
+  margin-bottom:12px;
+}
+@media (max-width: 900px){
+  .summary-kpis{ grid-template-columns: 1fr; }
+}
+.kpi{
+  border:1px solid rgba(17,24,39,0.12);
+  background:#fff;
+  border-radius:12px;
+  padding:10px 12px;
+}
+.kpi .label{
+  font-size:12px;
+  color: var(--muted);
+  font-weight:700;
+}
+.kpi .value{
+  font-size:18px;
+  font-weight:800;
+  margin-top:4px;
+  color:#111827;
+}
+.kpi .hint{
+  margin:6px 0 0 0;
+  font-size:12px;
+  color: var(--muted);
+}
+ 
     
     .prio-flag{
       display:inline-flex;
@@ -319,6 +384,9 @@
       background: rgba(239, 68, 68, 0.25) !important; /* light red */
     }
 
+    .type-order{
+  background: rgba(96, 165, 250, 0.28) !important; /* light blue */
+    }
 
     .checkbox{ width:16px; height:16px; }
     .small{ font-size:12px; color:var(--muted); }
@@ -508,11 +576,18 @@
       </div>
 
       <div class="controls">
-        <button class="btn home" id="btnHome" title="Back to Ops Admin Home">Home</button>
-
+        
         <div class="tabs">
-          <button class="tab active" id="tabPKY">PKY → DTN</button>
-          <button class="tab" id="tabDTN">DTN → PKY</button>
+         <button class="tab active" id="tabPKY">
+  PKY → DTN
+  <span class="badge" id="badgePKY" aria-label="Outstanding transfers"></span>
+</button>
+
+<button class="tab" id="tabDTN">
+  DTN → PKY
+  <span class="badge" id="badgeDTN" aria-label="Outstanding transfers"></span>
+</button>
+
         </div>
 
         <div style="display:flex;align-items:center;gap:8px;">
@@ -709,6 +784,40 @@
         </div>
       </section>
 
+<!-- Daily Summary (collapsible) -->
+<section class="card summary-card" id="summaryCard">
+  <div class="cardhead">
+    <div>
+      <h2>Daily Transfer Summary</h2>
+      <div class="sub">Snapshot for the selected date and direction.</div>
+    </div>
+    <div class="row-actions">
+      <button class="btn" id="btnToggleSummary">Show</button>
+    </div>
+  </div>
+
+  <!-- Collapsible content -->
+  <div id="summaryWrap" style="display:none;">
+    <div class="summary-kpis" id="summaryKpis"></div>
+
+    <div style="position:relative; border:1px solid #eef0f3; border-radius:12px; overflow:hidden;">
+      <table id="summaryTable">
+        <thead>
+          <tr>
+            <th style="width:140px;">TYPE</th>
+            <th style="width:120px;">REQUESTED</th>
+            <th style="width:120px;">SENT</th>
+            <th style="width:140px;">OUTSTANDING</th>
+            <th>NOTES</th>
+          </tr>
+        </thead>
+        <tbody id="summaryBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+      
     </div>
   </main>
 
@@ -799,11 +908,8 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbxpeOikchlafJAHPgZAyGD-5kCbRWijK1jn4zE1uZQOd1LA-DMJIf6ud3INj2HHW9yj/exec";
     const API_KEY = "Lthdn637H7shdbs8987jnsm72GtsFh";
 
-    // Home URL - points back to Ops Admin home
-    const HOME_URL = "index.html";
-
     // ====== SETTINGS ======
-    const AUTO_REFRESH_MS = 5 * 60 * 1000;
+    const AUTO_REFRESH_MS = 10 * 60 * 1000;
     const JSONP_URL_MAX = 1700;
 
     // ====== STATE ======
@@ -814,11 +920,12 @@
     // ====== UI ELEMENTS ======
     const statusPill = document.getElementById("statusPill");
 
+    const badgePKY = document.getElementById("badgePKY");
+    const badgeDTN = document.getElementById("badgeDTN");
     const tabPKY = document.getElementById("tabPKY");
     const tabDTN = document.getElementById("tabDTN");
     const datePicker = document.getElementById("datePicker");
 
-    const btnHome = document.getElementById("btnHome");
     const btnRefresh = document.getElementById("btnRefresh");
     const btnPasteUpload = document.getElementById("btnPasteUpload");
     const btnAddLine = document.getElementById("btnAddLine");
@@ -883,6 +990,14 @@ const sentCard = document.getElementById("sentCard");
 
     const toast = document.getElementById("toast");
 
+    
+    // Summary
+    const summaryWrap = document.getElementById("summaryWrap");
+    const btnToggleSummary = document.getElementById("btnToggleSummary");
+    const summaryKpis = document.getElementById("summaryKpis");
+    const summaryBody = document.getElementById("summaryBody");
+
+
     // ====== LOADING OVERLAY ======
     const loadingOverlay = document.getElementById("loadingOverlay");
     const loadingTitle = document.getElementById("loadingTitle");
@@ -924,6 +1039,14 @@ const sentCard = document.getElementById("sentCard");
       const dd = String(d.getDate()).padStart(2,"0");
       return `${yyyy}-${mm}-${dd}`;
     }
+
+    function resetToTodayAndRefresh(showOverlay = true){
+    const t = todayISO();
+    currentDate = t;
+    datePicker.value = t;
+    refresh(showOverlay);
+  }
+
 
     function setStatus(text, kind=""){
       statusPill.textContent = text;
@@ -976,23 +1099,45 @@ const sentCard = document.getElementById("sentCard");
 }
 
     // ===== TYPE COLOUR HELPER =====
+    
     function applyTypeColour(selectEl){
-      if (!selectEl) return;
+  if (!selectEl) return;
 
-    // Remove any previous type classes
-      selectEl.classList.remove("type-split", "type-bulk");
+  // Remove any previous type classes
+  selectEl.classList.remove("type-split", "type-bulk", "type-order");
 
-      const v = (selectEl.value || "").toUpperCase();
+  const v = (selectEl.value || "").toUpperCase();
 
-      if (v === "SPLIT") selectEl.classList.add("type-split");
-      else if (v === "BULK") selectEl.classList.add("type-bulk");
-      // ORDER = no colour
-    }
-
+  if (v === "SPLIT") selectEl.classList.add("type-split");
+  else if (v === "BULK") selectEl.classList.add("type-bulk");
+  else if (v === "ORDER") selectEl.classList.add("type-order");
+}
 
     function isYes(v){
       return (v || "").toString().trim().toUpperCase() === "YES";
     }
+
+    function setBadge(el, count){
+  const n = Number(count || 0);
+  if (!el) return;
+
+  if (n > 0){
+    el.textContent = n > 99 ? "99+" : String(n);  // prevents silly-wide badges
+    el.classList.add("show");
+  } else {
+    el.textContent = "";
+    el.classList.remove("show");
+  }
+}
+
+function countOutstandingFromRows(rws){
+  const status = (x) => (x.STATUS || "").toString().trim().toUpperCase();
+  const isSentRow = (x) => isYes(x.SENT);
+
+  // "not yet marked sent" AND not cancelled
+  return (rws || []).filter(r => !isSentRow(r) && status(r) !== "CANCELLED").length;
+}
+
 
     // ====== JSONP ======
     function jsonp(url){
@@ -1078,6 +1223,38 @@ const sentCard = document.getElementById("sentCard");
     async function apiCall(action, payload = {}){
       return await jsonp(buildApiUrl(action, payload));
     }
+
+    function buildApiUrlForSheet(sheet, action, payload = {}){
+  const url = new URL(API_URL);
+  url.searchParams.set("action", action);
+  url.searchParams.set("sheet", sheet);
+  url.searchParams.set("date", currentDate);
+  url.searchParams.set("apiKey", API_KEY);
+  return url.toString();
+}
+
+async function apiCallForSheet(sheet, action, payload = {}){
+  // only "list" is needed for badges; payload is here for future-proofing
+  return await jsonp(buildApiUrlForSheet(sheet, action, payload));
+}
+
+    async function refreshBothTabBadges(){
+  // If you're already loading, skip to avoid piling requests
+  if (isBusy()) return;
+
+  try{
+    const [pkyRes, dtnRes] = await Promise.all([
+      apiCallForSheet("PKY_TO_DTN", "list"),
+      apiCallForSheet("DTN_TO_PKY", "list"),
+    ]);
+
+    if (pkyRes && pkyRes.ok) setBadge(badgePKY, countOutstandingFromRows(pkyRes.rows || []));
+    if (dtnRes && dtnRes.ok) setBadge(badgeDTN, countOutstandingFromRows(dtnRes.rows || []));
+  } catch(e){
+    // silent fail: badge isn't critical enough to toast the user
+  }
+}
+
 
     // Robust bulk upload: automatically chunks so URL doesn’t exceed JSONP limits
     async function bulkAddChunked(allRows){
@@ -1259,6 +1436,106 @@ function render(){
   const sent = rows.filter(r => isSentRow(r) && status(r) !== "CANCELLED");
   const cancelled = rows.filter(r => status(r) === "CANCELLED");
 
+  
+  // ===== Daily Summary (uses full-day sets, not filtered sets) =====
+  const allRequested = rows.length; // includes cancelled
+  const totalSent = sent.length; // Sent = YES (excluding cancelled by your sent filter)
+  const totalCancelled = cancelled.length;
+  const totalOutstanding = (newReq.length + active.length); // not sent, excluding cancelled
+ 
+  // Update badge for the CURRENTLY loaded direction
+if (currentSheet === "PKY_TO_DTN") setBadge(badgePKY, totalOutstanding);
+if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
+
+  const requestedExclCancelled = allRequested - totalCancelled;
+  const completionPct = requestedExclCancelled > 0
+    ? Math.round((totalSent / requestedExclCancelled) * 100)
+    : 0;
+
+
+
+  
+  function typeCounts(arr){
+    const c = { SPLIT:0, BULK:0, ORDER:0, OTHER:0 };
+    arr.forEach(r => {
+      const t = (r.TYPE || "").toString().trim().toUpperCase();
+      if (t === "SPLIT") c.SPLIT++;
+      else if (t === "BULK") c.BULK++;
+      else if (t === "ORDER") c.ORDER++;
+      else c.OTHER++;
+    });
+    return c;
+  }
+
+  const reqCounts = typeCounts(rows.filter(r => (r.STATUS || "").toString().trim().toUpperCase() !== "CANCELLED")); // requested (excl cancelled)
+  const sentCounts = typeCounts(sent);
+  const outCounts  = typeCounts([...newReq, ...active]);
+
+  // KPI tiles
+    summaryKpis.innerHTML = `
+    <div class="kpi">
+      <div class="label">Total lines requested</div>
+      <div class="value">${allRequested}</div>
+      <div class="hint">All lines created for the day (includes cancellations).</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Total lines transferred</div>
+      <div class="value">${totalSent}</div>
+      <div class="hint">Lines marked <strong>Sent = YES</strong>.</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Total outstanding</div>
+      <div class="value">${totalOutstanding}</div>
+      <div class="hint">Not sent yet (excludes cancellations).</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Completion</div>
+      <div class="value">${completionPct}%</div>
+      <div class="hint">Sent ÷ requested (excluding cancellations).</div>
+    </div>
+  `;
+
+
+  // Summary table breakdown
+  summaryBody.innerHTML = `
+    <tr>
+      <td><strong>SPLIT</strong></td>
+      <td>${reqCounts.SPLIT}</td>
+      <td>${sentCounts.SPLIT}</td>
+      <td>${outCounts.SPLIT}</td>
+      <td>Split transfers requested today.</td>
+    </tr>
+    <tr>
+      <td><strong>BULK</strong></td>
+      <td>${reqCounts.BULK}</td>
+      <td>${sentCounts.BULK}</td>
+      <td>${outCounts.BULK}</td>
+      <td>Bulk transfers requested today.</td>
+    </tr>
+    <tr>
+      <td><strong>ORDER</strong></td>
+      <td>${reqCounts.ORDER}</td>
+      <td>${sentCounts.ORDER}</td>
+      <td>${outCounts.ORDER}</td>
+      <td>Order-related transfers requested today.</td>
+    </tr>
+    <tr>
+      <td><strong>OTHER</strong></td>
+      <td>${reqCounts.OTHER}</td>
+      <td>${sentCounts.OTHER}</td>
+      <td>${outCounts.OTHER}</td>
+      <td>Anything not labelled Split/Bulk/Order.</td>
+    </tr>
+    <tr>
+      <td><strong>CANCELLED</strong></td>
+      <td>${totalCancelled}</td>
+      <td>–</td>
+      <td>–</td>
+      <td>Lines cancelled today.</td>
+    </tr>
+  `;
+
+  
     // ===== Filter logic (multi-table) =====
   const q = (filterProduct || "").trim().toUpperCase();
 
@@ -1429,6 +1706,8 @@ function render(){
           if (!data.ok) throw new Error(data.error || "API error");
           rows = data.rows || [];
           render();
+          // Keep both direction badges up to date (background)
+          refreshBothTabBadges();
         } catch (e) {
           setStatus("Error loading", "err");
           showToast(String(e.message || e));
@@ -1468,17 +1747,6 @@ function render(){
       }
     });
 
-    // ====== HOME BUTTON ======
-    btnHome.addEventListener("click", () => {
-      if (isBusy()){
-        showToast("Please wait for the current action to finish.");
-        return;
-      }
-      if (pasteModal.style.display === "flex" || addModal.style.display === "flex"){
-        if (!confirm("Close this window and return to Home?")) return;
-      }
-      window.location.href = HOME_URL;
-    });
 
     // ====== EVENTS ======
     tabPKY.addEventListener("click", () => {
@@ -1496,8 +1764,7 @@ function render(){
       refresh(true);
     });
 
-    btnRefresh.addEventListener("click", () => refresh(true));
-
+    btnRefresh.addEventListener("click", () => resetToTodayAndRefresh(true));
 
     // ====== PAGE SEARCH EVENTS ======
 productSearch.addEventListener("input", () => {
@@ -1765,6 +2032,14 @@ productSearch.addEventListener("keydown", (e) => {
       sentWrap.style.display = hidden ? "block" : "none";
       btnToggleSent.textContent = hidden ? "Hide" : "Show";
     });
+
+    
+    btnToggleSummary.addEventListener("click", () => {
+    const hidden = summaryWrap.style.display === "none";
+    summaryWrap.style.display = hidden ? "block" : "none";
+    btnToggleSummary.textContent = hidden ? "Hide" : "Show";
+    });
+
 
     // ====== CANCELLED ACTIONS ======
     btnReverseCancel.addEventListener("click", async () => {
@@ -2068,12 +2343,11 @@ function makeAddRow(prefillType){
 
     // ====== AUTO REFRESH ======
     setInterval(() => {
-      if (isBusy()) return;
-      currentDate = todayISO();
-      datePicker.value = currentDate;
-      refresh(false);
-    }, AUTO_REFRESH_MS);
+  if (isBusy()) return;
+  resetToTodayAndRefresh(false);
+}, AUTO_REFRESH_MS);
 
+    
     // ====== START ======
     (function(){
       currentDate = todayISO();
