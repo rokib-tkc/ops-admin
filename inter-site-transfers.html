@@ -74,6 +74,30 @@
       transform: translateY(-1px);
     }
 
+
+    /* ===== Tab notification badge (outstanding count) ===== */
+.tab .badge{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  min-width:18px;
+  height:18px;
+  padding:0 6px;
+  border-radius:999px;
+  background: var(--cancel);   /* red */
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  line-height:18px;
+  text-align:center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+  display:none; /* default hidden */
+  pointer-events:none;
+}
+
+.tab .badge.show{ display:inline-block; }
+
+
     /* ===== Buttons ===== */
     .btn{
       border:1px solid var(--border);
@@ -554,8 +578,16 @@
       <div class="controls">
         
         <div class="tabs">
-          <button class="tab active" id="tabPKY">PKY → DTN</button>
-          <button class="tab" id="tabDTN">DTN → PKY</button>
+         <button class="tab active" id="tabPKY">
+  PKY → DTN
+  <span class="badge" id="badgePKY" aria-label="Outstanding transfers"></span>
+</button>
+
+<button class="tab" id="tabDTN">
+  DTN → PKY
+  <span class="badge" id="badgeDTN" aria-label="Outstanding transfers"></span>
+</button>
+
         </div>
 
         <div style="display:flex;align-items:center;gap:8px;">
@@ -888,6 +920,8 @@
     // ====== UI ELEMENTS ======
     const statusPill = document.getElementById("statusPill");
 
+    const badgePKY = document.getElementById("badgePKY");
+    const badgeDTN = document.getElementById("badgeDTN");
     const tabPKY = document.getElementById("tabPKY");
     const tabDTN = document.getElementById("tabDTN");
     const datePicker = document.getElementById("datePicker");
@@ -1082,7 +1116,28 @@ const sentCard = document.getElementById("sentCard");
     function isYes(v){
       return (v || "").toString().trim().toUpperCase() === "YES";
     }
-    
+
+    function setBadge(el, count){
+  const n = Number(count || 0);
+  if (!el) return;
+
+  if (n > 0){
+    el.textContent = n > 99 ? "99+" : String(n);  // prevents silly-wide badges
+    el.classList.add("show");
+  } else {
+    el.textContent = "";
+    el.classList.remove("show");
+  }
+}
+
+function countOutstandingFromRows(rws){
+  const status = (x) => (x.STATUS || "").toString().trim().toUpperCase();
+  const isSentRow = (x) => isYes(x.SENT);
+
+  // "not yet marked sent" AND not cancelled
+  return (rws || []).filter(r => !isSentRow(r) && status(r) !== "CANCELLED").length;
+}
+
 
     // ====== JSONP ======
     function jsonp(url){
@@ -1168,6 +1223,38 @@ const sentCard = document.getElementById("sentCard");
     async function apiCall(action, payload = {}){
       return await jsonp(buildApiUrl(action, payload));
     }
+
+    function buildApiUrlForSheet(sheet, action, payload = {}){
+  const url = new URL(API_URL);
+  url.searchParams.set("action", action);
+  url.searchParams.set("sheet", sheet);
+  url.searchParams.set("date", currentDate);
+  url.searchParams.set("apiKey", API_KEY);
+  return url.toString();
+}
+
+async function apiCallForSheet(sheet, action, payload = {}){
+  // only "list" is needed for badges; payload is here for future-proofing
+  return await jsonp(buildApiUrlForSheet(sheet, action, payload));
+}
+
+    async function refreshBothTabBadges(){
+  // If you're already loading, skip to avoid piling requests
+  if (isBusy()) return;
+
+  try{
+    const [pkyRes, dtnRes] = await Promise.all([
+      apiCallForSheet("PKY_TO_DTN", "list"),
+      apiCallForSheet("DTN_TO_PKY", "list"),
+    ]);
+
+    if (pkyRes && pkyRes.ok) setBadge(badgePKY, countOutstandingFromRows(pkyRes.rows || []));
+    if (dtnRes && dtnRes.ok) setBadge(badgeDTN, countOutstandingFromRows(dtnRes.rows || []));
+  } catch(e){
+    // silent fail: badge isn't critical enough to toast the user
+  }
+}
+
 
     // Robust bulk upload: automatically chunks so URL doesn’t exceed JSONP limits
     async function bulkAddChunked(allRows){
@@ -1355,6 +1442,11 @@ function render(){
   const totalSent = sent.length; // Sent = YES (excluding cancelled by your sent filter)
   const totalCancelled = cancelled.length;
   const totalOutstanding = (newReq.length + active.length); // not sent, excluding cancelled
+ 
+  // Update badge for the CURRENTLY loaded direction
+if (currentSheet === "PKY_TO_DTN") setBadge(badgePKY, totalOutstanding);
+if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
+
   const requestedExclCancelled = allRequested - totalCancelled;
   const completionPct = requestedExclCancelled > 0
     ? Math.round((totalSent / requestedExclCancelled) * 100)
@@ -1614,6 +1706,8 @@ function render(){
           if (!data.ok) throw new Error(data.error || "API error");
           rows = data.rows || [];
           render();
+          // Keep both direction badges up to date (background)
+          refreshBothTabBadges();
         } catch (e) {
           setStatus("Error loading", "err");
           showToast(String(e.message || e));
