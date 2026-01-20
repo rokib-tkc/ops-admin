@@ -98,15 +98,7 @@
     .btn.danger:hover{ border-color:#fca5a5; }
     .btn.small{ padding:7px 10px; font-size:13px; border-radius:9px; }
     .btn:disabled{ opacity:.5; cursor:not-allowed; }
-    .link{
-      border:none;
-      background:transparent;
-      color:var(--accent);
-      cursor:pointer;
-      padding:0;
-      font-size:14px;
-    }
-    .link:hover{ text-decoration:underline; }
+
     .container{
       max-width:1200px;
       margin:0 auto;
@@ -129,10 +121,7 @@
       justify-content:space-between;
       gap:12px;
     }
-    .card-h h2{
-      margin:0;
-      font-size:16px;
-    }
+    .card-h h2{ margin:0; font-size:16px; }
     .card-h .meta{
       margin-top:3px;
       color:var(--muted);
@@ -140,59 +129,13 @@
       line-height:1.35;
     }
     .card-b{ padding:14px; }
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap:12px;
-    }
-    .field{ grid-column: span 12; }
-    @media (min-width: 900px){
-      .field.col6{ grid-column: span 6; }
-      .field.col4{ grid-column: span 4; }
-      .field.col3{ grid-column: span 3; }
-      .field.col8{ grid-column: span 8; }
-      .field.col9{ grid-column: span 9; }
-    }
-    label{
-      display:block;
-      font-size:13px;
-      color:var(--muted);
-      margin-bottom:6px;
-    }
-    input[type="text"], input[type="password"], input[type="date"], input[type="month"], select{
-      width:100%;
-      padding:10px 11px;
-      border-radius:10px;
-      border:1px solid var(--border);
-      outline:none;
-      background:#fff;
-      font-size:14px;
-    }
-    input[type="file"]{
-      width:100%;
-      padding:10px 0;
-    }
+
     .note{
       font-size:13px;
       color:var(--muted);
       line-height:1.4;
     }
-    .kpis{
-      display:grid;
-      grid-template-columns: repeat(4, minmax(0,1fr));
-      gap:10px;
-    }
-    @media (max-width: 900px){
-      .kpis{ grid-template-columns: repeat(2, minmax(0,1fr)); }
-    }
-    .kpi{
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:10px 12px;
-      background:#fff;
-    }
-    .kpi .t{ color:var(--muted); font-size:12px; margin:0 0 6px 0; }
-    .kpi .v{ font-size:18px; font-weight:800; margin:0; }
+
     .badge{
       display:inline-flex;
       align-items:center;
@@ -236,10 +179,7 @@
       justify-content:space-between;
       gap:10px;
     }
-    .week-card h3{
-      margin:0;
-      font-size:14px;
-    }
+    .week-card h3{ margin:0; font-size:14px; }
     .week-card .muted{
       margin-top:3px;
       font-size:12px;
@@ -252,6 +192,53 @@
       gap:8px;
     }
 
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:12px;
+    }
+    .field{ grid-column: span 12; }
+    @media (min-width: 900px){
+      .field.col6{ grid-column: span 6; }
+      .field.col4{ grid-column: span 4; }
+      .field.col3{ grid-column: span 3; }
+      .field.col8{ grid-column: span 8; }
+      .field.col9{ grid-column: span 9; }
+    }
+    label{
+      display:block;
+      font-size:13px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    input[type="text"], input[type="date"], input[type="month"], select{
+      width:100%;
+      padding:10px 11px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      outline:none;
+      background:#fff;
+      font-size:14px;
+    }
+    input[type="file"]{ width:100%; padding:10px 0; }
+
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap:10px;
+    }
+    @media (max-width: 900px){
+      .kpis{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    .kpi{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px 12px;
+      background:#fff;
+    }
+    .kpi .t{ color:var(--muted); font-size:12px; margin:0 0 6px 0; }
+    .kpi .v{ font-size:18px; font-weight:800; margin:0; }
+
     .table-wrap{
       border:1px solid var(--border);
       border-radius:12px;
@@ -259,12 +246,7 @@
       background:#fff;
       max-height: 520px;
     }
-    table{
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0;
-      font-size:13px;
-    }
+    table{ width:100%; border-collapse:separate; border-spacing:0; font-size:13px; }
     thead th{
       position:sticky;
       top:0;
@@ -283,6 +265,7 @@
     }
     tbody tr:hover td{ background:#f9fafb; }
     .right{ text-align:right; }
+
     .status-cell{ font-weight:700; }
     .status-removed{ color:#991b1b; }
     .status-reduced{ color:#92400e; }
@@ -311,7 +294,6 @@
       font-weight:700;
     }
 
-    /* Modal */
     .overlay{
       position:fixed;
       inset:0;
@@ -342,6 +324,9 @@
     }
     .modal-h h2{ margin:0; font-size:16px; }
     .modal-b{ padding:14px; }
+
+    .divider{ height:1px; background:var(--border); margin:12px 0; }
+
     .toast{
       position:fixed;
       right:18px;
@@ -357,416 +342,182 @@
       max-width: min(520px, calc(100vw - 36px));
     }
     .toast.show{ display:block; }
-    .divider{ height:1px; background:var(--border); margin:12px 0; }
   </style>
 </head>
 
 <body>
-<header>
-  <div>
-    <h1>Packaging Count Tracker</h1>
-    <div class="sub">Upload weekly Opening / Closing exports, print warehouse count sheets, and review weekly + monthly usage.</div>
-  </div>
-
-  <div class="top-actions">
-    <span class="pill" id="pinStatus"><strong>PIN</strong> <span id="pinStatusText">Not set</span></span>
-    <button class="btn" id="btnArchive">Archive (Monthly)</button>
-    <button class="btn danger" id="btnForgetPin" title="Forget PIN on this browser">Forget PIN</button>
-    <button class="btn primary" id="btnRefresh">Refresh</button>
-  </div>
-</header>
-
-<div class="container">
-  <div class="card">
-    <div class="card-h">
-      <div>
-        <h2>Weeks (Live)</h2>
-        <div class="meta">
-          Shows the most recent weeks. Opening is locked once Closing is uploaded (remove Closing to unlock).
-        </div>
-      </div>
-      <div class="badge" id="apiBadge">API: <span class="mono">not checked</span></div>
+  <header>
+    <div>
+      <h1>Packaging Count Tracker</h1>
+      <div class="sub">Upload weekly Opening / Closing exports, print warehouse count sheets, and review weekly + monthly usage.</div>
     </div>
-    <div class="card-b">
-      <div class="note" id="liveHint" style="margin-bottom:10px;">
-        Tip: Upload Opening → Print sheet → Warehouse counts → Adjust system → Upload Closing → Review summary.
-      </div>
-      <div id="weeksContainer" class="week-list"></div>
+
+    <div class="top-actions">
+      <span class="pill" id="pinStatus"><strong>PIN</strong> <span id="pinStatusText">Not set</span></span>
+      <button class="btn" id="btnArchive">Archive (Monthly)</button>
+      <button class="btn danger" id="btnForgetPin" title="Forget PIN for this session">Forget PIN</button>
+      <button class="btn primary" id="btnRefresh">Refresh</button>
     </div>
-  </div>
-</div>
+  </header>
 
-<!-- Upload / Week modal -->
-<div class="overlay" id="weekOverlay" aria-hidden="true">
-  <div class="modal">
-    <div class="modal-h">
-      <div>
-        <h2 id="weekModalTitle">Week</h2>
-        <div class="meta" id="weekModalMeta" style="color:var(--muted); font-size:13px; margin-top:4px;"></div>
-      </div>
-      <button class="btn" id="btnCloseWeek">Close</button>
-    </div>
-    <div class="modal-b">
-      <div class="kpis" id="weekKpis" style="margin-bottom:12px;"></div>
-
-      <div class="grid">
-        <div class="field col4">
-          <label>Week Commencing (auto from export date, editable)</label>
-          <input type="date" id="weekCommencingInput" />
-        </div>
-
-        <div class="field col4">
-          <label>Upload type</label>
-          <select id="uploadTypeSelect">
-            <option value="OPENING">OPENING</option>
-            <option value="CLOSING">CLOSING</option>
-          </select>
-        </div>
-
-        <div class="field col4">
-          <label>Replace upload</label>
-          <select id="replaceSelect">
-            <option value="false">No</option>
-            <option value="true">Yes (Replace existing)</option>
-          </select>
-        </div>
-
-        <div class="field col9">
-          <label>Select Excel export (.xlsx)</label>
-          <input type="file" id="fileInput" accept=".xlsx,.xls" />
-          <div class="note" id="fileNote"></div>
-        </div>
-
-        <div class="field col3" style="display:flex; align-items:flex-end; gap:10px;">
-          <button class="btn primary" id="btnUploadNow" style="width:100%;">Upload</button>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+  <div class="container">
+    <div class="card">
+      <div class="card-h">
         <div>
-          <button class="btn" id="btnPrint">Print Warehouse Count Sheet (Opening)</button>
-          <button class="btn danger" id="btnRemoveClosing">Remove Closing (unlock Opening)</button>
+          <h2>Weeks (Live)</h2>
+          <div class="meta">Opening is locked once Closing is uploaded (remove Closing to unlock Opening replacement).</div>
         </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <input type="text" id="searchBox" placeholder="Filter rows (Part / Description / Location / Lot)..." />
-          <button class="btn" id="btnViewSummary">Show Summary</button>
-        </div>
+        <div class="badge" id="apiBadge">API: <span class="mono">not checked</span></div>
       </div>
-
-      <div class="divider"></div>
-
-      <div id="weekTablesArea">
-        <div class="note">Upload Opening and Closing to see the comparison table.</div>
+      <div class="card-b">
+        <div class="note" style="margin-bottom:10px;">
+          Workflow: Upload Opening → Print sheet → Warehouse counts → Adjust system → Upload Closing → Review summary.
+        </div>
+        <div id="weeksContainer" class="week-list"></div>
+        <div id="emptyHint" class="note" style="display:none;margin-top:10px;">
+          No weeks found yet. Upload an Opening export to create the first week entry.
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Archive modal -->
-<div class="overlay" id="archiveOverlay" aria-hidden="true">
-  <div class="modal">
-    <div class="modal-h">
-      <div>
-        <h2>Archive (Monthly)</h2>
-        <div class="meta" style="color:var(--muted); font-size:13px; margin-top:4px;">
-          Select a month to view totals and drill into the weeks inside that month.
+  <!-- WEEK MODAL -->
+  <div class="overlay" id="weekOverlay" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-h">
+        <div>
+          <h2 id="weekModalTitle">Week</h2>
+          <div id="weekModalMeta" style="color:var(--muted); font-size:13px; margin-top:4px;"></div>
         </div>
-      </div>
-      <button class="btn" id="btnCloseArchive">Close</button>
-    </div>
-    <div class="modal-b">
-      <div class="grid">
-        <div class="field col4">
-          <label>Month</label>
-          <input type="month" id="monthInput" />
-        </div>
-        <div class="field col8" style="display:flex; align-items:flex-end; gap:10px;">
-          <button class="btn primary" id="btnLoadMonth">Load Month</button>
-          <span class="note" id="monthNote"></span>
-        </div>
+        <button class="btn" id="btnCloseWeek">Close</button>
       </div>
 
-      <div class="divider"></div>
+      <div class="modal-b">
+        <div class="kpis" id="weekKpis" style="margin-bottom:12px;"></div>
 
-      <div id="monthArea">
-        <div class="note">Pick a month and click “Load Month”.</div>
+        <div class="grid">
+          <div class="field col4">
+            <label>Week Commencing (auto from export date, editable)</label>
+            <input type="date" id="weekCommencingInput" />
+          </div>
+
+          <div class="field col4">
+            <label>Upload type</label>
+            <select id="uploadTypeSelect">
+              <option value="OPENING">OPENING</option>
+              <option value="CLOSING">CLOSING</option>
+            </select>
+          </div>
+
+          <div class="field col4">
+            <label>Replace upload</label>
+            <select id="replaceSelect">
+              <option value="false">No</option>
+              <option value="true">Yes (Replace existing)</option>
+            </select>
+          </div>
+
+          <div class="field col9">
+            <label>Select Excel export (.xlsx)</label>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" />
+            <div class="note" id="fileNote"></div>
+          </div>
+
+          <div class="field col3" style="display:flex; align-items:flex-end; gap:10px;">
+            <button class="btn primary" id="btnUploadNow" style="width:100%;">Upload</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn" id="btnPrint">Print Warehouse Count Sheet (Opening)</button>
+            <button class="btn danger" id="btnRemoveClosing">Remove Closing (unlock Opening)</button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <input type="text" id="searchBox" placeholder="Filter rows (Part / Description / Location / Lot)..." style="min-width:280px;" />
+            <button class="btn" id="btnToggleSummary">Show Summary</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="weekTablesArea">
+          <div class="note">Upload Opening and Closing to see the comparison table.</div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="toast" id="toast"></div>
+  <!-- ARCHIVE MODAL -->
+  <div class="overlay" id="archiveOverlay" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-h">
+        <div>
+          <h2>Archive (Monthly)</h2>
+          <div style="color:var(--muted); font-size:13px; margin-top:4px;">
+            Select a month to view totals and drill into the weeks inside that month.
+          </div>
+        </div>
+        <button class="btn" id="btnCloseArchive">Close</button>
+      </div>
 
-<script>
-/* ===========================
+      <div class="modal-b">
+        <div class="grid">
+          <div class="field col4">
+            <label>Month</label>
+            <input type="month" id="monthInput" />
+          </div>
+          <div class="field col8" style="display:flex; align-items:flex-end; gap:10px;">
+            <button class="btn primary" id="btnLoadMonth">Load Month</button>
+            <span class="note" id="monthNote"></span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="monthArea">
+          <div class="note">Pick a month and click “Load Month”.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+
+    /* ===========================
    CONFIG (EDIT THIS)
 =========================== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbx3Cbb7RJrf_jNm36b2Aa9TxfP9sUbEnKHgxRERsyrmqQbrZdGEoHSct6OGq7mntvoa/exec'; 
+const API_URL = 'https://script.google.com/macros/s/AKfycbx3Cbb7RJrf_jNm36b2Aa9TxfP9sUbEnKHgxRERsyrmqQbrZdGEoHSct6OGq7mntvoa/exec';
 
 /* ===========================
    STATE
 =========================== */
 let PIN = sessionStorage.getItem('pct_pin') || '';
 let weeksCache = [];
-let currentWeek = null;        // Week row object
-let currentWeekData = null;    // { week, openingLines, closingLines }
-let parsedFile = null;         // { exportDateISO, exportDateText, suggestedWC, fileName, lines[] }
+let currentWeekData = null;
+let parsedFile = null;
 let summaryShown = false;
 
 /* ===========================
    HELPERS
 =========================== */
+function $(id){ return document.getElementById(id); }
+
 function toast(msg){
-  const t = document.getElementById('toast');
+  const t = $('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(()=> t.classList.remove('show'), 3200);
+  setTimeout(()=> t.classList.remove('show'), 3000);
 }
 
-function fmtInt(n){
-  const x = Number(n||0);
-  return x.toLocaleString('en-GB');
-}
-
-function ymd(date){
-  const d = new Date(date);
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const da = String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${da}`;
-}
-
-function mondayOfWeek(date){
-  const d = new Date(date);
-  const day = d.getDay(); // 0 Sun .. 6 Sat
-  const diff = (day === 0 ? -6 : 1) - day; // Monday as start
-  d.setDate(d.getDate() + diff);
-  d.setHours(0,0,0,0);
-  return d;
-}
-
-function parseExportDateFromD1(text){
-  // Example: "Stock levels at: 19/01/2026 10:38:52 ..."
-  const s = String(text||'');
-  const m = /(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/.exec(s);
-  if(!m) return null;
-  const dd = Number(m[1]), mm = Number(m[2]), yyyy = Number(m[3]);
-  const HH = Number(m[4]), MI = Number(m[5]), SS = Number(m[6]);
-  return new Date(yyyy, mm-1, dd, HH, MI, SS);
-}
-
-function safeLower(s){ return String(s||'').toLowerCase(); }
-
-function normaliseHeader(h){
-  return safeLower(String(h||'')).replace(/\s+/g,' ').trim();
-}
-
-function buildLineKey(line){
-  // Match backend comparison: Part|Description|Location|Lot|PO|Created
-  return [
-    line.Part || '',
-    line.Description || '',
-    line.Location || '',
-    line.Lot || '',
-    line.PO || '',
-    line.Created || ''
-  ].join('|');
-}
-
-function setPinStatus(){
-  const el = document.getElementById('pinStatusText');
-  const badge = document.getElementById('pinStatus');
-  if(PIN){
-    el.textContent = 'Set';
-    badge.style.borderColor = '#bbf7d0';
-  }else{
-    el.textContent = 'Not set';
-    badge.style.borderColor = '';
-  }
-}
-
-function escapeHtml(s){
-  return String(s ?? '')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#039;');
-}
-
-function toDisplayDate(val){
-  if(val == null || val === '') return '';
-  if(typeof val === 'string'){
-    // try ISO or dd/mm/yyyy
-    if(/^\d{4}-\d{2}-\d{2}/.test(val)) return val.slice(0,10);
-    if(/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
-    return val;
-  }
-  if(val instanceof Date && !isNaN(val)) return ymd(val);
-  return String(val);
-}
-
-function excelDateToISO(v){
-  // v may be Date, number (Excel serial), or string
-  if(v == null || v === '') return '';
-  if(v instanceof Date && !isNaN(v)) return ymd(v);
-  if(typeof v === 'number' && isFinite(v)){
-    // Excel serial (approx) - SheetJS uses 1900 system by default
-    const d = XLSX.SSF.parse_date_code(v);
-    if(!d) return '';
-    const dt = new Date(d.y, d.m-1, d.d);
-    return ymd(dt);
-  }
-  return toDisplayDate(v);
-}
-
-/* ===========================
-   API
-=========================== */
-async function apiPost(action, payload={}){
-  if(!API_URL || API_URL.includes('PASTE_')){
-    throw new Error('API_URL is not set in the HTML file.');
-  }
-  const body = { action, pin: PIN, ...payload };
-
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json' },
-    body: JSON.stringify(body)
-  });
-
-  const data = await res.json();
-  if(!data || data.ok !== true){
-    throw new Error((data && data.error) ? data.error : 'Unknown API error');
-  }
-  return data.data;
-}
-
-async function apiPing(){
-  const badge = document.getElementById('apiBadge');
-  try{
-    const r = await fetch(API_URL, { method:'GET' });
-    const j = await r.json();
-    badge.className = 'badge ok';
-    badge.innerHTML = `API: <span class="mono">ok</span>`;
-    return j;
-  }catch(e){
-    badge.className = 'badge bad';
-    badge.innerHTML = `API: <span class="mono">error</span>`;
-    return null;
-  }
-}
-
-/* ===========================
-   PIN GATE
-=========================== */
-async function ensurePin(){
-  setPinStatus();
-  if(PIN) return;
-
-  const pin = prompt('Enter PIN to use Packaging Count Tracker:');
-  if(!pin) throw new Error('PIN is required.');
-  PIN = String(pin).trim();
-  sessionStorage.setItem('pct_pin', PIN);
-  setPinStatus();
-}
-
-/* ===========================
-   LOAD WEEKS
-=========================== */
-function weekStateBadge(state){
-  if(state === 'COMPLETE') return '<span class="badge ok">Complete</span>';
-  if(state === 'CLOSING_MISSING') return '<span class="badge warn">Closing missing</span>';
-  return '<span class="badge bad">Opening missing</span>';
-}
-
-function renderWeeks(){
-  const wrap = document.getElementById('weeksContainer');
-  wrap.innerHTML = '';
-
-  if(!weeksCache.length){
-    const suggestedWC = ymd(mondayOfWeek(new Date()));
-    wrap.innerHTML = `
-      <div class="week-card">
-        <div class="row1">
-          <div>
-            <h3>No weeks yet</h3>
-            <div class="muted">Upload an Opening export to create the first week entry.</div>
-          </div>
-          <div>${weekStateBadge('OPENING_MISSING')}</div>
-        </div>
-        <div class="actions">
-          <button class="btn small primary" id="btnStartNew">Start new week (Upload Opening)</button>
-          <span class="note">Suggested WC: <span class="mono">${suggestedWC}</span></span>
-        </div>
-      </div>
-    `;
-    document.getElementById('btnStartNew').addEventListener('click', async ()=>{
-      await openWeekModal(suggestedWC, 'uploadOpening', true);
-    });
-    return;
-  }
-
-  const weeks = [...weeksCache].sort((a,b)=> (a.WeekCommencing < b.WeekCommencing ? 1 : -1));
-
-  for(const w of weeks){
-    const wc = w.WeekCommencing;
-    const openDt = w.OpeningExportDateTime ? w.OpeningExportDateTime : '—';
-    const closeDt = w.ClosingExportDateTime ? w.ClosingExportDateTime : '—';
-
-    const state = w.State || 'OPENING_MISSING';
-    const openingExists = !!w.OpeningUploadId;
-    const closingExists = !!w.ClosingUploadId;
-
-    const card = document.createElement('div');
-    card.className = 'week-card';
-    card.innerHTML = `
-      <div class="row1">
-        <div>
-          <h3>WC ${escapeHtml(wc)}</h3>
-          <div class="muted">
-            Opening export: <span class="mono">${escapeHtml(openDt)}</span><br/>
-            Closing export: <span class="mono">${escapeHtml(closeDt)}</span>
-          </div>
-        </div>
-        <div>${weekStateBadge(state)}</div>
-      </div>
-
-      <div class="actions">
-        <button class="btn small ${openingExists ? '' : 'primary'}" data-action="openWeek" data-wc="${escapeHtml(wc)}">Open</button>
-        <button class="btn small" data-action="uploadOpening" data-wc="${escapeHtml(wc)}">Upload Opening</button>
-        <button class="btn small" data-action="uploadClosing" data-wc="${escapeHtml(wc)}">Upload Closing</button>
-        <button class="btn small" data-action="print" data-wc="${escapeHtml(wc)}" ${openingExists ? '' : 'disabled'}>Print</button>
-        <button class="btn small" data-action="view" data-wc="${escapeHtml(wc)}" ${openingExists && closingExists ? '' : 'disabled'}>View</button>
-      </div>
-    `;
-    wrap.appendChild(card);
-  }
-
-  wrap.querySelectorAll('button[data-action]').forEach(btn=>{
-    btn.addEventListener('click', async () => {
-      const action = btn.getAttribute('data-action');
-      const wc = btn.getAttribute('data-wc');
-      await openWeekModal(wc, action, false);
-    });
-  });
-}
-
-async function refreshWeeks(){
-  await ensurePin();
-  await apiPing();
-  const data = await apiPost('listWeeks');
-  weeksCache = Array.isArray(data) ? data : [];
-  renderWeeks();
-}
-
-/* ===========================
-   WEEK MODAL
-=========================== */
 function showOverlay(id, show){
-  const el = document.getElementById(id);
+  const el = $(id);
   if(show){
     el.classList.add('show');
     el.setAttribute('aria-hidden','false');
@@ -776,617 +527,296 @@ function showOverlay(id, show){
   }
 }
 
-function setWeekModalHeader(weekRow){
-  const title = document.getElementById('weekModalTitle');
-  const meta = document.getElementById('weekModalMeta');
-
-  title.textContent = `WC ${weekRow.WeekCommencing}`;
-
-  const o = weekRow.OpeningExportDateTime ? `<span class="mono">${escapeHtml(weekRow.OpeningExportDateTime)}</span>` : '—';
-  const c = weekRow.ClosingExportDateTime ? `<span class="mono">${escapeHtml(weekRow.ClosingExportDateTime)}</span>` : '—';
-
-  meta.innerHTML = `
-    State: <strong>${escapeHtml(weekRow.State || '—')}</strong> &nbsp;•&nbsp;
-    Opening: ${o} &nbsp;•&nbsp; Closing: ${c}
-  `;
+function ymd(d){
+  const dt = new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,'0');
+  const da = String(dt.getDate()).padStart(2,'0');
+  return `${y}-${m}-${da}`;
 }
 
-function computeComparison(openingLines, closingLines){
-  // Match backend strategy:
-  // BaseKey = Part|Description|Location|Lot|PO|Created
-  // duplicates paired by Phys desc
-  const keyFn = (x) => [
-    x.Part||'', x.Description||'', x.Location||'', x.Lot||'', x.PO||'', x.Created||''
-  ].join('|');
+function mondayOfWeek(date){
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
 
-  const group = (arr) => {
-    const m = {};
-    (arr||[]).forEach(x=>{
-      const k = keyFn(x);
-      if(!m[k]) m[k] = [];
-      m[k].push(x);
-    });
-    Object.keys(m).forEach(k=>{
-      m[k].sort((a,b)=> (Number(b.Phys||0) - Number(a.Phys||0)));
-    });
-    return m;
-  };
+function safeLower(s){ return String(s||'').toLowerCase(); }
+function escapeHtml(s){
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
-  const og = group(openingLines);
-  const cg = group(closingLines);
-  const allKeys = new Set([...Object.keys(og), ...Object.keys(cg)]);
+function fmtInt(n){ return Number(n||0).toLocaleString('en-GB'); }
 
-  const rows = [];
-  const totals = { opening:0, closing:0, usage:0, netChange:0 };
-  const removedLots = [];
-  const newLots = [];
+/* ===========================
+   PIN
+=========================== */
+function setPinStatus(){
+  const t = $('pinStatusText');
+  if(!t) return;
+  t.textContent = PIN ? 'Set' : 'Not set';
+}
 
-  for(const k of allKeys){
-    const oList = og[k] || [];
-    const cList = cg[k] || [];
-    const maxLen = Math.max(oList.length, cList.length);
+async function ensurePin(){
+  if(PIN) return;
+  const p = prompt('Enter PIN to use Packaging Count Tracker:');
+  if(!p) throw new Error('PIN required.');
+  PIN = p.trim();
+  sessionStorage.setItem('pct_pin', PIN);
+  setPinStatus();
+}
 
-    for(let i=0;i<maxLen;i++){
-      const o = oList[i] || null;
-      const c = cList[i] || null;
+/* ===========================
+   API
+=========================== */
+async function apiPost(action, payload={}){
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ action, pin: PIN, ...payload })
+  });
+  const j = await res.json();
+  if(!j || j.ok !== true) throw new Error(j?.error || 'API error');
+  return j.data;
+}
 
-      const part = (o?o.Part:c.Part) || '';
-      const desc = (o?o.Description:c.Description) || '';
-      const loc  = (o?o.Location:c.Location) || '';
-      const lot  = (o?o.Lot:c.Lot) || '';
-      const po   = (o?o.PO:c.PO) || '';
-      const created = (o?o.Created:c.Created) || '';
+async function apiPing(){
+  const badge = $('apiBadge');
+  try{
+    const r = await fetch(API_URL);
+    await r.json();
+    badge.className = 'badge ok';
+    badge.innerHTML = `API: <span class="mono">ok</span>`;
+  }catch(e){
+    badge.className = 'badge bad';
+    badge.innerHTML = `API: <span class="mono">error</span>`;
+  }
+}
 
-      const oPhys = o ? Number(o.Phys||0) : 0;
-      const cPhys = c ? Number(c.Phys||0) : 0;
+/* ===========================
+   WEEKS LIST
+=========================== */
+function weekStateBadge(state){
+  if(state === 'COMPLETE') return '<span class="badge ok">Complete</span>';
+  if(state === 'CLOSING_MISSING') return '<span class="badge warn">Closing missing</span>';
+  return '<span class="badge bad">Opening missing</span>';
+}
 
-      const usage = oPhys - cPhys;              // + used, - net increase
-      const netChange = cPhys - oPhys;
+function renderWeeks(){
+  const wrap = $('weeksContainer');
+  wrap.innerHTML = '';
 
-      totals.opening += oPhys;
-      totals.closing += cPhys;
-      totals.usage += usage;
-      totals.netChange += netChange;
-
-      let status = 'Unchanged';
-      let statusClass = 'status-unchanged';
-
-      if(o && !c){
-        status = 'Removed';
-        statusClass = 'status-removed';
-        removedLots.push({ Part:part, Description:desc, Location:loc, Lot:lot, Opening:oPhys });
-      }else if(!o && c){
-        status = 'New';
-        statusClass = 'status-new';
-        newLots.push({ Part:part, Description:desc, Location:loc, Lot:lot, Closing:cPhys });
-      }else if(o && c && cPhys < oPhys){
-        status = 'Reduced';
-        statusClass = 'status-reduced';
-      }else if(o && c && cPhys > oPhys){
-        status = 'Increased';
-        statusClass = 'status-new';
-      }
-
-      rows.push({
-        Part: part,
-        Description: desc,
-        Location: loc,
-        Lot: lot,
-        PO: po,
-        Created: created,
-        Opening: oPhys,
-        Closing: cPhys,
-        Usage: usage,
-        Status: status,
-        StatusClass: statusClass
-      });
-    }
+  if(!weeksCache.length){
+    wrap.innerHTML = `<div class="note">No weeks yet. Upload Opening to start.</div>`;
+    return;
   }
 
-  rows.sort((a,b)=> {
-    if(a.Part !== b.Part) return a.Part.localeCompare(b.Part);
-    if(a.Location !== b.Location) return a.Location.localeCompare(b.Location);
-    return String(a.Lot||'').localeCompare(String(b.Lot||''));
-  });
+  const weeks = [...weeksCache].sort((a,b)=> a.WeekCommencing < b.WeekCommencing ? 1 : -1);
 
-  // Summary by Part + Description
-  const byPart = new Map();
-  for(const r of rows){
-    const key = `${r.Part}|${r.Description}`;
-    if(!byPart.has(key)){
-      byPart.set(key, { Part:r.Part, Description:r.Description, Opening:0, Closing:0, Usage:0, NetChange:0 });
-    }
-    const agg = byPart.get(key);
-    agg.Opening += r.Opening;
-    agg.Closing += r.Closing;
-    agg.Usage += r.Usage;
-    agg.NetChange += (r.Closing - r.Opening);
+  for(const w of weeks){
+    const el = document.createElement('div');
+    el.className = 'week-card';
+    el.innerHTML = `
+      <div class="row1">
+        <div>
+          <h3>WC ${escapeHtml(w.WeekCommencing)}</h3>
+          <div class="muted">
+            Opening: <span class="mono">${escapeHtml(w.OpeningExportDateTime||'—')}</span><br/>
+            Closing: <span class="mono">${escapeHtml(w.ClosingExportDateTime||'—')}</span>
+          </div>
+        </div>
+        <div>${weekStateBadge(w.State)}</div>
+      </div>
+      <div class="actions">
+        <button class="btn small primary" data-wc="${w.WeekCommencing}">Open</button>
+      </div>
+    `;
+    el.querySelector('button').addEventListener('click', ()=> openWeekModal(w.WeekCommencing));
+    wrap.appendChild(el);
   }
-  const summaryByPart = [...byPart.values()].sort((a,b)=> a.Part.localeCompare(b.Part));
-
-  return { rows, totals, summaryByPart, removedLots, newLots };
 }
 
-function renderWeekKpis(totals){
-  const wrap = document.getElementById('weekKpis');
-  wrap.innerHTML = `
-    <div class="kpi">
-      <p class="t">Opening total</p>
-      <p class="v">${fmtInt(totals.opening)}</p>
-    </div>
-    <div class="kpi">
-      <p class="t">Closing total</p>
-      <p class="v">${fmtInt(totals.closing)}</p>
-    </div>
-    <div class="kpi">
-      <p class="t">Usage (Opening − Closing)</p>
-      <p class="v">${fmtInt(totals.usage)}</p>
-    </div>
-    <div class="kpi">
-      <p class="t">Net change (Closing − Opening)</p>
-      <p class="v">${fmtInt(totals.netChange)}</p>
-    </div>
-  `;
-}
-
-function renderComparisonTable(rows, filterText){
-  const f = safeLower(filterText||'').trim();
-
-  const filtered = !f ? rows : rows.filter(r=>{
-    const hay = `${r.Part} ${r.Description} ${r.Location} ${r.Lot}`.toLowerCase();
-    return hay.includes(f);
-  });
-
-  const body = filtered.map(r=>`
-    <tr>
-      <td>${escapeHtml(r.Part)}</td>
-      <td>${escapeHtml(r.Description)}</td>
-      <td>${escapeHtml(r.Location)}</td>
-      <td class="mono">${escapeHtml(r.Lot)}</td>
-      <td class="right mono">${fmtInt(r.Opening)}</td>
-      <td class="right mono">${fmtInt(r.Closing)}</td>
-      <td class="right mono">${fmtInt(r.Usage)}</td>
-      <td class="status-cell ${r.StatusClass}">${escapeHtml(r.Status)}</td>
-    </tr>
-  `).join('');
-
-  return `
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Part</th>
-            <th>Description</th>
-            <th>Location</th>
-            <th>LOT</th>
-            <th class="right">Opening PHYS</th>
-            <th class="right">Closing PHYS</th>
-            <th class="right">Usage</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${body || `<tr><td colspan="8" class="note">No rows match your filter.</td></tr>`}
-        </tbody>
-      </table>
-    </div>
-    <div class="note" style="margin-top:8px;">Rows shown: <strong>${fmtInt(filtered.length)}</strong></div>
-  `;
-}
-
-function renderSummaryTables(cmp){
-  const sRows = cmp.summaryByPart.map(r=>`
-    <tr>
-      <td>${escapeHtml(r.Part)}</td>
-      <td>${escapeHtml(r.Description)}</td>
-      <td class="right mono">${fmtInt(r.Opening)}</td>
-      <td class="right mono">${fmtInt(r.Closing)}</td>
-      <td class="right mono">${fmtInt(r.Usage)}</td>
-      <td class="right mono">${fmtInt(r.NetChange)}</td>
-    </tr>
-  `).join('');
-
-  const removed = cmp.removedLots.map(r=>`
-    <tr>
-      <td>${escapeHtml(r.Part)}</td>
-      <td>${escapeHtml(r.Description)}</td>
-      <td>${escapeHtml(r.Location)}</td>
-      <td class="mono">${escapeHtml(r.Lot)}</td>
-      <td class="right mono">${fmtInt(r.Opening)}</td>
-    </tr>
-  `).join('');
-
-  const added = cmp.newLots.map(r=>`
-    <tr>
-      <td>${escapeHtml(r.Part)}</td>
-      <td>${escapeHtml(r.Description)}</td>
-      <td>${escapeHtml(r.Location)}</td>
-      <td class="mono">${escapeHtml(r.Lot)}</td>
-      <td class="right mono">${fmtInt(r.Closing)}</td>
-    </tr>
-  `).join('');
-
-  return `
-    <div class="divider"></div>
-
-    <h3 style="margin:0 0 8px 0; font-size:14px;">Weekly summary (by Part + Description)</h3>
-    <div class="table-wrap" style="max-height:360px;">
-      <table>
-        <thead>
-          <tr>
-            <th>Part</th>
-            <th>Description</th>
-            <th class="right">Opening</th>
-            <th class="right">Closing</th>
-            <th class="right">Usage</th>
-            <th class="right">Net change</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${sRows || `<tr><td colspan="6" class="note">No summary available.</td></tr>`}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="grid" style="margin-top:12px;">
-      <div class="field col6">
-        <h3 style="margin:0 0 8px 0; font-size:14px;">Removed LOTs (present in Opening, missing in Closing)</h3>
-        <div class="table-wrap" style="max-height:260px;">
-          <table>
-            <thead>
-              <tr><th>Part</th><th>Description</th><th>Location</th><th>LOT</th><th class="right">Opening</th></tr>
-            </thead>
-            <tbody>
-              ${removed || `<tr><td colspan="5" class="note">None</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="field col6">
-        <h3 style="margin:0 0 8px 0; font-size:14px;">New LOTs (missing in Opening, present in Closing)</h3>
-        <div class="table-wrap" style="max-height:260px;">
-          <table>
-            <thead>
-              <tr><th>Part</th><th>Description</th><th>Location</th><th>LOT</th><th class="right">Closing</th></tr>
-            </thead>
-            <tbody>
-              ${added || `<tr><td colspan="5" class="note">None</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-async function openWeekModal(wc, action, isNewWeek){
+async function refreshWeeks(){
   await ensurePin();
   await apiPing();
+  weeksCache = await apiPost('listWeeks');
+  renderWeeks();
+}
 
-  summaryShown = false;
-  document.getElementById('searchBox').value = '';
-  document.getElementById('fileInput').value = '';
-  document.getElementById('fileNote').textContent = '';
+/* ===========================
+   OPEN WEEK
+=========================== */
+async function openWeekModal(wc){
+  await ensurePin();
+  const data = await apiPost('getWeekData', { weekCommencing: wc });
+  currentWeekData = data;
+
+  $('weekModalTitle').textContent = `WC ${wc}`;
+  $('weekModalMeta').innerHTML = `
+    Opening: <span class="mono">${escapeHtml(data.week.OpeningExportDateTime||'—')}</span> •
+    Closing: <span class="mono">${escapeHtml(data.week.ClosingExportDateTime||'—')}</span>
+  `;
+
+  $('weekCommencingInput').value = wc;
+  $('fileInput').value = '';
+  $('fileNote').textContent = '';
   parsedFile = null;
+  summaryShown = false;
 
-  const weekInput = document.getElementById('weekCommencingInput');
-  const uploadTypeSelect = document.getElementById('uploadTypeSelect');
-  const replaceSelect = document.getElementById('replaceSelect');
+  $('btnRemoveClosing').disabled = !data.week.ClosingUploadId;
+  $('btnPrint').disabled = !data.week.OpeningUploadId;
 
-  // Determine what week row is (existing or new placeholder)
-  let weekRow = null;
-
-  if(isNewWeek){
-    weekRow = {
-      WeekCommencing: wc,
-      OpeningUploadId: '',
-      ClosingUploadId: '',
-      OpeningExportDateTime: '',
-      ClosingExportDateTime: '',
-      State: 'OPENING_MISSING',
-      LastUpdated: ''
-    };
-    currentWeekData = { week: weekRow, openingLines: [], closingLines: [] };
-  }else{
-    const data = await apiPost('getWeekData', { weekCommencing: wc });
-    currentWeekData = data;
-    weekRow = data.week;
-  }
-
-  currentWeek = weekRow;
-  setWeekModalHeader(weekRow);
-
-  weekInput.value = weekRow.WeekCommencing;
-
-  // Default action -> set upload type etc.
-  if(action === 'uploadClosing'){
-    uploadTypeSelect.value = 'CLOSING';
-  }else{
-    uploadTypeSelect.value = 'OPENING';
-  }
-  replaceSelect.value = 'false';
-
-  // Enable / disable buttons
-  document.getElementById('btnRemoveClosing').disabled = !weekRow.ClosingUploadId;
-  document.getElementById('btnPrint').disabled = !weekRow.OpeningUploadId;
-
-  // If view requested but we don't have both, just show note
   await renderWeekTables();
 
   showOverlay('weekOverlay', true);
-
-  // If action implies upload/print/view, do a little convenience behaviour
-  if(action === 'print'){
-    if(weekRow.OpeningUploadId) printWarehouseSheet();
-    else toast('Upload Opening first to print.');
-  }
-  if(action === 'view'){
-    // just ensure summary hidden and comparison visible
-    summaryShown = false;
-    await renderWeekTables();
-  }
-}
-
-async function renderWeekTables(){
-  const area = document.getElementById('weekTablesArea');
-
-  if(!currentWeekData || !currentWeekData.week){
-    area.innerHTML = `<div class="note">No week loaded.</div>`;
-    return;
-  }
-
-  const o = currentWeekData.openingLines || [];
-  const c = currentWeekData.closingLines || [];
-  const weekRow = currentWeekData.week;
-
-  if(!weekRow.OpeningUploadId){
-    document.getElementById('weekKpis').innerHTML = '';
-    area.innerHTML = `<div class="note">Upload an Opening export to begin this week.</div>`;
-    return;
-  }
-
-  // If only opening exists
-  if(!weekRow.ClosingUploadId){
-    const openingTotal = o.reduce((a,x)=> a + Number(x.Phys||0), 0);
-    renderWeekKpis({ opening: openingTotal, closing: 0, usage: openingTotal, netChange: -openingTotal });
-
-    area.innerHTML = `
-      <div class="note" style="margin-bottom:10px;">
-        Opening is uploaded. Print the warehouse count sheet, then upload Closing to see usage.
-      </div>
-      ${renderComparisonTable(
-        (o||[]).map(x=>({
-          Part:x.Part||'',
-          Description:x.Description||'',
-          Location:x.Location||'',
-          Lot:x.Lot||'',
-          Opening:Number(x.Phys||0),
-          Closing:0,
-          Usage:Number(x.Phys||0),
-          Status:'Opening only',
-          StatusClass:'status-reduced'
-        })),
-        document.getElementById('searchBox').value
-      )}
-    `;
-    return;
-  }
-
-  // Both exist -> compute comparison
-  const cmp = computeComparison(o,c);
-  renderWeekKpis(cmp.totals);
-
-  const filterText = document.getElementById('searchBox').value;
-
-  const tabs = `
-    <div class="tabs">
-      <button class="tabbtn ${summaryShown ? '' : 'active'}" id="tabComparison">Comparison</button>
-      <button class="tabbtn ${summaryShown ? 'active' : ''}" id="tabSummary">Summary</button>
-    </div>
-  `;
-
-  area.innerHTML = tabs + (summaryShown
-    ? renderSummaryTables(cmp)
-    : renderComparisonTable(cmp.rows, filterText)
-  );
-
-  document.getElementById('tabComparison').addEventListener('click', async ()=>{
-    summaryShown = false;
-    await renderWeekTables();
-  });
-  document.getElementById('tabSummary').addEventListener('click', async ()=>{
-    summaryShown = true;
-    await renderWeekTables();
-  });
 }
 
 /* ===========================
    EXCEL PARSING
 =========================== */
-async function parseExcelFile(file){
+function parseExportDateFromD1(text){
+  const m = /(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/.exec(String(text||''));
+  if(!m) return null;
+  return new Date(m[3], m[2]-1, m[1], m[4], m[5], m[6]);
+}
+
+async function parseExcel(file){
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type:'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
 
-  const sheetName = wb.SheetNames[0];
-  const ws = wb.Sheets[sheetName];
-  if(!ws) throw new Error('No worksheet found in file.');
+  const exportDT = parseExportDateFromD1(ws['D1']?.v);
+  if(!exportDT) throw new Error('Could not read export date from D1');
 
-  // Read D1 for export date
-  const d1 = ws['D1'] ? ws['D1'].v : '';
-  const exportDt = parseExportDateFromD1(d1);
-  if(!exportDt) throw new Error('Could not read export date/time from cell D1 (expected "Stock levels at: dd/mm/yyyy hh:mm:ss").');
+  const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+  const headers = rows[1].map(h=> safeLower(h).trim());
 
-  const exportISO = exportDt.toISOString();
-  const exportText = `${ymd(exportDt)} ${String(exportDt.getHours()).padStart(2,'0')}:${String(exportDt.getMinutes()).padStart(2,'0')}:${String(exportDt.getSeconds()).padStart(2,'0')}`;
-  const suggestedWC = ymd(mondayOfWeek(exportDt));
+  const idx = (name) => headers.indexOf(name);
 
-  // Header is on row 2
-  // We will read as arrays with range from row2 onward.
-  const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', blankrows:false });
+  const iPart = idx('part no.') >= 0 ? idx('part no.') : idx('part');
+  const iDesc = idx('description');
+  const iLoc = idx('location');
+  const iLot = idx('lot');
+  const iPO = idx('p/o');
+  const iCreated = idx('created');
+  const iPhys = idx('phys');
 
-  if(rows.length < 2) throw new Error('File appears empty.');
+  if(iPart < 0 || iPhys < 0) throw new Error('Missing Part or PHYS column');
 
-  const headerRow = rows[1]; // row 2
-  const headers = headerRow.map(normaliseHeader);
+  const lines = [];
 
-  const colIndex = (names) => {
-    for(const n of names){
-      const idx = headers.indexOf(normaliseHeader(n));
-      if(idx >= 0) return idx;
-    }
-    return -1;
-  };
-
-  const idxPart = colIndex(['part no.', 'part', 'part number', 'part no']);
-  const idxDesc = colIndex(['description', 'desc']);
-  const idxLoc  = colIndex(['location', 'loc']);
-  const idxLot  = colIndex(['lot']);
-  const idxPO   = colIndex(['p/o', 'po', 'p.o']);
-  const idxCreated = colIndex(['created', 'create date']);
-  const idxPhys = colIndex(['phys', 'physical', 'qty', 'quantity']);
-
-  if(idxPart < 0 || idxPhys < 0) throw new Error('Could not locate required columns (Part and PHYS).');
-
-  // Data begins row 3 (index 2 in rows array)
-  const outLines = [];
-  for(let r=2; r<rows.length; r++){
+  for(let r=2;r<rows.length;r++){
     const row = rows[r];
-    const part = String(row[idxPart] ?? '').trim();
-    const physRaw = row[idxPhys];
-    const phys = Number(physRaw || 0);
+    const part = String(row[iPart]||'').trim();
+    const phys = Number(row[iPhys]||0);
+    const loc = String(row[iLoc]||'').trim();
+    const lot = String(row[iLot]||'').trim();
 
-    const loc = idxLoc >= 0 ? String(row[idxLoc] ?? '').trim() : '';
-    const lot = idxLot >= 0 ? String(row[idxLot] ?? '').trim() : '';
-    const desc = idxDesc >= 0 ? String(row[idxDesc] ?? '').trim() : '';
-    const po = idxPO >= 0 ? String(row[idxPO] ?? '').trim() : '';
-    const created = idxCreated >= 0 ? excelDateToISO(row[idxCreated]) : '';
+    if(!part || !loc || !lot || phys <= 0) continue;
 
-    // Ignore non-stock lines:
-    // - no part
-    // - phys <= 0 or not a number
-    // - missing location/lot (as per your requirement)
-    if(!part) continue;
-    if(!isFinite(phys) || phys <= 0) continue;
-    if(!loc || !lot) continue;
-
-    const line = {
+    lines.push({
       Part: part,
-      Description: desc,
+      Description: String(row[iDesc]||''),
       Location: loc,
       Lot: lot,
-      PO: po,
-      Created: created,
+      PO: String(row[iPO]||''),
+      Created: String(row[iCreated]||''),
       Phys: phys
-    };
-    line.LineKey = buildLineKey(line);
-
-    outLines.push(line);
+    });
   }
 
   return {
-    exportDateISO: exportISO,
-    exportDateText: exportText,
-    suggestedWC,
+    exportDateISO: exportDT.toISOString(),
+    exportDateText: exportDT.toLocaleString('en-GB'),
+    suggestedWC: ymd(mondayOfWeek(exportDT)),
     fileName: file.name,
-    lines: outLines
+    lines
   };
 }
 
-async function handleFileChosen(){
-  const fileInput = document.getElementById('fileInput');
-  const note = document.getElementById('fileNote');
-  const file = fileInput.files && fileInput.files[0];
-  parsedFile = null;
-
-  if(!file){
-    note.textContent = '';
-    return;
-  }
-
+/* ===========================
+   FILE PICK
+=========================== */
+$('fileInput').addEventListener('change', async ()=>{
+  const f = $('fileInput').files[0];
+  if(!f) return;
   try{
-    note.textContent = 'Reading file...';
-    const parsed = await parseExcelFile(file);
-    parsedFile = parsed;
-
-    // Suggest WC in the date picker (but allow override)
-    const wcInput = document.getElementById('weekCommencingInput');
-    if(!wcInput.value) wcInput.value = parsed.suggestedWC;
-
-    note.innerHTML = `
-      Parsed: <strong>${fmtInt(parsed.lines.length)}</strong> stock lines<br/>
-      Export date/time: <span class="mono">${escapeHtml(parsed.exportDateText)}</span><br/>
-      Suggested WC: <span class="mono">${escapeHtml(parsed.suggestedWC)}</span>
+    parsedFile = await parseExcel(f);
+    if(!$('weekCommencingInput').value) $('weekCommencingInput').value = parsedFile.suggestedWC;
+    $('fileNote').innerHTML = `
+      Export: <span class="mono">${parsedFile.exportDateText}</span><br/>
+      Lines: <strong>${parsedFile.lines.length}</strong><br/>
+      Suggested WC: <span class="mono">${parsedFile.suggestedWC}</span>
     `;
-
-    // Also (nicely) auto-fill WC to suggested unless user already has a different value
-    if(wcInput.value !== parsed.suggestedWC && !wcInput.dataset.userEdited){
-      wcInput.value = parsed.suggestedWC;
-    }
   }catch(e){
-    parsedFile = null;
-    note.textContent = '';
     toast(e.message);
   }
-}
+});
 
 /* ===========================
-   UPLOAD ACTIONS
+   UPLOAD
 =========================== */
 async function uploadNow(){
   await ensurePin();
-  if(!parsedFile) throw new Error('Select an Excel export first.');
+  if(!parsedFile) throw new Error('Select a file first.');
 
-  const wc = document.getElementById('weekCommencingInput').value;
-  const uploadType = document.getElementById('uploadTypeSelect').value;
-  const replace = document.getElementById('replaceSelect').value === 'true';
+  const wc = $('weekCommencingInput').value;
+  const uploadType = $('uploadTypeSelect').value;
+  const replace = $('replaceSelect').value === 'true';
 
-  if(!wc) throw new Error('Week Commencing is required.');
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(wc)) throw new Error('Week Commencing must be a valid date.');
-
-  const payload = {
+  await apiPost('upload', {
     weekCommencing: wc,
     uploadType,
     exportDateTime: parsedFile.exportDateISO,
     sourceFileName: parsedFile.fileName,
-    lines: parsedFile.lines.map(l => ({
-      Part: l.Part,
-      Description: l.Description,
-      Location: l.Location,
-      Lot: l.Lot,
-      PO: l.PO,
-      Created: l.Created,
-      Phys: l.Phys,
-      LineKey: l.LineKey
-    })),
+    lines: parsedFile.lines,
     replace
-  };
-
-  toast('Uploading...');
-  await apiPost('upload', payload);
+  });
 
   toast('Upload complete.');
-  // Refresh weeks list and reload week data
+  showOverlay('weekOverlay', false);
   await refreshWeeks();
-
-  // Reload week data for the week we just uploaded
-  const data = await apiPost('getWeekData', { weekCommencing: wc });
-  currentWeekData = data;
-  currentWeek = data.week;
-  setWeekModalHeader(currentWeek);
-
-  document.getElementById('btnRemoveClosing').disabled = !currentWeek.ClosingUploadId;
-  document.getElementById('btnPrint').disabled = !currentWeek.OpeningUploadId;
-
-  summaryShown = false;
-  await renderWeekTables();
 }
 
 /* ===========================
-   PRINT
+   REMOVE CLOSING
+=========================== */
+async function removeClosing(){
+  const wc = currentWeekData.week.WeekCommencing;
+  if(!confirm('Remove Closing?')) return;
+  await apiPost('removeClosing', { weekCommencing: wc });
+  toast('Closing removed.');
+  showOverlay('weekOverlay', false);
+  await refreshWeeks();
+}
+
+/* ===========================
+   TABLE RENDER
+=========================== */
+async function renderWeekTables(){
+  const area = $('weekTablesArea');
+  const w = currentWeekData.week;
+
+  if(!w.OpeningUploadId){
+    area.innerHTML = `<div class="note">Upload Opening to begin.</div>`;
+    return;
+  }
+
+  if(!w.ClosingUploadId){
+    area.innerHTML = `<div class="note">Opening uploaded. Print sheet, then upload Closing.</div>`;
+    return;
+  }
+
+  area.innerHTML = `<div class="note">Opening and Closing both uploaded. (Comparison view coming in next step)</div>`;
+}
+
+    /* ===========================
+   PRINT (Opening only)
 =========================== */
 function buildPrintHTML(openingLines, wc, exportDateTime){
-  // Group by Part, sorted by Part, with blank row between groups
   const lines = [...openingLines].sort((a,b)=>{
     if(a.Part !== b.Part) return String(a.Part||'').localeCompare(String(b.Part||''));
     if(a.Location !== b.Location) return String(a.Location||'').localeCompare(String(b.Location||''));
@@ -1415,7 +845,7 @@ function buildPrintHTML(openingLines, wc, exportDateTime){
     `);
   }
 
-  const exportText = exportDateTime ? new Date(exportDateTime).toLocaleString('en-GB') : '';
+  const exportText = exportDateTime ? String(exportDateTime) : '';
 
   return `
 <!doctype html>
@@ -1474,11 +904,11 @@ function buildPrintHTML(openingLines, wc, exportDateTime){
 }
 
 function printWarehouseSheet(){
-  if(!currentWeekData || !currentWeekData.week) return;
+  if(!currentWeekData) return;
   const week = currentWeekData.week;
   const openingLines = currentWeekData.openingLines || [];
   if(!openingLines.length){
-    toast('No Opening lines found to print.');
+    toast('No Opening lines to print.');
     return;
   }
   const html = buildPrintHTML(openingLines, week.WeekCommencing, week.OpeningExportDateTime);
@@ -1490,206 +920,65 @@ function printWarehouseSheet(){
 }
 
 /* ===========================
-   CLOSING REMOVAL
+   BUTTON WIRING
 =========================== */
-async function removeClosing(){
-  if(!currentWeekData || !currentWeekData.week) return;
-  const wc = currentWeekData.week.WeekCommencing;
-  if(!confirm(`Remove Closing for WC ${wc}? This unlocks Opening for replacement.`)) return;
-
-  toast('Removing Closing...');
-  await apiPost('removeClosing', { weekCommencing: wc });
-  toast('Closing removed.');
-
-  await refreshWeeks();
-  const data = await apiPost('getWeekData', { weekCommencing: wc });
-  currentWeekData = data;
-  currentWeek = data.week;
-  setWeekModalHeader(currentWeek);
-
-  document.getElementById('btnRemoveClosing').disabled = !currentWeek.ClosingUploadId;
-  summaryShown = false;
-  await renderWeekTables();
-}
-
-/* ===========================
-   ARCHIVE MONTH VIEW
-=========================== */
-function renderMonthKpis(totals){
-  return `
-    <div class="kpis" style="margin-bottom:12px;">
-      <div class="kpi"><p class="t">Opening total</p><p class="v">${fmtInt(totals.opening)}</p></div>
-      <div class="kpi"><p class="t">Closing total</p><p class="v">${fmtInt(totals.closing)}</p></div>
-      <div class="kpi"><p class="t">Usage (Opening − Closing)</p><p class="v">${fmtInt(totals.usage)}</p></div>
-      <div class="kpi"><p class="t">Net change (Closing − Opening)</p><p class="v">${fmtInt(totals.netChange)}</p></div>
-    </div>
-  `;
-}
-
-function renderMonthByPart(byPart){
-  const rows = (byPart||[]).map(r=>`
-    <tr>
-      <td>${escapeHtml(r.Part)}</td>
-      <td>${escapeHtml(r.Description)}</td>
-      <td class="right mono">${fmtInt(r.Opening)}</td>
-      <td class="right mono">${fmtInt(r.Closing)}</td>
-      <td class="right mono">${fmtInt(r.Usage)}</td>
-      <td class="right mono">${fmtInt(r.NetChange)}</td>
-    </tr>
-  `).join('');
-
-  return `
-    <h3 style="margin:0 0 8px 0; font-size:14px;">Month summary (by Part + Description)</h3>
-    <div class="table-wrap" style="max-height:360px;">
-      <table>
-        <thead>
-          <tr>
-            <th>Part</th>
-            <th>Description</th>
-            <th class="right">Opening</th>
-            <th class="right">Closing</th>
-            <th class="right">Usage</th>
-            <th class="right">Net change</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows || `<tr><td colspan="6" class="note">No data for this month.</td></tr>`}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-function renderMonthWeeksList(weeks){
-  const items = (weeks||[]).sort((a,b)=> (a.WeekCommencing < b.WeekCommencing ? 1 : -1)).map(w=>`
-    <div class="week-card" style="box-shadow:none;">
-      <div class="row1">
-        <div>
-          <h3>WC ${escapeHtml(w.WeekCommencing)}</h3>
-          <div class="muted">
-            Opening: <span class="mono">${escapeHtml(w.OpeningExportDateTime || '—')}</span><br/>
-            Closing: <span class="mono">${escapeHtml(w.ClosingExportDateTime || '—')}</span>
-          </div>
-        </div>
-        <div>${weekStateBadge(w.State || 'OPENING_MISSING')}</div>
-      </div>
-      <div class="actions">
-        <button class="btn small primary" data-wc="${escapeHtml(w.WeekCommencing)}">Open week</button>
-      </div>
-    </div>
-  `).join('');
-
-  return `
-    <div class="divider"></div>
-    <h3 style="margin:0 0 8px 0; font-size:14px;">Weeks in this month</h3>
-    <div class="week-list" id="monthWeeksList">
-      ${items || `<div class="note">No weeks found in this month.</div>`}
-    </div>
-  `;
-}
-
-async function loadMonth(){
-  await ensurePin();
-
-  const ym = document.getElementById('monthInput').value; // YYYY-MM
-  const note = document.getElementById('monthNote');
-  const area = document.getElementById('monthArea');
-
-  if(!ym){
-    note.textContent = 'Please select a month.';
-    return;
-  }
-
-  note.textContent = 'Loading...';
+$('btnRefresh').addEventListener('click', async ()=>{
   try{
-    const data = await apiPost('monthSummary', { yearMonth: ym });
-    note.textContent = '';
-
-    area.innerHTML =
-      renderMonthKpis(data.totals) +
-      renderMonthByPart(data.byPart) +
-      renderMonthWeeksList(data.weeks);
-
-    const list = document.getElementById('monthWeeksList');
-    if(list){
-      list.querySelectorAll('button[data-wc]').forEach(btn=>{
-        btn.addEventListener('click', async ()=>{
-          const wc = btn.getAttribute('data-wc');
-          showOverlay('archiveOverlay', false);
-          await openWeekModal(wc, 'view', false);
-        });
-      });
-    }
-  }catch(e){
-    note.textContent = '';
-    area.innerHTML = `<div class="note">Error: ${escapeHtml(e.message)}</div>`;
-  }
-}
-
-/* ===========================
-   EVENTS / INIT
-=========================== */
-document.getElementById('btnRefresh').addEventListener('click', async ()=>{
-  try{ await refreshWeeks(); toast('Refreshed.'); }catch(e){ toast(e.message); }
-});
-
-document.getElementById('btnForgetPin').addEventListener('click', ()=>{
-  PIN = '';
-  sessionStorage.removeItem('pct_pin');
-  setPinStatus();
-  toast('PIN forgotten on this browser.');
-});
-
-document.getElementById('btnArchive').addEventListener('click', async ()=>{
-  try{
-    await ensurePin();
-    showOverlay('archiveOverlay', true);
-    // default month = current month
-    const mi = document.getElementById('monthInput');
-    if(!mi.value){
-      const now = new Date();
-      mi.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-    }
+    await refreshWeeks();
+    toast('Refreshed.');
   }catch(e){
     toast(e.message);
   }
 });
 
-document.getElementById('btnCloseArchive').addEventListener('click', ()=> showOverlay('archiveOverlay', false));
-document.getElementById('btnLoadMonth').addEventListener('click', async ()=> { await loadMonth(); });
-
-document.getElementById('btnCloseWeek').addEventListener('click', ()=> showOverlay('weekOverlay', false));
-
-document.getElementById('fileInput').addEventListener('change', async ()=> { await handleFileChosen(); });
-
-document.getElementById('weekCommencingInput').addEventListener('input', (e)=>{
-  e.target.dataset.userEdited = 'true';
+$('btnForgetPin').addEventListener('click', ()=>{
+  PIN = '';
+  sessionStorage.removeItem('pct_pin');
+  setPinStatus();
+  toast('PIN forgotten (session only).');
 });
 
-document.getElementById('btnUploadNow').addEventListener('click', async ()=>{
-  try{ await uploadNow(); }catch(e){ toast(e.message); }
+$('btnArchive').addEventListener('click', ()=>{
+  toast('Month view will be added next (this button is a placeholder for now).');
 });
 
-document.getElementById('btnRemoveClosing').addEventListener('click', async ()=>{
-  try{ await removeClosing(); }catch(e){ toast(e.message); }
+$('btnCloseWeek').addEventListener('click', ()=> showOverlay('weekOverlay', false));
+
+$('btnUploadNow').addEventListener('click', async ()=>{
+  try{
+    await uploadNow();
+  }catch(e){
+    toast(e.message);
+  }
 });
 
-document.getElementById('btnPrint').addEventListener('click', ()=>{
-  try{ printWarehouseSheet(); }catch(e){ toast(e.message); }
+$('btnRemoveClosing').addEventListener('click', async ()=>{
+  try{
+    await removeClosing();
+  }catch(e){
+    toast(e.message);
+  }
 });
 
-document.getElementById('btnViewSummary').addEventListener('click', async ()=>{
-  summaryShown = !summaryShown;
-  document.getElementById('btnViewSummary').textContent = summaryShown ? 'Show Comparison' : 'Show Summary';
-  await renderWeekTables();
+$('btnPrint').addEventListener('click', ()=>{
+  try{
+    printWarehouseSheet();
+  }catch(e){
+    toast(e.message);
+  }
 });
 
-document.getElementById('searchBox').addEventListener('input', async ()=>{
-  if(!currentWeekData) return;
-  if(summaryShown) return; // filter only affects comparison view
-  await renderWeekTables();
+$('btnViewSummary').addEventListener('click', ()=>{
+  toast('Comparison/Summary view is coming next step.');
 });
 
+$('searchBox').addEventListener('input', ()=>{
+  // filter will be applied when comparison is implemented
+});
+
+/* ===========================
+   INIT
+=========================== */
 window.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape'){
     showOverlay('weekOverlay', false);
@@ -1698,14 +987,18 @@ window.addEventListener('keydown', (e)=>{
 });
 
 (async function init(){
-  setPinStatus();
-  await apiPing();
   try{
+    setPinStatus();
+    await apiPing();
+    // Don't force prompt on load; prompt on first action if you prefer:
     await refreshWeeks();
   }catch(e){
-    // likely missing PIN; prompt on first action
+    // If PIN not entered yet, refreshWeeks will prompt — if cancelled, just show API badge.
   }
 })();
 </script>
 </body>
 </html>
+
+    
+  
