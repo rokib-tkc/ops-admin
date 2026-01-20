@@ -573,16 +573,28 @@ async function ensurePin(){
 /* ===========================
    API
 =========================== */
-async function apiPost(action, payload={}){
+async function apiPost(action, payload = {}) {
+  const bodyObj = { action, pin: PIN, ...payload };
+
+  // IMPORTANT:
+  // Send as text/plain to avoid CORS preflight (Apps Script doesn't handle OPTIONS reliably)
   const res = await fetch(API_URL, {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify({ action, pin: PIN, ...payload })
+    method: 'POST',
+    body: JSON.stringify(bodyObj) // leaving headers off => browser uses text/plain
   });
-  const j = await res.json();
-  if(!j || j.ok !== true) throw new Error(j?.error || 'API error');
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  // If the deployment is misconfigured, sometimes Google returns HTML.
+  const text = await res.text();
+  let j;
+  try { j = JSON.parse(text); }
+  catch { throw new Error('API did not return JSON. Check Apps Script deployment access + URL.'); }
+
+  if (!j || j.ok !== true) throw new Error(j?.error || 'API error');
   return j.data;
 }
+
 
 async function apiPing(){
   const badge = $('apiBadge');
