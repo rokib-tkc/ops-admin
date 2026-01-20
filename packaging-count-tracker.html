@@ -777,13 +777,12 @@ async function uploadNow(){
   if(!parsedFile) throw new Error('Select a file first.');
 
   const wc = $('weekCommencingInput').value;
-
-  if(!wc) throw new Error('Week Commencing is required.');
-if(!/^\d{4}-\d{2}-\d{2}$/.test(wc)) throw new Error('Week Commencing must be a valid date (YYYY-MM-DD).');
-
   const uploadType = $('uploadTypeSelect').value;
   const replace = $('replaceSelect').value === 'true';
 
+  if(!wc) throw new Error('Week Commencing is required.');
+
+  // Upload to API
   await apiPost('upload', {
     weekCommencing: wc,
     uploadType,
@@ -793,10 +792,32 @@ if(!/^\d{4}-\d{2}-\d{2}$/.test(wc)) throw new Error('Week Commencing must be a v
     replace
   });
 
-  toast('Upload complete.');
-  showOverlay('weekOverlay', false);
-  await refreshWeeks();
+  toast('Upload complete. Reloading week...');
+
+  // Reload the week from API so openingLines are available immediately
+  const data = await apiPost('getWeekData', { weekCommencing: wc });
+  currentWeekData = data;
+
+  // Update header/meta
+  $('weekModalTitle').textContent = `WC ${wc}`;
+  $('weekModalMeta').innerHTML = `
+    Opening: <span class="mono">${escapeHtml(data.week.OpeningExportDateTime||'—')}</span> •
+    Closing: <span class="mono">${escapeHtml(data.week.ClosingExportDateTime||'—')}</span>
+  `;
+
+  // Update buttons
+  $('btnRemoveClosing').disabled = !data.week.ClosingUploadId;
+  $('btnPrint').disabled = !data.week.OpeningUploadId;
+
+  // Reset view + render
+  summaryShown = false;
+  await renderWeekTables();
+
+  // Refresh main weeks list in background (keeps UI consistent)
+  weeksCache = await apiPost('listWeeks');
+  renderWeeks();
 }
+
 
 /* ===========================
    REMOVE CLOSING
