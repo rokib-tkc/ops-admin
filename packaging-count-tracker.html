@@ -357,6 +357,7 @@
       <button class="btn" id="btnArchive">Archive (Monthly)</button>
       <button class="btn danger" id="btnForgetPin" title="Forget PIN for this session">Forget PIN</button>
       <button class="btn primary" id="btnRefresh">Refresh</button>
+      <button class="btn" id="btnNewWeek">New Week (Upload Opening)</button>
     </div>
   </header>
 
@@ -764,6 +765,10 @@ async function uploadNow(){
   if(!parsedFile) throw new Error('Select a file first.');
 
   const wc = $('weekCommencingInput').value;
+
+  if(!wc) throw new Error('Week Commencing is required.');
+if(!/^\d{4}-\d{2}-\d{2}$/.test(wc)) throw new Error('Week Commencing must be a valid date (YYYY-MM-DD).');
+
   const uploadType = $('uploadTypeSelect').value;
   const replace = $('replaceSelect').value === 'true';
 
@@ -919,9 +924,92 @@ function printWarehouseSheet(){
   w.focus();
 }
 
+async function loadMonth(){
+  await ensurePin();
+  const ym = $('monthInput').value; // YYYY-MM
+  if(!ym){
+    $('monthNote').textContent = 'Select a month.';
+    return;
+  }
+  $('monthNote').textContent = 'Loading...';
+
+  try{
+    const data = await apiPost('monthSummary', { yearMonth: ym });
+
+    $('monthNote').textContent = '';
+    $('monthArea').innerHTML = `
+      <div class="kpis" style="margin-bottom:12px;">
+        <div class="kpi"><p class="t">Opening total</p><p class="v">${fmtInt(data.totals.opening)}</p></div>
+        <div class="kpi"><p class="t">Closing total</p><p class="v">${fmtInt(data.totals.closing)}</p></div>
+        <div class="kpi"><p class="t">Usage (Opening − Closing)</p><p class="v">${fmtInt(data.totals.usage)}</p></div>
+        <div class="kpi"><p class="t">Net change</p><p class="v">${fmtInt(data.totals.netChange)}</p></div>
+      </div>
+
+      <div class="table-wrap" style="max-height:420px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Part</th><th>Description</th>
+              <th class="right">Opening</th><th class="right">Closing</th>
+              <th class="right">Usage</th><th class="right">Net</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(data.byPart||[]).map(r=>`
+              <tr>
+                <td>${escapeHtml(r.Part)}</td>
+                <td>${escapeHtml(r.Description)}</td>
+                <td class="right mono">${fmtInt(r.Opening)}</td>
+                <td class="right mono">${fmtInt(r.Closing)}</td>
+                <td class="right mono">${fmtInt(r.Usage)}</td>
+                <td class="right mono">${fmtInt(r.NetChange)}</td>
+              </tr>
+            `).join('') || `<tr><td colspan="6" class="note">No data.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }catch(e){
+    $('monthNote').textContent = '';
+    $('monthArea').innerHTML = `<div class="note">Error: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+
+    
 /* ===========================
    BUTTON WIRING
 =========================== */
+
+    $('btnNewWeek').addEventListener('click', async ()=>{
+  try{
+    await ensurePin();
+    // open modal without a week selected — file parsing will suggest WC
+    $('weekModalTitle').textContent = 'New Week';
+    $('weekModalMeta').textContent = 'Upload an Opening export to create a new week.';
+    $('uploadTypeSelect').value = 'OPENING';
+    $('replaceSelect').value = 'false';
+    $('weekCommencingInput').value = '';
+    $('fileInput').value = '';
+    $('fileNote').textContent = '';
+    parsedFile = null;
+    currentWeekData = { week: { WeekCommencing:'', OpeningUploadId:'', ClosingUploadId:'' }, openingLines:[], closingLines:[] };
+
+    $('btnRemoveClosing').disabled = true;
+    $('btnPrint').disabled = true;
+
+    $('weekTablesArea').innerHTML = `<div class="note">Select an Opening export to begin.</div>`;
+    showOverlay('weekOverlay', true);
+  }catch(e){
+    toast(e.message);
+  }
+});
+
+    $('btnLoadMonth').addEventListener('click', async ()=>{
+  try{ await loadMonth(); }catch(e){ toast(e.message); }
+});
+
+    
 $('btnRefresh').addEventListener('click', async ()=>{
   try{
     await refreshWeeks();
@@ -938,9 +1026,23 @@ $('btnForgetPin').addEventListener('click', ()=>{
   toast('PIN forgotten (session only).');
 });
 
-$('btnArchive').addEventListener('click', ()=>{
-  toast('Month view will be added next (this button is a placeholder for now).');
+$('btnArchive').addEventListener('click', async ()=>{
+  try{
+    await ensurePin();
+    showOverlay('archiveOverlay', true);
+
+    // Default month = current month
+    if(!$('monthInput').value){
+      const now = new Date();
+      $('monthInput').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    }
+  }catch(e){
+    toast(e.message);
+  }
 });
+
+$('btnCloseArchive').addEventListener('click', ()=> showOverlay('archiveOverlay', false));
+
 
 $('btnCloseWeek').addEventListener('click', ()=> showOverlay('weekOverlay', false));
 
@@ -968,9 +1070,13 @@ $('btnPrint').addEventListener('click', ()=>{
   }
 });
 
-$('btnViewSummary').addEventListener('click', ()=>{
-  toast('Comparison/Summary view is coming next step.');
+$('btnToggleSummary').addEventListener('click', async ()=>{
+  if(!currentWeekData) return;
+  summaryShown = !summaryShown;
+  $('btnToggleSummary').textContent = summaryShown ? 'Show Comparison' : 'Show Summary';
+  await renderWeekTables();
 });
+
 
 $('searchBox').addEventListener('input', ()=>{
   // filter will be applied when comparison is implemented
