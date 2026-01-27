@@ -634,6 +634,7 @@
       <thead>
         <tr>
           <th style="width:34px;"><input type="checkbox" id="checkAllPriority" class="checkbox"></th>
+          <th style="width:70px;">ITEM</th>
           <th style="width:110px;">TYPE</th>
           <th style="width:170px;">PRODUCT</th>
           <th style="width:80px;">QTY</th>
@@ -668,6 +669,7 @@
             <thead>
               <tr>
                 <th style="width:34px;"><input type="checkbox" id="checkAllNew" class="checkbox"></th>
+                <th style="width:70px;">ITEM</th>
                 <th style="width:30px;"></th>
                 <th style="width:100px;">TYPE</th>
                 <th style="width:170px;">PRODUCT</th>
@@ -702,6 +704,7 @@
             <thead>
               <tr>
                 <th style="width:34px;"><input type="checkbox" id="checkAllActive" class="checkbox"></th>
+                <th style="width:70px;">ITEM</th>
                 <th style="width:30px;"></th>
                 <th style="width:100px;">TYPE</th>
                 <th style="width:170px;">PRODUCT</th>
@@ -736,6 +739,7 @@
             <thead>
               <tr>
                 <th style="width:34px;"><input type="checkbox" id="checkAllSent" class="checkbox"></th>
+                <th style="width:70px;">ITEM</th>
                 <th style="width:30px;"></th>
                 <th style="width:100px;">TYPE</th>
                 <th style="width:170px;">PRODUCT</th>
@@ -768,6 +772,7 @@
             <thead>
               <tr>
                 <th style="width:34px;"><input type="checkbox" id="checkAllCancel" class="checkbox"></th>
+                <th style="width:70px;">ITEM</th>
                 <th style="width:30px;"></th>
                 <th style="width:100px;">TYPE</th>
                 <th style="width:170px;">PRODUCT</th>
@@ -1343,6 +1348,7 @@ async function apiCallForSheet(sheet, action, payload = {}){
 
       const rowsHtml = lines.map(r => `
         <tr>
+          <td>${escapeHtml(r.ITEM_NO)}</td>
           <td>${escapeHtml((r.TYPE||"").toUpperCase())}</td>
           <td>${escapeHtml(r.PRODUCT)}</td>
           <td>${escapeHtml(r.QTY)}</td>
@@ -1374,7 +1380,7 @@ async function apiCallForSheet(sheet, action, payload = {}){
           <table>
             <thead>
               <tr>
-                <th>TYPE</th><th>PRODUCT</th><th>QTY</th><th>WH</th><th>BIN</th><th>COMMENTS</th>
+                <th>ITEM</th><th>TYPE</th><th>PRODUCT</th><th>QTY</th><th>WH</th><th>BIN</th><th>COMMENTS</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
@@ -1600,6 +1606,7 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
     priorityBody.innerHTML = outstandingPrio.map(r => `
       <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
         <td><input class="checkbox" type="checkbox" data-rowcheck="prio" data-rowid="${r.rowId}"></td>
+        <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
         <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
         <td>${escapeHtml(r.PRODUCT)}</td>
         <td>${escapeHtml(r.QTY)}</td>
@@ -1623,6 +1630,7 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
   newBody.innerHTML = newRows.map(r => `
     <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
       <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
+      <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
       <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
       <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
       <td>${escapeHtml(r.PRODUCT)}</td>
@@ -1637,6 +1645,7 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
   activeBody.innerHTML = activeRows.map(r => `
     <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
       <td><input class="checkbox" type="checkbox" data-rowcheck="active" data-rowid="${r.rowId}"></td>
+      <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
       <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
       <td data-col="TYPE">${buildSelect(["SPLIT","BULK","ORDER"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
       <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
@@ -1656,6 +1665,7 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
   sentBody.innerHTML = sentRows.map(r => `
     <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
       <td><input class="checkbox" type="checkbox" data-rowcheck="sent" data-rowid="${r.rowId}"></td>
+      <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
       <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
       <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
       <td>${escapeHtml(r.PRODUCT)}</td>
@@ -1672,6 +1682,7 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
   cancelBody.innerHTML = cancelRows.map(r => `
     <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
       <td><input class="checkbox" type="checkbox" data-rowcheck="cancel" data-rowid="${r.rowId}"></td>
+      <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
       <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
       <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
       <td>${escapeHtml(r.PRODUCT)}</td>
