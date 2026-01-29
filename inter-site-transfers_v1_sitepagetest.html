@@ -392,6 +392,8 @@ th:nth-child(3), td:nth-child(3){
       line-height:20px;      /* stabilises height to match input feel */
       white-space:pre-wrap;
       word-break:break-word;
+      display:block;
+      margin:0;
     }
     .cell-textarea:focus{
       outline:none;
@@ -1698,28 +1700,35 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
 
  // ===== Auto-grow COMMENTS textareas (Active only) =====
 activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").forEach(ta => {
-
-  // Measure the "standard" height from a real input on the same row (Product box)
   const row = ta.closest("tr");
   const productInput = row ? row.querySelector("td[data-col='PRODUCT'] input.cell-input") : null;
 
-  // Fallback if not found
-  const DEFAULT_H = productInput ? productInput.getBoundingClientRect().height : 34;
+  // Use the actual height of the Product input as baseline (matches the row)
+  const BASE_H = productInput ? Math.round(productInput.getBoundingClientRect().height) : 34;
+
+  // Allow tiny scrollHeight differences (padding/line-height rounding)
+  const TOLERANCE = 4;
 
   const fit = () => {
-    // Start at standard height (matches other boxes)
-    ta.style.height = DEFAULT_H + "px";
+    // Start at baseline height
+    ta.style.height = BASE_H + "px";
 
-    // Only expand if content needs more space
+    // Measure required height
     ta.style.height = "auto";
     const needed = ta.scrollHeight;
 
-    ta.style.height = Math.max(DEFAULT_H, needed) + "px";
+    // Only expand if it genuinely needs more than baseline (+ tolerance)
+    if (needed > BASE_H + TOLERANCE) {
+      ta.style.height = needed + "px";
+    } else {
+      ta.style.height = BASE_H + "px";
+    }
   };
 
   fit();
   ta.addEventListener("input", fit);
 });
+
 
 
   // ===== Render Sent =====
