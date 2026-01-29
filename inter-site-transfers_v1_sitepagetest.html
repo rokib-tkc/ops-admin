@@ -1718,12 +1718,6 @@ activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").fo
 });
 
 
-  fit();
-  ta.addEventListener("input", fit);
-});
-
-
-
   // ===== Render Sent =====
   sentBody.innerHTML = sentRows.map(r => `
     <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
