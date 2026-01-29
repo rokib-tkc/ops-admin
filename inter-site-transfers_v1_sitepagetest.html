@@ -445,15 +445,15 @@ th:nth-child(3), td:nth-child(3){
     }
     .modal .content{ padding:14px; }
 
-    textarea{
-      width:100%;
-      min-height:220px;
-      padding:10px;
-      border:1px solid var(--border);
-      border-radius:10px;
-      resize:vertical;
-      font-size:13px;
-    }
+    #pasteBox{
+  width:100%;
+  min-height:220px;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  resize:vertical;
+  font-size:13px;
+}
 
     .toast{
       position:fixed;
@@ -1695,27 +1695,24 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
   // Apply TYPE colouring to Active table
   activeBody.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => applyTypeColour(sel));
 
- // Grow ONLY when needed (otherwise keep default height)
-activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea").forEach(ta => {
-  const DEFAULT_H = (typeof ACTIVE_COMMENT_DEFAULT_H !== "undefined") ? ACTIVE_COMMENT_DEFAULT_H : 34;
+ // ===== Auto-grow COMMENTS textareas (Active only) =====
+activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").forEach(ta => {
+  const DEFAULT_H = 34; // match your CSS min-height
 
-  const fitIfNeeded = () => {
-    // Reset to default first (keeps most rows compact)
+  const fit = () => {
+    // collapse first (keeps most rows compact)
     ta.style.height = DEFAULT_H + "px";
 
-    // Temporarily set to auto to measure true scrollHeight
+    // measure required height
     ta.style.height = "auto";
     const needed = ta.scrollHeight;
 
-    // If it actually needs more space, expand; otherwise stick to default
-    ta.style.height = (needed > DEFAULT_H ? needed : DEFAULT_H) + "px";
+    // only expand if content actually overflows
+    ta.style.height = Math.max(DEFAULT_H, needed) + "px";
   };
 
-  // Only expand those that overflow
-  fitIfNeeded();
-
-  // While typing, expand/collapse as required
-  ta.addEventListener("input", fitIfNeeded);
+  fit();
+  ta.addEventListener("input", fit);
 });
 
 
