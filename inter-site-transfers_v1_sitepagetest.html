@@ -380,8 +380,8 @@ th:nth-child(3), td:nth-child(3){
     /* ===== Auto-grow textarea for COMMENTS in Active table ===== */
     .cell-textarea{
       width:100%;
-      height: 34px;          /* default same as inputs */
-      min-height: 34px;      /* don’t start taller */
+      height:34px;          /* force same visible height as other inputs */
+      min-height:34px;
       padding:7px 8px;
       border:1px solid var(--border);
       border-radius:8px;
@@ -389,12 +389,13 @@ th:nth-child(3), td:nth-child(3){
       background:#fff;
       resize:none;
       overflow:hidden;
-      line-height:20px;      /* stabilises height to match input feel */
+      line-height:20px;     /* stable 1-line baseline */
       white-space:pre-wrap;
       word-break:break-word;
       display:block;
       margin:0;
     }
+
     .cell-textarea:focus{
       outline:none;
       border-color:var(--accent);
@@ -1456,8 +1457,9 @@ async function apiCallForSheet(sheet, action, payload = {}){
       return `<input class="cell-input" type="${type}" value="${escapeHtml(value ?? "")}">`;
     }
 
+    
     function buildTextarea(value){
-      return `<textarea class="cell-textarea">${escapeHtml(value ?? "")}</textarea>`;
+      return `<textarea class="cell-textarea" rows="1">${escapeHtml(value ?? "")}</textarea>`;
     }
 
 
@@ -1700,30 +1702,21 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
 
  // ===== Auto-grow COMMENTS textareas (Active only) =====
 activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").forEach(ta => {
-  const row = ta.closest("tr");
-  const productInput = row ? row.querySelector("td[data-col='PRODUCT'] input.cell-input") : null;
-
-  // Use the actual height of the Product input as baseline (matches the row)
-  const BASE_H = productInput ? Math.round(productInput.getBoundingClientRect().height) : 34;
-
-  // Allow tiny scrollHeight differences (padding/line-height rounding)
-  const TOLERANCE = 4;
+  const BASE_H = 34;       // must match CSS height/min-height
+  const TOLERANCE = 2;
 
   const fit = () => {
-    // Start at baseline height
-    ta.style.height = BASE_H + "px";
-
-    // Measure required height
-    ta.style.height = "auto";
+    ta.style.height = BASE_H + "px";   // reset to 1-line height
+    ta.style.height = "auto";          // let it measure
     const needed = ta.scrollHeight;
 
-    // Only expand if it genuinely needs more than baseline (+ tolerance)
-    if (needed > BASE_H + TOLERANCE) {
-      ta.style.height = needed + "px";
-    } else {
-      ta.style.height = BASE_H + "px";
-    }
+    ta.style.height = (needed > BASE_H + TOLERANCE ? needed : BASE_H) + "px";
   };
+
+  fit();
+  ta.addEventListener("input", fit);
+});
+
 
   fit();
   ta.addEventListener("input", fit);
