@@ -376,6 +376,28 @@ th:nth-child(3), td:nth-child(3){
       font-size:13px;
       background:#fff;
     }
+    
+    /* ===== Auto-grow textarea for COMMENTS in Active table ===== */
+    .cell-textarea{
+      width:100%;
+      min-height: 34px;
+      padding:7px 8px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      font-size:13px;
+      background:#fff;
+      resize:none;          /* user can't drag it bigger */
+      overflow:hidden;      /* height expands instead */
+      line-height:1.25;
+      white-space:pre-wrap; /* wrap long text */
+      word-break:break-word;
+    }
+    .cell-textarea:focus{
+      outline:none;
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+    }
+
     .cell-input:focus, .cell-select:focus{
       outline:none;
       border-color:var(--accent);
@@ -1431,6 +1453,11 @@ async function apiCallForSheet(sheet, action, payload = {}){
       return `<input class="cell-input" type="${type}" value="${escapeHtml(value ?? "")}">`;
     }
 
+    function buildTextarea(value){
+      return `<textarea class="cell-textarea">${escapeHtml(value ?? "")}</textarea>`;
+    }
+
+
     function buildPrioFlag(priorityYes){
       if (priorityYes){
         return `<span class="prio-flag" title="Priority">!</span>`;
@@ -1661,12 +1688,23 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
       <td data-col="BIN">${buildInput(r.BIN)}</td>
       <td data-col="DROPPED">${buildSelect(["","YES"], (r.DROPPED || "").toString().toUpperCase())}</td>
       <td data-col="SENT">${buildSelect(["","YES"], (r.SENT || "").toString().toUpperCase())}</td>
-      <td data-col="COMMENTS">${buildInput(r.COMMENTS)}</td>
+      <td data-col="COMMENTS">${buildTextarea(r.COMMENTS)}</td>
     </tr>
   `).join("");
 
   // Apply TYPE colouring to Active table
   activeBody.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => applyTypeColour(sel));
+
+  // Auto-grow COMMENTS textareas in Active table
+  activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea").forEach(ta => {
+    const autoGrow = () => {
+      ta.style.height = "auto";
+      ta.style.height = ta.scrollHeight + "px";
+    };
+    autoGrow();
+    ta.addEventListener("input", autoGrow);
+  });
+
 
   // ===== Render Sent =====
   sentBody.innerHTML = sentRows.map(r => `
@@ -1752,7 +1790,7 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
     // ====== INPUT NORMALISATION ======
     document.addEventListener("input", (ev) => {
       const input = ev.target;
-      if (!input.classList.contains("cell-input")) return;
+      if (!(input.classList.contains("cell-input") || input.classList.contains("cell-textarea"))) return;
 
       const td = input.closest("td[data-col]");
       if (!td) return;
