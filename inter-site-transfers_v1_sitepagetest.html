@@ -380,16 +380,17 @@ th:nth-child(3), td:nth-child(3){
     /* ===== Auto-grow textarea for COMMENTS in Active table ===== */
     .cell-textarea{
       width:100%;
-      min-height: 34px;
+      height: 34px;          /* default same as inputs */
+      min-height: 34px;      /* don’t start taller */
       padding:7px 8px;
       border:1px solid var(--border);
       border-radius:8px;
       font-size:13px;
       background:#fff;
-      resize:none;          /* user can't drag it bigger */
-      overflow:hidden;      /* height expands instead */
-      line-height:1.25;
-      white-space:pre-wrap; /* wrap long text */
+      resize:none;
+      overflow:hidden;
+      line-height:20px;      /* stabilises height to match input feel */
+      white-space:pre-wrap;
       word-break:break-word;
     }
     .cell-textarea:focus{
@@ -1697,17 +1698,22 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
 
  // ===== Auto-grow COMMENTS textareas (Active only) =====
 activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").forEach(ta => {
-  const DEFAULT_H = 34; // match your CSS min-height
+
+  // Measure the "standard" height from a real input on the same row (Product box)
+  const row = ta.closest("tr");
+  const productInput = row ? row.querySelector("td[data-col='PRODUCT'] input.cell-input") : null;
+
+  // Fallback if not found
+  const DEFAULT_H = productInput ? productInput.getBoundingClientRect().height : 34;
 
   const fit = () => {
-    // collapse first (keeps most rows compact)
+    // Start at standard height (matches other boxes)
     ta.style.height = DEFAULT_H + "px";
 
-    // measure required height
+    // Only expand if content needs more space
     ta.style.height = "auto";
     const needed = ta.scrollHeight;
 
-    // only expand if content actually overflows
     ta.style.height = Math.max(DEFAULT_H, needed) + "px";
   };
 
