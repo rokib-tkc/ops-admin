@@ -1695,15 +1695,28 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
   // Apply TYPE colouring to Active table
   activeBody.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => applyTypeColour(sel));
 
-  // Auto-grow COMMENTS textareas in Active table
-  activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea").forEach(ta => {
-    const autoGrow = () => {
-      ta.style.height = "auto";
-      ta.style.height = ta.scrollHeight + "px";
-    };
-    autoGrow();
-    ta.addEventListener("input", autoGrow);
-  });
+ // Grow ONLY when needed (otherwise keep default height)
+activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea").forEach(ta => {
+  const DEFAULT_H = (typeof ACTIVE_COMMENT_DEFAULT_H !== "undefined") ? ACTIVE_COMMENT_DEFAULT_H : 34;
+
+  const fitIfNeeded = () => {
+    // Reset to default first (keeps most rows compact)
+    ta.style.height = DEFAULT_H + "px";
+
+    // Temporarily set to auto to measure true scrollHeight
+    ta.style.height = "auto";
+    const needed = ta.scrollHeight;
+
+    // If it actually needs more space, expand; otherwise stick to default
+    ta.style.height = (needed > DEFAULT_H ? needed : DEFAULT_H) + "px";
+  };
+
+  // Only expand those that overflow
+  fitIfNeeded();
+
+  // While typing, expand/collapse as required
+  ta.addEventListener("input", fitIfNeeded);
+});
 
 
   // ===== Render Sent =====
