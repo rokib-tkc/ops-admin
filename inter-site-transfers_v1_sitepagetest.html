@@ -1210,31 +1210,35 @@ const sentCard = document.getElementById("sentCard");
     }
 
 
-    function getDestBarcodeText(){
-  // Include asterisks exactly as requested
-  return (currentSheet === "PKY_TO_DTN") ? "*XCDTN*" : "*XCPKY*";
+   function getDestBarcodeText(){
+  // Data ONLY (no asterisks) for CODE39
+  return (currentSheet === "PKY_TO_DTN") ? "XCDTN" : "XCPKY";
 }
 
 function normaliseProductText(v){
-  const p = (v || "").toString().trim().toUpperCase();
-  if (!p) return "";
-  return `*${p}*`; // include asterisks exactly as requested
+  // Data ONLY (no asterisks) for CODE39
+  return (v || "").toString().trim().toUpperCase();
 }
 
 function renderBarcode(svgEl, text){
-  // Code128 scans reliably and supports * characters as literal text
-  JsBarcode(svgEl, text, {
-    format: "CODE128",
+  // CODE39 (matches "BC 39" labels)
+  // NOTE: Code39 cannot encode the asterisk * as data (it's start/stop),
+  // so ensure 'text' does NOT contain *.
+  const safe = (text || "").replaceAll("*", ""); // safety net
+
+  JsBarcode(svgEl, safe, {
+    format: "CODE39",
     lineColor: "#111827",
-    width: 2,     // bar thickness (scanner-friendly)
-    height: 78,   // bar height (scanner-friendly)
+    width: 3,        // thicker bars = better screen scanning
+    height: 100,     // taller barcode = better
     margin: 0,
     displayValue: true,
     font: "Arial",
     fontSize: 18,
-    textMargin: 6
+    textMargin: 8
   });
 }
+
 
 function positionOverlayNearElement(el){
   const r = el.getBoundingClientRect();
@@ -1275,8 +1279,9 @@ function showBarcodeOverlayForInput(inputEl){
 
   const destText = getDestBarcodeText();
 
-  boProdLabel.textContent = `PRODUCT (${prodText})`;
-  boDestLabel.textContent = `DESTINATION (${destText})`;
+  boProdLabel.textContent = `PRODUCT (*${prodText}*)`;
+  boDestLabel.textContent = `DESTINATION (*${destText}*)`;
+
 
   try{
     renderBarcode(boProd, prodText);
