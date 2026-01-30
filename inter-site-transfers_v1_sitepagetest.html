@@ -597,6 +597,59 @@ th:nth-child(3), td:nth-child(3){
   font-weight:700;
 }
 
+
+/* ===== Barcode hover overlay ===== */
+.barcode-overlay{
+  position: fixed;
+  z-index: 4000;
+  display: none;
+  background: #fff;
+  border: 1px solid rgba(17,24,39,0.18);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.20);
+  padding: 12px 12px;
+  width: 420px;
+  max-width: calc(100vw - 24px);
+}
+
+.barcode-overlay .bo-title{
+  font-weight: 800;
+  font-size: 12px;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.barcode-overlay .bo-grid{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.barcode-overlay .bo-block{
+  border: 1px solid rgba(17,24,39,0.10);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.barcode-overlay .bo-label{
+  font-size: 11px;
+  font-weight: 800;
+  color: #374151;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+
+.barcode-overlay svg{
+  width: 100%;
+  height: 92px; /* scanner-friendly height */
+  display: block;
+}
+
+/* A little extra spacing so the wrong code isn't scanned */
+.barcode-overlay .bo-block + .bo-block{
+  margin-top: 4px;
+}
+
     
   </style>
 </head>
@@ -941,6 +994,24 @@ th:nth-child(3), td:nth-child(3){
     </div>
   </div>
 
+
+  <!-- Barcode overlay (shown on hover over PRODUCT in Active table) -->
+<div id="barcodeOverlay" class="barcode-overlay" aria-hidden="true">
+  <p class="bo-title">Scan in order: Product → Destination</p>
+
+  <div class="bo-grid">
+    <div class="bo-block">
+      <div class="bo-label" id="boProdLabel">PRODUCT</div>
+      <svg id="boProd"></svg>
+    </div>
+
+    <div class="bo-block">
+      <div class="bo-label" id="boDestLabel">DESTINATION</div>
+      <svg id="boDest"></svg>
+    </div>
+  </div>
+</div>
+  
   <script>
     // ====== EDIT THESE ======
     const API_URL = "https://script.google.com/macros/s/AKfycbxpeOikchlafJAHPgZAyGD-5kCbRWijK1jn4zE1uZQOd1LA-DMJIf6ud3INj2HHW9yj/exec";
@@ -1027,6 +1098,16 @@ const sentCard = document.getElementById("sentCard");
     const addLinesBody = document.getElementById("addLinesBody");
 
     const toast = document.getElementById("toast");
+
+    // ====== BARCODE OVERLAY ======
+    const barcodeOverlay = document.getElementById("barcodeOverlay");
+    const boProd = document.getElementById("boProd");
+    const boDest = document.getElementById("boDest");
+    const boProdLabel = document.getElementById("boProdLabel");
+    const boDestLabel = document.getElementById("boDestLabel");
+
+    let __hoveredProductInput = null;
+    let __hideOverlayTimer = null;
 
     
     // Summary
@@ -1124,6 +1205,103 @@ const sentCard = document.getElementById("sentCard");
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
+
+
+    function getDestBarcodeText(){
+  // Include asterisks exactly as requested
+  return (currentSheet === "PKY_TO_DTN") ? "*XCDTN*" : "*XCPKY*";
+}
+
+function normaliseProductText(v){
+  const p = (v || "").toString().trim().toUpperCase();
+  if (!p) return "";
+  return `*${p}*`; // include asterisks exactly as requested
+}
+
+function renderBarcode(svgEl, text){
+  // Code128 scans reliably and supports * characters as literal text
+  JsBarcode(svgEl, text, {
+    format: "CODE128",
+    lineColor: "#111827",
+    width: 2,     // bar thickness (scanner-friendly)
+    height: 78,   // bar height (scanner-friendly)
+    margin: 0,
+    displayValue: true,
+    font: "Arial",
+    fontSize: 18,
+    textMargin: 6
+  });
+}
+
+function positionOverlayNearElement(el){
+  const r = el.getBoundingClientRect();
+  const pad = 10;
+
+  // Default: show below the cell
+  let left = r.left;
+  let top = r.bottom + pad;
+
+  // Measure overlay (temporary show to measure)
+  barcodeOverlay.style.display = "block";
+  const ow = barcodeOverlay.offsetWidth;
+  const oh = barcodeOverlay.offsetHeight;
+
+  // Clamp within viewport
+  left = Math.min(left, window.innerWidth - ow - pad);
+  left = Math.max(pad, left);
+
+  // If it would go off bottom, show above instead
+  if (top + oh + pad > window.innerHeight){
+    top = r.top - oh - pad;
+  }
+  top = Math.max(pad, top);
+
+  barcodeOverlay.style.left = left + "px";
+  barcodeOverlay.style.top = top + "px";
+}
+
+function showBarcodeOverlayForInput(inputEl){
+  // Only for Active table PRODUCT column
+  if (!inputEl) return;
+
+  const prodText = normaliseProductText(inputEl.value);
+  if (!prodText){
+    hideBarcodeOverlay();
+    return;
+  }
+
+  const destText = getDestBarcodeText();
+
+  boProdLabel.textContent = `PRODUCT (${prodText})`;
+  boDestLabel.textContent = `DESTINATION (${destText})`;
+
+  try{
+    renderBarcode(boProd, prodText);
+    renderBarcode(boDest, destText);
+  } catch(e){
+    // If JsBarcode fails for any reason, hide quietly
+    hideBarcodeOverlay();
+    return;
+  }
+
+  positionOverlayNearElement(inputEl);
+  barcodeOverlay.setAttribute("aria-hidden", "false");
+}
+
+function hideBarcodeOverlay(){
+  barcodeOverlay.style.display = "none";
+  barcodeOverlay.setAttribute("aria-hidden", "true");
+  __hoveredProductInput = null;
+}
+
+function scheduleHideBarcodeOverlay(delayMs = 120){
+  clearTimeout(__hideOverlayTimer);
+  __hideOverlayTimer = setTimeout(() => {
+    // If mouse is over the overlay, don't hide yet
+    if (barcodeOverlay.matches(":hover")) return;
+    hideBarcodeOverlay();
+  }, delayMs);
+}
 
 
     function updateAddRowPrioFlag(tr){
@@ -1406,7 +1584,15 @@ async function apiCallForSheet(sheet, action, payload = {}){
             th, td{ border:1px solid #ddd; padding:8px; font-size:12px; text-align:left; }
             th{ background:#f3f4f6; }
           </style>
+
+
+        <!-- Barcode generator (Code128) -->
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+
+          
         </head>
+
+        
         <body>
           <h1>${safeTitle}</h1>
           <p class="meta">Date: ${dateTxt} • Direction: ${dirTxt}</p>
@@ -2408,6 +2594,47 @@ function makeAddRow(prefillType){
         }
       }, "Saving the new line(s) and refreshing…");
     });
+
+
+            // Hover overlay on PRODUCT inputs in Active table
+document.addEventListener("mouseover", (ev) => {
+  const input = ev.target.closest("#activeBody td[data-col='PRODUCT'] input.cell-input");
+  if (!input) return;
+
+  // Only show for PKY_TO_DTN or DTN_TO_PKY (your two tabs)
+  __hoveredProductInput = input;
+  clearTimeout(__hideOverlayTimer);
+  showBarcodeOverlayForInput(input);
+});
+
+document.addEventListener("mouseout", (ev) => {
+  const leavingInput = ev.target.closest("#activeBody td[data-col='PRODUCT'] input.cell-input");
+  if (!leavingInput) return;
+
+  // If moving into overlay, keep it visible
+  const toEl = ev.relatedTarget;
+  if (toEl && (barcodeOverlay === toEl || barcodeOverlay.contains(toEl))) return;
+
+  scheduleHideBarcodeOverlay(120);
+});
+
+// Keep visible if cursor moves onto overlay; hide when leaving overlay
+barcodeOverlay.addEventListener("mouseleave", () => scheduleHideBarcodeOverlay(80));
+barcodeOverlay.addEventListener("mouseenter", () => clearTimeout(__hideOverlayTimer));
+
+// If user edits product while hovering, refresh barcode live
+document.addEventListener("input", (ev) => {
+  if (!__hoveredProductInput) return;
+  if (ev.target === __hoveredProductInput){
+    showBarcodeOverlayForInput(__hoveredProductInput);
+  }
+});
+
+// Hide overlay on scroll or resize (prevents it floating in wrong place)
+window.addEventListener("scroll", () => hideBarcodeOverlay(), true);
+window.addEventListener("resize", () => hideBarcodeOverlay());
+
+            
 
     // ====== AUTO REFRESH ======
     setInterval(() => {
