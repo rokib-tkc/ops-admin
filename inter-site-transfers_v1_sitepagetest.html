@@ -7,8 +7,7 @@
   
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.1.2/bundled/lenis.min.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
   
   
   <style>
@@ -1026,29 +1025,34 @@ th:nth-child(3), td:nth-child(3){
     const API_URL = "https://script.google.com/macros/s/AKfycbxpeOikchlafJAHPgZAyGD-5kCbRWijK1jn4zE1uZQOd1LA-DMJIf6ud3INj2HHW9yj/exec";
     const API_KEY = "Lthdn637H7shdbs8987jnsm72GtsFh";
 
-        // ====== SMOOTH SCROLL (Lenis) ======
-    const lenis = new Lenis({
-      // Higher duration + lower lerp = floatier / smoother
-      duration: 1.6,
-      lerp: 0.07,
+// ====== SMOOTH SCROLL (Lenis) ======
+(function initLenis(){
+  if (typeof Lenis === "undefined") {
+    console.warn("Lenis failed to load — smooth scrolling disabled.");
+    return;
+  }
 
-      smoothWheel: true,
-      wheelMultiplier: 0.85,
+  const lenis = new Lenis({
+    // Floatier feel
+    duration: 2.2,
+    lerp: 0.06,
 
-      // Optional: if you want smooth on touch devices too
-      smoothTouch: false,
-      touchMultiplier: 1.15,
+    smoothWheel: true,
+    wheelMultiplier: 0.8,
 
-      // Nice “ease out” feel
-      easing: (t) => 1 - Math.pow(1 - t, 4)
-    });
+    smoothTouch: false,
+    touchMultiplier: 1.15,
 
-    function __lenisRaf(time){
-      lenis.raf(time);
-      requestAnimationFrame(__lenisRaf);
-    }
-    requestAnimationFrame(__lenisRaf);
+    // “Ease out” glide
+    easing: (t) => 1 - Math.pow(1 - t, 5)
+  });
 
+  function raf(time){
+    lenis.raf(time);
+    requestAnimationFrame(raf);
+  }
+  requestAnimationFrame(raf);
+})();
 
     // ====== SETTINGS ======
     const AUTO_REFRESH_MS = 20 * 60 * 1000;
