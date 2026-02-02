@@ -1281,7 +1281,7 @@ function showBarcodeOverlayForInput(inputEl){
   // Only for Active table PRODUCT column
   if (!inputEl) return;
 
-   // Only show overlay for BULK / SPLIT
+  // Only show overlay for BULK / SPLIT
   const rowType = getRowTypeFromProductInput(inputEl);
   if (rowType !== "BULK" && rowType !== "SPLIT"){
     hideBarcodeOverlay();
@@ -1294,23 +1294,16 @@ function showBarcodeOverlayForInput(inputEl){
     return;
   }
 
-  const prodText = normaliseProductText(inputEl.value);
-  if (!prodText){
-    hideBarcodeOverlay();
-    return;
-  }
-
   const destText = getDestBarcodeText();
 
+  // Labels can show *...* for humans, but barcode data must NOT include *
   boProdLabel.textContent = `PRODUCT (*${prodText}*)`;
   boDestLabel.textContent = `DESTINATION (*${destText}*)`;
-
 
   try{
     renderBarcode(boProd, prodText);
     renderBarcode(boDest, destText);
   } catch(e){
-    // If JsBarcode fails for any reason, hide quietly
     hideBarcodeOverlay();
     return;
   }
@@ -1318,6 +1311,7 @@ function showBarcodeOverlayForInput(inputEl){
   positionOverlayNearElement(inputEl);
   barcodeOverlay.setAttribute("aria-hidden", "false");
 }
+
 
 function hideBarcodeOverlay(){
   barcodeOverlay.style.display = "none";
