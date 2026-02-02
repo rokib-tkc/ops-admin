@@ -1267,9 +1267,32 @@ function positionOverlayNearElement(el){
   barcodeOverlay.style.top = top + "px";
 }
 
+
+    function getRowTypeFromProductInput(inputEl){
+  // Finds TYPE select in the same Active table row as this PRODUCT input
+  const tr = inputEl.closest("tr[data-rowid]");
+  if (!tr) return "";
+
+  const typeSel = tr.querySelector("td[data-col='TYPE'] select");
+  return (typeSel && typeSel.value ? typeSel.value : "").toString().trim().toUpperCase();
+}
+
 function showBarcodeOverlayForInput(inputEl){
   // Only for Active table PRODUCT column
   if (!inputEl) return;
+
+   // Only show overlay for BULK / SPLIT
+  const rowType = getRowTypeFromProductInput(inputEl);
+  if (rowType !== "BULK" && rowType !== "SPLIT"){
+    hideBarcodeOverlay();
+    return;
+  }
+
+  const prodText = normaliseProductText(inputEl.value);
+  if (!prodText){
+    hideBarcodeOverlay();
+    return;
+  }
 
   const prodText = normaliseProductText(inputEl.value);
   if (!prodText){
@@ -2086,10 +2109,25 @@ productSearch.addEventListener("keydown", (e) => {
 
       if (col === "TYPE") value = (value || "SPLIT").toUpperCase();
 
-      // Update colour immediately in UI when TYPE changes
-    if (col === "TYPE" && ev.target.tagName === "SELECT"){
-      applyTypeColour(ev.target);
+    // Update colour immediately in UI when TYPE changes
+if (col === "TYPE" && ev.target.tagName === "SELECT"){
+  applyTypeColour(ev.target);
+
+  // If the currently-hovered row gets changed to ORDER, hide overlay immediately
+  if (__hoveredProductInput){
+    const hoveredRow = __hoveredProductInput.closest("tr[data-rowid]");
+    if (hoveredRow && hoveredRow === tr){
+      const newType = (ev.target.value || "").toString().trim().toUpperCase();
+      if (newType !== "BULK" && newType !== "SPLIT"){
+        hideBarcodeOverlay();
+      } else {
+        // If changed back to BULK/SPLIT, refresh overlay contents/position
+        showBarcodeOverlayForInput(__hoveredProductInput);
+      }
     }
+  }
+}
+
 
       if (col === "DROPPED") value = (value || "").toUpperCase();
       if (col === "SENT") value = (value || "").toUpperCase();
