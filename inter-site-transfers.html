@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Inter-Site Stock Transfers</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  
+  
   <style>
     :root{
       --bg:#f5f6f8;
@@ -30,6 +36,8 @@
     *{ box-sizing:border-box; font-family: Arial, sans-serif; }
     body{ margin:0; background:var(--bg); color:var(--text); }
 
+   
+    
     header{
       background:var(--card);
       box-shadow:var(--shadow);
@@ -183,6 +191,13 @@
       vertical-align:middle;
       font-size:13px;
     }
+    /* Tighten ITEM + Priority flag columns (all tables) */
+th:nth-child(2), td:nth-child(2),
+th:nth-child(3), td:nth-child(3){
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: center;
+}
     th{
       text-align:left;
       font-size:12px;
@@ -194,102 +209,133 @@
       z-index:10;
     }
 
-   /* Base hover is controlled by the final row colour system at the bottom */
+/* ===== Row colour system: light default, darker on hover ===== */
 
-    /* New = blue highlight (unless priority / dropped / sent) */
-    #newTable tr.status-new td{ background: rgba(96,165,250,0.18); }
-
-    tr.status-dropped td{ background: rgba(245,158,11,0.16); }
-    tr.status-sent td{ background: rgba(22,163,74,0.12); }
-    tr.status-cancel td{ background: rgba(239,68,68,0.12); }
-
-    /* Priority highlight (applies only when NOT dropped/sent/cancelled) */
-    tr.status-priority td{ background: var(--priorityBg) !important; }
-
-    /* ===== Outstanding Priority Transfers (summary table) ===== */
-    .priority-card{
-      border-color: rgba(185,28,28,0.35) !important;
-      background: rgba(185,28,28,0.06) !important; /* light red tint */
-    }
-
-    .priority-card .cardhead h2{
-      color: #7f1d1d;
-    }
-
-    #priorityTable tbody td{
-      background: rgba(185,28,28,0.08); /* light red row background */
-    }
-
-    
-
-    /* ===== New Transfer Requests (blue-tint card to match Priority styling style) ===== */
-.new-card{
-  border-color: rgba(37,99,235,0.35) !important;
-  background: rgba(37,99,235,0.06) !important; /* light blue tint */
+/* Plain/white rows */
+table tbody tr:hover td{
+  background:#f3f4f6 !important;
 }
 
-.new-card .cardhead h2{
-  color: #1d4ed8; /* blue header text */
+/* Priority rows */
+tr.status-priority td{
+  background: rgba(185,28,28,0.09) !important;
+}
+tr.status-priority:hover td{
+  background: rgba(185,28,28,0.18) !important;
 }
 
-/* blue-tint row background (like priority table tint) */
-#newTable tbody td{
-  background: rgba(37,99,235,0.06);
-}
-
-    
-
-/* keep New status highlight stronger than the base tint */
+/* New rows */
 #newTable tr.status-new td{
-  background: rgba(96,165,250,0.22) !important;
+  background: rgba(96,165,250,0.12) !important;
+}
+#newTable tr.status-new:hover td{
+  background: rgba(96,165,250,0.24) !important;
 }
 
-
-    /* ===== Sent Transfers (green-tint card to match Priority/New styling style) ===== */
-.sent-card{
-  border-color: rgba(22,163,74,0.35) !important;
-  background: rgba(22,163,74,0.06) !important; /* light green tint */
+/* Dropped rows */
+tr.status-dropped td{
+  background: rgba(245,158,11,0.10) !important;
+}
+tr.status-dropped:hover td{
+  background: rgba(245,158,11,0.22) !important;
 }
 
-.sent-card .cardhead h2{
-  color: #166534; /* green header text */
+/* Sent rows */
+tr.status-sent td{
+  background: rgba(22,163,74,0.09) !important;
 }
-
-/* green-tint row background */
-#sentTable tbody td{
-  background: rgba(22,163,74,0.06);
-}
-
-
-
-/* keep Sent status highlight stronger than the base tint */
-#sentTable tr.status-sent td{
+tr.status-sent:hover td{
   background: rgba(22,163,74,0.18) !important;
 }
 
-
-    /* ===== Cancellations (red/grey-tint card) ===== */
-.cancel-card{
-  border-color: rgba(185,28,28,0.35) !important;
-  background: rgba(185,28,28,0.05) !important; /* very light red/grey tint */
+/* Cancelled rows */
+tr.status-cancel td{
+  background: rgba(239,68,68,0.09) !important;
 }
-
-.cancel-card .cardhead h2{
-  color: #7f1d1d; /* dark muted red */
-}
-
-/* red/grey-tint row background */
-#cancelTable tbody td{
-  background: rgba(185,28,28,0.04);
-}
-
-
-
-/* keep Cancelled status highlight stronger than base tint */
-#cancelTable tr.status-cancel td{
+tr.status-cancel:hover td{
   background: rgba(239,68,68,0.18) !important;
 }
 
+/* ===== Outstanding Priority Transfers ===== */
+.priority-card{
+  border-color: rgba(185,28,28,0.35) !important;
+  background: rgba(185,28,28,0.06) !important;
+}
+
+.priority-card .cardhead h2{
+  color: #7f1d1d;
+}
+
+#priorityTable tbody tr td{
+  background: rgba(185,28,28,0.07) !important;
+}
+
+#priorityTable tbody tr:hover td{
+  background: rgba(185,28,28,0.16) !important;
+}
+
+/* ===== New Transfer Requests ===== */
+.new-card{
+  border-color: rgba(37,99,235,0.35) !important;
+  background: rgba(37,99,235,0.06) !important;
+}
+
+.new-card .cardhead h2{
+  color: #1d4ed8;
+}
+
+#newTable tbody tr:not(.status-new):not(.status-priority) td{
+  background: rgba(37,99,235,0.035) !important;
+}
+
+#newTable tbody tr:not(.status-new):not(.status-priority):hover td{
+  background: rgba(37,99,235,0.11) !important;
+}
+
+/* ===== Sent Transfers ===== */
+.sent-card{
+  border-color: rgba(22,163,74,0.35) !important;
+  background: rgba(22,163,74,0.06) !important;
+}
+
+.sent-card .cardhead h2{
+  color: #166534;
+}
+
+#sentTable tbody tr:not(.status-sent) td{
+  background: rgba(22,163,74,0.035) !important;
+}
+
+#sentTable tbody tr:not(.status-sent):hover td{
+  background: rgba(22,163,74,0.11) !important;
+}
+
+/* ===== Cancellations ===== */
+.cancel-card{
+  border-color: rgba(185,28,28,0.35) !important;
+  background: rgba(185,28,28,0.05) !important;
+}
+
+.cancel-card .cardhead h2{
+  color: #7f1d1d;
+}
+
+#cancelTable tbody tr:not(.status-cancel) td{
+  background: rgba(185,28,28,0.035) !important;
+}
+
+#cancelTable tbody tr:not(.status-cancel):hover td{
+  background: rgba(185,28,28,0.11) !important;
+}
+
+/* Keep inputs readable when row is coloured */
+#activeTable tbody tr:hover .cell-input,
+#activeTable tbody tr:hover .cell-select,
+#activeTable tbody tr:hover .cell-textarea{
+  background: rgba(255,255,255,0.82) !important;
+}
+
+    
    /* ===== Daily Summary ===== */
 .summary-card{
   border-color: rgba(17,24,39,0.18) !important;
@@ -360,6 +406,32 @@
       font-size:13px;
       background:#fff;
     }
+    
+    /* ===== Auto-grow textarea for COMMENTS in Active table ===== */
+    .cell-textarea{
+      width:100%;
+      height:34px;          /* force same visible height as other inputs */
+      min-height:34px;
+      padding:7px 8px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      font-size:13px;
+      background:#fff;
+      resize:none;
+      overflow:hidden;
+      line-height:20px;     /* stable 1-line baseline */
+      white-space:pre-wrap;
+      word-break:break-word;
+      display:block;
+      margin:0;
+    }
+
+    .cell-textarea:focus{
+      outline:none;
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+    }
+
     .cell-input:focus, .cell-select:focus{
       outline:none;
       border-color:var(--accent);
@@ -376,7 +448,7 @@
     }
 
     .type-order{
-  background: rgba(96, 165, 250, 0.28) !important; /* light blue */
+      background: rgba(196, 181, 253, 0.35) !important; /* pastel purple */
     }
 
     .checkbox{ width:16px; height:16px; }
@@ -407,15 +479,15 @@
     }
     .modal .content{ padding:14px; }
 
-    textarea{
-      width:100%;
-      min-height:220px;
-      padding:10px;
-      border:1px solid var(--border);
-      border-radius:10px;
-      resize:vertical;
-      font-size:13px;
-    }
+    #pasteBox{
+  width:100%;
+  min-height:220px;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  resize:vertical;
+  font-size:13px;
+}
 
     .toast{
       position:fixed;
@@ -556,87 +628,58 @@
 }
 
 
-/* ===== Final row colour system: light default, darker on hover ===== */
-
-/* Plain/white rows */
-table tbody tr:hover td{
-  background:#f3f4f6 !important;
+/* ===== Barcode hover overlay ===== */
+.barcode-overlay{
+  position: fixed;
+  z-index: 4000;
+  display: none;
+  background: #fff;
+  border: 1px solid rgba(17,24,39,0.18);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.20);
+  padding: 12px 12px;
+  width: 420px;
+  max-width: calc(100vw - 24px);
 }
 
-/* Priority rows */
-tr.status-priority td{
-  background: rgba(185,28,28,0.09) !important;
-}
-tr.status-priority:hover td{
-  background: rgba(185,28,28,0.18) !important;
-}
-
-/* New rows */
-#newTable tr.status-new td{
-  background: rgba(96,165,250,0.12) !important;
-}
-#newTable tr.status-new:hover td{
-  background: rgba(96,165,250,0.24) !important;
+.barcode-overlay .bo-title{
+  font-weight: 800;
+  font-size: 12px;
+  color: #111827;
+  margin: 0 0 8px 0;
 }
 
-/* Dropped rows */
-tr.status-dropped td{
-  background: rgba(245,158,11,0.10) !important;
-}
-tr.status-dropped:hover td{
-  background: rgba(245,158,11,0.22) !important;
+.barcode-overlay .bo-grid{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 64px;
 }
 
-/* Sent rows */
-tr.status-sent td{
-  background: rgba(22,163,74,0.09) !important;
-}
-tr.status-sent:hover td{
-  background: rgba(22,163,74,0.18) !important;
+.barcode-overlay .bo-block{
+  border: 1px solid rgba(17,24,39,0.10);
+  border-radius: 12px;
+  padding: 10px;
 }
 
-/* Cancelled rows */
-tr.status-cancel td{
-  background: rgba(239,68,68,0.09) !important;
-}
-tr.status-cancel:hover td{
-  background: rgba(239,68,68,0.18) !important;
-}
-
-/* Subtle default table tints */
-#priorityTable tbody tr:not(.status-priority) td{
-  background: rgba(185,28,28,0.045) !important;
-}
-#priorityTable tbody tr:not(.status-priority):hover td{
-  background: rgba(185,28,28,0.12) !important;
+.barcode-overlay .bo-label{
+  font-size: 11px;
+  font-weight: 800;
+  color: #374151;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
 }
 
-#newTable tbody tr:not(.status-new):not(.status-priority) td{
-  background: rgba(37,99,235,0.035) !important;
-}
-#newTable tbody tr:not(.status-new):not(.status-priority):hover td{
-  background: rgba(37,99,235,0.11) !important;
-}
-
-#sentTable tbody tr:not(.status-sent) td{
-  background: rgba(22,163,74,0.035) !important;
-}
-#sentTable tbody tr:not(.status-sent):hover td{
-  background: rgba(22,163,74,0.11) !important;
+.barcode-overlay svg{
+  width: 100%;
+  height: 92px; /* scanner-friendly height */
+  display: block;
 }
 
-#cancelTable tbody tr:not(.status-cancel) td{
-  background: rgba(185,28,28,0.035) !important;
-}
-#cancelTable tbody tr:not(.status-cancel):hover td{
-  background: rgba(185,28,28,0.11) !important;
+/* A little extra spacing so the wrong code isn't scanned */
+.barcode-overlay .bo-block + .bo-block{
+  margin-top: 4px;
 }
 
-/* Helps Active table hover show behind inputs */
-#activeTable tbody tr:hover .cell-input,
-#activeTable tbody tr:hover .cell-select{
-  background: rgba(255,255,255,0.78);
-}
     
   </style>
 </head>
@@ -705,16 +748,17 @@ tr.status-cancel:hover td{
   <div style="position:relative; border:1px solid rgba(185,28,28,0.25); border-radius:12px;">
     <table id="priorityTable">
       <thead>
-        <tr>
-          <th style="width:34px;"><input type="checkbox" id="checkAllPriority" class="checkbox"></th>
-          <th style="width:110px;">TYPE</th>
-          <th style="width:170px;">PRODUCT</th>
-          <th style="width:80px;">QTY</th>
-          <th style="width:60px;">WH</th>
-          <th style="width:80px;">BIN</th>
-          <th>COMMENTS</th>
-        </tr>
-      </thead>
+  <tr>
+    <th style="width:34px;"><input type="checkbox" id="checkAllPriority" class="checkbox"></th>
+    <th style="width:46px;">ITEM</th>
+    <th style="width:110px;">TYPE</th>
+    <th style="width:170px;">PRODUCT</th>
+    <th style="width:80px;">QTY</th>
+    <th style="width:60px;">WH</th>
+    <th style="width:80px;">BIN</th>
+    <th>COMMENTS</th>
+  </tr>
+</thead>
       <tbody id="priorityBody"></tbody>
     </table>
   </div>
@@ -739,17 +783,18 @@ tr.status-cancel:hover td{
         <div style="position:relative; border:1px solid #eef0f3; border-radius:12px;">
           <table id="newTable">
             <thead>
-              <tr>
-                <th style="width:34px;"><input type="checkbox" id="checkAllNew" class="checkbox"></th>
-                <th style="width:30px;"></th>
-                <th style="width:100px;">TYPE</th>
-                <th style="width:170px;">PRODUCT</th>
-                <th style="width:80px;">QTY</th>
-                <th style="width:60px;">WH</th>
-                <th style="width:80px;">BIN</th>
-                <th>COMMENTS</th>
-              </tr>
-            </thead>
+  <tr>
+    <th style="width:34px;"><input type="checkbox" id="checkAllNew" class="checkbox"></th>
+    <th style="width:46px;">ITEM</th>
+    <th style="width:26px;"></th>
+    <th style="width:100px;">TYPE</th>
+    <th style="width:170px;">PRODUCT</th>
+    <th style="width:80px;">QTY</th>
+    <th style="width:60px;">WH</th>
+    <th style="width:80px;">BIN</th>
+    <th>COMMENTS</th>
+  </tr>
+</thead>
             <tbody id="newBody"></tbody>
           </table>
         </div>
@@ -773,19 +818,20 @@ tr.status-cancel:hover td{
         <div style="position:relative; border:1px solid #eef0f3; border-radius:12px;">
           <table id="activeTable">
             <thead>
-              <tr>
-                <th style="width:34px;"><input type="checkbox" id="checkAllActive" class="checkbox"></th>
-                <th style="width:30px;"></th>
-                <th style="width:100px;">TYPE</th>
-                <th style="width:170px;">PRODUCT</th>
-                <th style="width:80px;">QTY</th>
-                <th style="width:60px;">WH</th>
-                <th style="width:80px;">BIN</th>
-                <th style="width:80px;">DROPPED</th>
-                <th style="width:80px;">SENT</th>
-                <th>COMMENTS</th>
-              </tr>
-            </thead>
+  <tr>
+    <th style="width:34px;"><input type="checkbox" id="checkAllActive" class="checkbox"></th>
+    <th style="width:46px;">ITEM</th>
+    <th style="width:26px;"></th>
+    <th style="width:100px;">TYPE</th>
+    <th style="width:170px;">PRODUCT</th>
+    <th style="width:80px;">QTY</th>
+    <th style="width:60px;">WH</th>
+    <th style="width:80px;">BIN</th>
+    <th style="width:80px;">DROPPED</th>
+    <th style="width:80px;">SENT</th>
+    <th>COMMENTS</th>
+  </tr>
+</thead>
             <tbody id="activeBody"></tbody>
           </table>
         </div>
@@ -807,19 +853,20 @@ tr.status-cancel:hover td{
         <div id="sentWrap" style="position:relative; border:1px solid #eef0f3; border-radius:12px;">
           <table id="sentTable">
             <thead>
-              <tr>
-                <th style="width:34px;"><input type="checkbox" id="checkAllSent" class="checkbox"></th>
-                <th style="width:30px;"></th>
-                <th style="width:100px;">TYPE</th>
-                <th style="width:170px;">PRODUCT</th>
-                <th style="width:80px;">QTY</th>
-                <th style="width:60px;">WH</th>
-                <th style="width:80px;">BIN</th>
-                <th style="width:80px;">DROPPED</th>
-                <th style="width:80px;">SENT</th>
-                <th>COMMENTS</th>
-              </tr>
-            </thead>
+  <tr>
+    <th style="width:34px;"><input type="checkbox" id="checkAllSent" class="checkbox"></th>
+    <th style="width:46px;">ITEM</th>
+    <th style="width:26px;"></th>
+    <th style="width:100px;">TYPE</th>
+    <th style="width:170px;">PRODUCT</th>
+    <th style="width:80px;">QTY</th>
+    <th style="width:60px;">WH</th>
+    <th style="width:80px;">BIN</th>
+    <th style="width:80px;">DROPPED</th>
+    <th style="width:80px;">SENT</th>
+    <th>COMMENTS</th>
+  </tr>
+</thead>
             <tbody id="sentBody"></tbody>
           </table>
         </div>
@@ -839,19 +886,20 @@ tr.status-cancel:hover td{
         <div style="position:relative; border:1px solid #eef0f3; border-radius:12px;">
           <table id="cancelTable">
             <thead>
-              <tr>
-                <th style="width:34px;"><input type="checkbox" id="checkAllCancel" class="checkbox"></th>
-                <th style="width:30px;"></th>
-                <th style="width:100px;">TYPE</th>
-                <th style="width:170px;">PRODUCT</th>
-                <th style="width:80px;">QTY</th>
-                <th style="width:60px;">WH</th>
-                <th style="width:80px;">BIN</th>
-                <th style="width:80px;">DROPPED</th>
-                <th style="width:80px;">SENT</th>
-                <th>COMMENTS</th>
-              </tr>
-            </thead>
+  <tr>
+    <th style="width:34px;"><input type="checkbox" id="checkAllCancel" class="checkbox"></th>
+    <th style="width:46px;">ITEM</th>
+    <th style="width:26px;"></th>
+    <th style="width:100px;">TYPE</th>
+    <th style="width:170px;">PRODUCT</th>
+    <th style="width:80px;">QTY</th>
+    <th style="width:60px;">WH</th>
+    <th style="width:80px;">BIN</th>
+    <th style="width:80px;">DROPPED</th>
+    <th style="width:80px;">SENT</th>
+    <th>COMMENTS</th>
+  </tr>
+</thead>
             <tbody id="cancelBody"></tbody>
           </table>
         </div>
@@ -976,13 +1024,60 @@ tr.status-cancel:hover td{
     </div>
   </div>
 
+
+  <!-- Barcode overlay (shown on hover over PRODUCT in Active table) -->
+<div id="barcodeOverlay" class="barcode-overlay" aria-hidden="true">
+  <p class="bo-title">Product / Destination Barcodes</p>
+
+  <div class="bo-grid">
+    <div class="bo-block">
+      <div class="bo-label" id="boProdLabel">PRODUCT</div>
+      <svg id="boProd"></svg>
+    </div>
+
+    <div class="bo-block">
+      <div class="bo-label" id="boDestLabel">DESTINATION</div>
+      <svg id="boDest"></svg>
+    </div>
+  </div>
+</div>
+  
   <script>
     // ====== EDIT THESE ======
     const API_URL = "https://script.google.com/macros/s/AKfycbxpeOikchlafJAHPgZAyGD-5kCbRWijK1jn4zE1uZQOd1LA-DMJIf6ud3INj2HHW9yj/exec";
     const API_KEY = "Lthdn637H7shdbs8987jnsm72GtsFh";
 
+// ====== SMOOTH SCROLL (Lenis) ======
+(function initLenis(){
+  if (typeof Lenis === "undefined") {
+    console.warn("Lenis failed to load — smooth scrolling disabled.");
+    return;
+  }
+
+  const lenis = new Lenis({
+    // Floatier feel
+    duration: 1.75,
+    lerp: 0.075,
+
+    smoothWheel: true,
+    wheelMultiplier: 0.9,
+
+    smoothTouch: false,
+    touchMultiplier: 1.15,
+
+    // “Ease out” glide
+    easing: (t) => 1 - Math.pow(1 - t, 5)
+  });
+
+  function raf(time){
+    lenis.raf(time);
+    requestAnimationFrame(raf);
+  }
+  requestAnimationFrame(raf);
+})();
+
     // ====== SETTINGS ======
-    const AUTO_REFRESH_MS = 10 * 60 * 1000;
+    const AUTO_REFRESH_MS = 20 * 60 * 1000;
     const JSONP_URL_MAX = 1700;
 
     // ====== STATE ======
@@ -1062,6 +1157,16 @@ const sentCard = document.getElementById("sentCard");
     const addLinesBody = document.getElementById("addLinesBody");
 
     const toast = document.getElementById("toast");
+
+    // ====== BARCODE OVERLAY ======
+    const barcodeOverlay = document.getElementById("barcodeOverlay");
+    const boProd = document.getElementById("boProd");
+    const boDest = document.getElementById("boDest");
+    const boProdLabel = document.getElementById("boProdLabel");
+    const boDestLabel = document.getElementById("boDestLabel");
+
+    let __hoveredProductInput = null;
+    let __hideOverlayTimer = null;
 
     
     // Summary
@@ -1159,6 +1264,125 @@ const sentCard = document.getElementById("sentCard");
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
+
+
+   function getDestBarcodeText(){
+  // Data ONLY (no asterisks) for CODE39
+  return (currentSheet === "PKY_TO_DTN") ? "XCDTN" : "XCPKY";
+}
+
+function normaliseProductText(v){
+  // Data ONLY (no asterisks) for CODE39
+  return (v || "").toString().trim().toUpperCase();
+}
+
+function renderBarcode(svgEl, text){
+  // CODE39 (matches "BC 39" labels)
+  // NOTE: Code39 cannot encode the asterisk * as data (it's start/stop),
+  // so ensure 'text' does NOT contain *.
+  const safe = (text || "").replaceAll("*", ""); // safety net
+
+  JsBarcode(svgEl, safe, {
+    format: "CODE39",
+    lineColor: "#111827",
+    width: 3,        // thicker bars = better screen scanning
+    height: 100,     // taller barcode = better
+    margin: 0,
+    displayValue: true,
+    font: "Arial",
+    fontSize: 18,
+    textMargin: 8
+  });
+}
+
+
+function positionOverlayNearElement(el){
+  const r = el.getBoundingClientRect();
+  const pad = 10;
+
+  // Default: show below the cell
+  let left = r.left;
+  let top = r.bottom + pad;
+
+  // Measure overlay (temporary show to measure)
+  barcodeOverlay.style.display = "block";
+  const ow = barcodeOverlay.offsetWidth;
+  const oh = barcodeOverlay.offsetHeight;
+
+  // Clamp within viewport
+  left = Math.min(left, window.innerWidth - ow - pad);
+  left = Math.max(pad, left);
+
+  // If it would go off bottom, show above instead
+  if (top + oh + pad > window.innerHeight){
+    top = r.top - oh - pad;
+  }
+  top = Math.max(pad, top);
+
+  barcodeOverlay.style.left = left + "px";
+  barcodeOverlay.style.top = top + "px";
+}
+
+
+    function getRowTypeFromProductInput(inputEl){
+  // Finds TYPE select in the same Active table row as this PRODUCT input
+  const tr = inputEl.closest("tr[data-rowid]");
+  if (!tr) return "";
+
+  const typeSel = tr.querySelector("td[data-col='TYPE'] select");
+  return (typeSel && typeSel.value ? typeSel.value : "").toString().trim().toUpperCase();
+}
+
+function showBarcodeOverlayForInput(inputEl){
+  // Only for Active table PRODUCT column
+  if (!inputEl) return;
+
+  // Only show overlay for BULK / SPLIT
+  const rowType = getRowTypeFromProductInput(inputEl);
+  if (rowType !== "BULK" && rowType !== "SPLIT"){
+    hideBarcodeOverlay();
+    return;
+  }
+
+  const prodText = normaliseProductText(inputEl.value);
+  if (!prodText){
+    hideBarcodeOverlay();
+    return;
+  }
+
+  const destText = getDestBarcodeText();
+
+  // Labels can show *...* for humans, but barcode data must NOT include *
+  boProdLabel.textContent = `PRODUCT (*${prodText}*)`;
+  boDestLabel.textContent = `DESTINATION (*${destText}*)`;
+
+  try{
+    renderBarcode(boProd, prodText);
+    renderBarcode(boDest, destText);
+  } catch(e){
+    hideBarcodeOverlay();
+    return;
+  }
+
+  positionOverlayNearElement(inputEl);
+  barcodeOverlay.setAttribute("aria-hidden", "false");
+}
+
+
+function hideBarcodeOverlay(){
+  barcodeOverlay.style.display = "none";
+  barcodeOverlay.setAttribute("aria-hidden", "true");
+  __hoveredProductInput = null;
+}
+
+function scheduleHideBarcodeOverlay(delayMs = 120){
+  clearTimeout(__hideOverlayTimer);
+  __hideOverlayTimer = setTimeout(() => {
+    // If mouse is over the overlay, don't hide yet
+    if (barcodeOverlay.matches(":hover")) return;
+    hideBarcodeOverlay();
+  }, delayMs);
+}
 
 
     function updateAddRowPrioFlag(tr){
@@ -1416,6 +1640,7 @@ async function apiCallForSheet(sheet, action, payload = {}){
 
       const rowsHtml = lines.map(r => `
         <tr>
+          <td>${escapeHtml(r.ITEM_NO)}</td>
           <td>${escapeHtml((r.TYPE||"").toUpperCase())}</td>
           <td>${escapeHtml(r.PRODUCT)}</td>
           <td>${escapeHtml(r.QTY)}</td>
@@ -1440,14 +1665,18 @@ async function apiCallForSheet(sheet, action, payload = {}){
             th, td{ border:1px solid #ddd; padding:8px; font-size:12px; text-align:left; }
             th{ background:#f3f4f6; }
           </style>
+
+          
         </head>
+
+        
         <body>
           <h1>${safeTitle}</h1>
           <p class="meta">Date: ${dateTxt} • Direction: ${dirTxt}</p>
           <table>
             <thead>
               <tr>
-                <th>TYPE</th><th>PRODUCT</th><th>QTY</th><th>WH</th><th>BIN</th><th>COMMENTS</th>
+                <th>ITEM</th><th>TYPE</th><th>PRODUCT</th><th>QTY</th><th>WH</th><th>BIN</th><th>COMMENTS</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
@@ -1490,6 +1719,12 @@ async function apiCallForSheet(sheet, action, payload = {}){
     function buildInput(value, type="text"){
       return `<input class="cell-input" type="${type}" value="${escapeHtml(value ?? "")}">`;
     }
+
+    
+    function buildTextarea(value){
+      return `<textarea class="cell-textarea" rows="1">${escapeHtml(value ?? "")}</textarea>`;
+    }
+
 
     function buildPrioFlag(priorityYes){
       if (priorityYes){
@@ -1671,8 +1906,9 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
   // ===== Priority table (normal view only) =====
   if (!q){
     priorityBody.innerHTML = outstandingPrio.map(r => `
-      <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+      <tr class="status-priority" data-rowid="${r.rowId}">
         <td><input class="checkbox" type="checkbox" data-rowcheck="prio" data-rowid="${r.rowId}"></td>
+        <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
         <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
         <td>${escapeHtml(r.PRODUCT)}</td>
         <td>${escapeHtml(r.QTY)}</td>
@@ -1696,6 +1932,7 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
   newBody.innerHTML = newRows.map(r => `
     <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
       <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
+      <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
       <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
       <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
       <td>${escapeHtml(r.PRODUCT)}</td>
@@ -1710,6 +1947,7 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
   activeBody.innerHTML = activeRows.map(r => `
     <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
       <td><input class="checkbox" type="checkbox" data-rowcheck="active" data-rowid="${r.rowId}"></td>
+      <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
       <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
       <td data-col="TYPE">${buildSelect(["SPLIT","BULK","ORDER"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
       <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
@@ -1718,17 +1956,36 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
       <td data-col="BIN">${buildInput(r.BIN)}</td>
       <td data-col="DROPPED">${buildSelect(["","YES"], (r.DROPPED || "").toString().toUpperCase())}</td>
       <td data-col="SENT">${buildSelect(["","YES"], (r.SENT || "").toString().toUpperCase())}</td>
-      <td data-col="COMMENTS">${buildInput(r.COMMENTS)}</td>
+      <td data-col="COMMENTS">${buildTextarea(r.COMMENTS)}</td>
     </tr>
   `).join("");
 
   // Apply TYPE colouring to Active table
   activeBody.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => applyTypeColour(sel));
 
+ // ===== Auto-grow COMMENTS textareas (Active only) =====
+activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").forEach(ta => {
+  const BASE_H = 34;       // must match CSS height/min-height
+  const TOLERANCE = 2;
+
+  const fit = () => {
+    ta.style.height = BASE_H + "px";   // reset to 1-line height
+    ta.style.height = "auto";          // let it measure
+    const needed = ta.scrollHeight;
+
+    ta.style.height = (needed > BASE_H + TOLERANCE ? needed : BASE_H) + "px";
+  };
+
+  fit();
+  ta.addEventListener("input", fit);
+});
+
+
   // ===== Render Sent =====
   sentBody.innerHTML = sentRows.map(r => `
     <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
       <td><input class="checkbox" type="checkbox" data-rowcheck="sent" data-rowid="${r.rowId}"></td>
+      <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
       <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
       <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
       <td>${escapeHtml(r.PRODUCT)}</td>
@@ -1745,6 +2002,7 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
   cancelBody.innerHTML = cancelRows.map(r => `
     <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
       <td><input class="checkbox" type="checkbox" data-rowcheck="cancel" data-rowid="${r.rowId}"></td>
+      <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
       <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
       <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
       <td>${escapeHtml(r.PRODUCT)}</td>
@@ -1807,7 +2065,7 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
     // ====== INPUT NORMALISATION ======
     document.addEventListener("input", (ev) => {
       const input = ev.target;
-      if (!input.classList.contains("cell-input")) return;
+      if (!(input.classList.contains("cell-input") || input.classList.contains("cell-textarea"))) return;
 
       const td = input.closest("td[data-col]");
       if (!td) return;
@@ -1901,10 +2159,25 @@ productSearch.addEventListener("keydown", (e) => {
 
       if (col === "TYPE") value = (value || "SPLIT").toUpperCase();
 
-      // Update colour immediately in UI when TYPE changes
-    if (col === "TYPE" && ev.target.tagName === "SELECT"){
-      applyTypeColour(ev.target);
+    // Update colour immediately in UI when TYPE changes
+if (col === "TYPE" && ev.target.tagName === "SELECT"){
+  applyTypeColour(ev.target);
+
+  // If the currently-hovered row gets changed to ORDER, hide overlay immediately
+  if (__hoveredProductInput){
+    const hoveredRow = __hoveredProductInput.closest("tr[data-rowid]");
+    if (hoveredRow && hoveredRow === tr){
+      const newType = (ev.target.value || "").toString().trim().toUpperCase();
+      if (newType !== "BULK" && newType !== "SPLIT"){
+        hideBarcodeOverlay();
+      } else {
+        // If changed back to BULK/SPLIT, refresh overlay contents/position
+        showBarcodeOverlayForInput(__hoveredProductInput);
+      }
     }
+  }
+}
+
 
       if (col === "DROPPED") value = (value || "").toUpperCase();
       if (col === "SENT") value = (value || "").toUpperCase();
@@ -2413,6 +2686,47 @@ function makeAddRow(prefillType){
         }
       }, "Saving the new line(s) and refreshing…");
     });
+
+
+            // Hover overlay on PRODUCT inputs in Active table
+document.addEventListener("mouseover", (ev) => {
+  const input = ev.target.closest("#activeBody td[data-col='PRODUCT'] input.cell-input");
+  if (!input) return;
+
+  // Only show for PKY_TO_DTN or DTN_TO_PKY (your two tabs)
+  __hoveredProductInput = input;
+  clearTimeout(__hideOverlayTimer);
+  showBarcodeOverlayForInput(input);
+});
+
+document.addEventListener("mouseout", (ev) => {
+  const leavingInput = ev.target.closest("#activeBody td[data-col='PRODUCT'] input.cell-input");
+  if (!leavingInput) return;
+
+  // If moving into overlay, keep it visible
+  const toEl = ev.relatedTarget;
+  if (toEl && (barcodeOverlay === toEl || barcodeOverlay.contains(toEl))) return;
+
+  scheduleHideBarcodeOverlay(120);
+});
+
+// Keep visible if cursor moves onto overlay; hide when leaving overlay
+barcodeOverlay.addEventListener("mouseleave", () => scheduleHideBarcodeOverlay(80));
+barcodeOverlay.addEventListener("mouseenter", () => clearTimeout(__hideOverlayTimer));
+
+// If user edits product while hovering, refresh barcode live
+document.addEventListener("input", (ev) => {
+  if (!__hoveredProductInput) return;
+  if (ev.target === __hoveredProductInput){
+    showBarcodeOverlayForInput(__hoveredProductInput);
+  }
+});
+
+// Hide overlay on scroll or resize (prevents it floating in wrong place)
+window.addEventListener("scroll", () => hideBarcodeOverlay(), true);
+window.addEventListener("resize", () => hideBarcodeOverlay());
+
+            
 
     // ====== AUTO REFRESH ======
     setInterval(() => {
