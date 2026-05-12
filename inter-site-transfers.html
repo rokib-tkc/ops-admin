@@ -194,10 +194,7 @@
       z-index:10;
     }
 
-    /* Base hover for plain/white rows */
-table tbody tr:hover td{
-  background:#f3f4f6 !important;
-}
+   /* Base hover is controlled by the final row colour system at the bottom */
 
     /* New = blue highlight (unless priority / dropped / sent) */
     #newTable tr.status-new td{ background: rgba(96,165,250,0.18); }
@@ -559,57 +556,87 @@ table tbody tr:hover td{
 }
 
 
-/* ===== Stronger hover states for coloured rows ===== */
+/* ===== Final row colour system: light default, darker on hover ===== */
 
-/* Outstanding Priority Transfers */
-#priorityTable tbody tr:hover td,
-#priorityTable tbody tr.status-priority:hover td{
+/* Plain/white rows */
+table tbody tr:hover td{
+  background:#f3f4f6 !important;
+}
+
+/* Priority rows */
+tr.status-priority td{
+  background: rgba(185,28,28,0.09) !important;
+}
+tr.status-priority:hover td{
   background: rgba(185,28,28,0.18) !important;
 }
 
-/* New Transfer Requests */
-#newTable tbody tr:hover td{
-  background: rgba(37,99,235,0.14) !important;
+/* New rows */
+#newTable tr.status-new td{
+  background: rgba(96,165,250,0.12) !important;
+}
+#newTable tr.status-new:hover td{
+  background: rgba(96,165,250,0.24) !important;
 }
 
-#newTable tbody tr.status-new:hover td{
-  background: rgba(96,165,250,0.30) !important;
+/* Dropped rows */
+tr.status-dropped td{
+  background: rgba(245,158,11,0.10) !important;
+}
+tr.status-dropped:hover td{
+  background: rgba(245,158,11,0.22) !important;
 }
 
-#newTable tbody tr.status-priority:hover td{
-  background: rgba(185,28,28,0.18) !important;
+/* Sent rows */
+tr.status-sent td{
+  background: rgba(22,163,74,0.09) !important;
 }
-
-/* Active Transfers */
-#activeTable tbody tr.status-priority:hover td{
-  background: rgba(185,28,28,0.18) !important;
-}
-
-#activeTable tbody tr.status-dropped:hover td{
-  background: rgba(245,158,11,0.24) !important;
-}
-
-#activeTable tbody tr.status-sent:hover td{
-  background: rgba(22,163,74,0.20) !important;
-}
-
-#activeTable tbody tr.status-cancel:hover td{
-  background: rgba(239,68,68,0.20) !important;
-}
-
-/* Sent Transfers */
-#sentTable tbody tr:hover td,
-#sentTable tbody tr.status-sent:hover td{
+tr.status-sent:hover td{
   background: rgba(22,163,74,0.18) !important;
 }
 
-/* Cancellations */
-#cancelTable tbody tr:hover td,
-#cancelTable tbody tr.status-cancel:hover td{
-  background: rgba(239,68,68,0.20) !important;
+/* Cancelled rows */
+tr.status-cancel td{
+  background: rgba(239,68,68,0.09) !important;
+}
+tr.status-cancel:hover td{
+  background: rgba(239,68,68,0.18) !important;
 }
 
+/* Subtle default table tints */
+#priorityTable tbody tr:not(.status-priority) td{
+  background: rgba(185,28,28,0.045) !important;
+}
+#priorityTable tbody tr:not(.status-priority):hover td{
+  background: rgba(185,28,28,0.12) !important;
+}
 
+#newTable tbody tr:not(.status-new):not(.status-priority) td{
+  background: rgba(37,99,235,0.035) !important;
+}
+#newTable tbody tr:not(.status-new):not(.status-priority):hover td{
+  background: rgba(37,99,235,0.11) !important;
+}
+
+#sentTable tbody tr:not(.status-sent) td{
+  background: rgba(22,163,74,0.035) !important;
+}
+#sentTable tbody tr:not(.status-sent):hover td{
+  background: rgba(22,163,74,0.11) !important;
+}
+
+#cancelTable tbody tr:not(.status-cancel) td{
+  background: rgba(185,28,28,0.035) !important;
+}
+#cancelTable tbody tr:not(.status-cancel):hover td{
+  background: rgba(185,28,28,0.11) !important;
+}
+
+/* Helps Active table hover show behind inputs */
+#activeTable tbody tr:hover .cell-input,
+#activeTable tbody tr:hover .cell-select{
+  background: rgba(255,255,255,0.78);
+}
     
   </style>
 </head>
