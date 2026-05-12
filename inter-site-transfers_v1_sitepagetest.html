@@ -2053,14 +2053,74 @@ activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").fo
     }
 
     async function patchRow(rowId, patch){
-      const res = await apiCall("update", { rowId, patch });
-      if (!res.ok) throw new Error(res.error || "Update failed");
+  const res = await apiCall("update", { rowId, patch });
+  if (!res.ok) throw new Error(res.error || "Update failed");
+}
+
+async function bulkPatch(rowIds, patch){
+  const res = await apiCall("bulkUpdate", { rowIds, patch });
+  if (!res.ok) throw new Error(res.error || "Bulk update failed");
+}
+
+/* ====== FAST SCREEN UPDATE + BACKGROUND SAVE ====== */
+let __pendingSaveCount = 0;
+let __failedSaves = [];
+
+function updateLocalRows(rowIds, patch){
+  const idSet = new Set(rowIds.map(Number));
+
+  rows = rows.map(r => {
+    if (!idSet.has(Number(r.rowId))) return r;
+    return { ...r, ...patch };
+  });
+
+  render();
+}
+
+function updateSavingPill(){
+  if (__failedSaves.length > 0){
+    setStatus(`${__failedSaves.length} save issue(s)`, "err");
+    return;
+  }
+
+  if (__pendingSaveCount > 0){
+    setStatus(`Saving ${__pendingSaveCount} change(s)…`, "warn");
+    return;
+  }
+
+  setStatus("Saved", "ok");
+}
+
+async function savePatchInBackground(rowIds, patch, successMsg = "Saved"){
+  __pendingSaveCount++;
+  updateSavingPill();
+
+  try{
+    if (rowIds.length === 1){
+      await patchRow(rowIds[0], patch);
+    } else {
+      await bulkPatch(rowIds, patch);
     }
 
-    async function bulkPatch(rowIds, patch){
-      const res = await apiCall("bulkUpdate", { rowIds, patch });
-      if (!res.ok) throw new Error(res.error || "Bulk update failed");
-    }
+    showToast(successMsg);
+    refreshBothTabBadges();
+
+  } catch(e){
+    __failedSaves.push({
+      rowIds: [...rowIds],
+      patch: { ...patch },
+      error: String(e.message || e),
+      time: new Date().toISOString()
+    });
+
+    showToast("Save failed — change is still shown on screen. Please refresh/check before repeating the work.");
+    console.error("Background save failed:", e, { rowIds, patch });
+
+  } finally {
+    __pendingSaveCount = Math.max(0, __pendingSaveCount - 1);
+    updateSavingPill();
+  }
+}
 
     // ====== INPUT NORMALISATION ======
     document.addEventListener("input", (ev) => {
@@ -2189,40 +2249,23 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
       // PRODUCT still required, but WH/BIN now allowed to be blank
       if (col === "PRODUCT" && value === "") { showToast("Product cannot be blank"); await refresh(true); return; }
 
-      await withLoading("Saving changes…", async () => {
-        try{
-          setStatus("Saving…", "warn");
-          await patchRow(rowId, { [col]: value });
-          showToast("Saved");
-          await refresh(false);
-        } catch(e){
-          setStatus("Save failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Updating and refreshing the page…");
+      updateLocalRows([rowId], { [col]: value });
+      savePatchInBackground([rowId], { [col]: value }, "Saved");
     });
 
     // ====== PRIORITY ACTIONS ======
-    async function togglePriorityForSelected(which){
-      const ids = selectedRowIds(`input[data-rowcheck='${which}']:checked`);
-      if (!ids.length) return;
+  async function togglePriorityForSelected(which){
+  const ids = selectedRowIds(`input[data-rowcheck='${which}']:checked`);
+  if (!ids.length) return;
 
-      const selected = selectedRowsByIds(ids);
-      const allPriority = selected.length > 0 && selected.every(r => isYes(r.PRIORITY));
-      const newValue = allPriority ? "" : "YES";
+  const selected = selectedRowsByIds(ids);
+  const allPriority = selected.length > 0 && selected.every(r => isYes(r.PRIORITY));
+  const newValue = allPriority ? "" : "YES";
+  const patch = { PRIORITY: newValue };
 
-      await withLoading(allPriority ? "Removing Priority…" : "Setting Priority…", async () => {
-        try{
-          setStatus("Saving…", "warn");
-          await bulkPatch(ids, { PRIORITY: newValue });
-          showToast(allPriority ? "Priority removed" : "Marked as Priority");
-          await refresh(false);
-        } catch(e){
-          setStatus("Priority update failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Updating selected lines…");
-    }
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, allPriority ? "Priority removed" : "Marked as Priority");
+}
 
     btnPriorityNew.addEventListener("click", async () => {
       if (isBusy()) return;
@@ -2236,22 +2279,16 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
 
     // ====== NEW ACTIONS ======
     btnAcceptNew.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='new']:checked");
-      if (!ids.length) return;
+  if (isBusy()) return;
 
-      await withLoading("Accepting request(s)…", async () => {
-        try{
-          setStatus("Accepting…", "warn");
-          await bulkPatch(ids, { STATUS: "ACTIVE" });
-          showToast("Accepted");
-          await refresh(false);
-        } catch(e){
-          setStatus("Accept failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Moving selected lines to Active Transfers…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='new']:checked");
+  if (!ids.length) return;
+
+  const patch = { STATUS: "ACTIVE" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Accepted");
+});
 
     btnPrintNew.addEventListener("click", () => {
       const ids = selectedRowIds("input[data-rowcheck='new']:checked");
@@ -2265,25 +2302,18 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
       printLines("Outstanding Priority Transfers", selectedRowsByIds(ids));
     });
 
-
     btnCancelNew.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='new']:checked");
-      if (!ids.length) return;
-      if (!confirm("Cancel the selected request(s)?")) return;
+  if (isBusy()) return;
 
-      await withLoading("Cancelling request(s)…", async () => {
-        try{
-          setStatus("Cancelling…", "warn");
-          await bulkPatch(ids, { STATUS: "CANCELLED" });
-          showToast("Cancelled");
-          await refresh(false);
-        } catch(e){
-          setStatus("Cancel failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Updating and refreshing the page…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='new']:checked");
+  if (!ids.length) return;
+  if (!confirm("Cancel the selected request(s)?")) return;
+
+  const patch = { STATUS: "CANCELLED" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Cancelled");
+});
 
     // ====== ACTIVE ACTIONS ======
     btnPrintActive.addEventListener("click", () => {
@@ -2293,59 +2323,41 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
     });
 
     btnBulkDropped.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='active']:checked");
-      if (!ids.length) return;
+  if (isBusy()) return;
 
-      await withLoading("Marking Dropped…", async () => {
-        try{
-          setStatus("Saving…", "warn");
-          await bulkPatch(ids, { DROPPED: "YES" });
-          showToast("Marked Dropped");
-          await refresh(false);
-        } catch(e){
-          setStatus("Bulk save failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Setting DROPPED = YES for selected lines…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='active']:checked");
+  if (!ids.length) return;
+
+  const patch = { DROPPED: "YES" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Marked Dropped");
+});
 
     btnBulkSent.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='active']:checked");
-      if (!ids.length) return;
+  if (isBusy()) return;
 
-      await withLoading("Marking Sent…", async () => {
-        try{
-          setStatus("Saving…", "warn");
-          await bulkPatch(ids, { SENT: "YES" });
-          showToast("Marked Sent");
-          await refresh(false);
-        } catch(e){
-          setStatus("Bulk save failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Setting SENT = YES for selected lines…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='active']:checked");
+  if (!ids.length) return;
+
+  const patch = { SENT: "YES" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Marked Sent");
+});
 
     btnCancelActive.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='active']:checked");
-      if (!ids.length) return;
-      if (!confirm("Cancel the selected active transfer(s)?")) return;
+  if (isBusy()) return;
 
-      await withLoading("Cancelling transfer(s)…", async () => {
-        try{
-          setStatus("Cancelling…", "warn");
-          await bulkPatch(ids, { STATUS: "CANCELLED" });
-          showToast("Cancelled");
-          await refresh(false);
-        } catch(e){
-          setStatus("Cancel failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Updating and refreshing the page…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='active']:checked");
+  if (!ids.length) return;
+  if (!confirm("Cancel the selected active transfer(s)?")) return;
+
+  const patch = { STATUS: "CANCELLED" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Cancelled");
+});
 
     // ====== SENT ACTIONS ======
     btnPrintSent.addEventListener("click", () => {
@@ -2355,23 +2367,17 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
     });
 
     btnReverseSent.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='sent']:checked");
-      if (!ids.length) return;
-      if (!confirm("Reverse 'Sent' for the selected line(s)? They will return to Active Transfers.")) return;
+  if (isBusy()) return;
 
-      await withLoading("Reversing Sent…", async () => {
-        try{
-          setStatus("Reversing…", "warn");
-          await bulkPatch(ids, { SENT: "", STATUS: "ACTIVE" });
-          showToast("Reversed Sent");
-          await refresh(false);
-        } catch(e){
-          setStatus("Reverse failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Moving selected lines back to Active Transfers…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='sent']:checked");
+  if (!ids.length) return;
+  if (!confirm("Reverse 'Sent' for the selected line(s)? They will return to Active Transfers.")) return;
+
+  const patch = { SENT: "", STATUS: "ACTIVE" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Reversed Sent");
+});
 
     btnToggleSent.addEventListener("click", () => {
       const hidden = sentWrap.style.display === "none";
@@ -2389,23 +2395,17 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
 
     // ====== CANCELLED ACTIONS ======
     btnReverseCancel.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='cancel']:checked");
-      if (!ids.length) return;
-      if (!confirm("Reverse cancellation for the selected line(s)? They will return to Active Transfers.")) return;
+  if (isBusy()) return;
 
-      await withLoading("Reversing cancellation…", async () => {
-        try{
-          setStatus("Reversing…", "warn");
-          await bulkPatch(ids, { STATUS: "ACTIVE" });
-          showToast("Reversed Cancellation");
-          await refresh(false);
-        } catch(e){
-          setStatus("Reverse failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Returning selected lines to Active Transfers…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='cancel']:checked");
+  if (!ids.length) return;
+  if (!confirm("Reverse cancellation for the selected line(s)? They will return to Active Transfers.")) return;
+
+  const patch = { STATUS: "ACTIVE" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Reversed Cancellation");
+});
 
     // ====== PASTE UPLOAD (unchanged rules: requires PRODUCT, WH, BIN) ======
     btnPasteUpload.addEventListener("click", () => {
