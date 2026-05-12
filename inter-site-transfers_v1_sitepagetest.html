@@ -209,111 +209,133 @@ th:nth-child(3), td:nth-child(3){
       z-index:10;
     }
 
-    tr:hover td{ background:#fafafa; }
+/* ===== Row colour system: light default, darker on hover ===== */
 
-    /* New = blue highlight (unless priority / dropped / sent) */
-    #newTable tr.status-new td{ background: rgba(96,165,250,0.18); }
-
-    tr.status-dropped td{ background: rgba(245,158,11,0.16); }
-    tr.status-sent td{ background: rgba(22,163,74,0.12); }
-    tr.status-cancel td{ background: rgba(239,68,68,0.12); }
-
-    /* Priority highlight (applies only when NOT dropped/sent/cancelled) */
-    tr.status-priority td{ background: var(--priorityBg) !important; }
-
-    /* ===== Outstanding Priority Transfers (summary table) ===== */
-    .priority-card{
-      border-color: rgba(185,28,28,0.35) !important;
-      background: rgba(185,28,28,0.06) !important; /* light red tint */
-    }
-
-    .priority-card .cardhead h2{
-      color: #7f1d1d;
-    }
-
-    #priorityTable tbody td{
-      background: rgba(185,28,28,0.08); /* light red row background */
-    }
-
-    #priorityTable tr:hover td{
-      background: rgba(185,28,28,0.12);
-    }
-
-
-    /* ===== New Transfer Requests (blue-tint card to match Priority styling style) ===== */
-.new-card{
-  border-color: rgba(37,99,235,0.35) !important;
-  background: rgba(37,99,235,0.06) !important; /* light blue tint */
+/* Plain/white rows */
+table tbody tr:hover td{
+  background:#f3f4f6 !important;
 }
 
-.new-card .cardhead h2{
-  color: #1d4ed8; /* blue header text */
+/* Priority rows */
+tr.status-priority td{
+  background: rgba(185,28,28,0.09) !important;
+}
+tr.status-priority:hover td{
+  background: rgba(185,28,28,0.18) !important;
 }
 
-/* blue-tint row background (like priority table tint) */
-#newTable tbody td{
-  background: rgba(37,99,235,0.06);
-}
-
-#newTable tr:hover td{
-  background: rgba(37,99,235,0.10);
-}
-
-/* keep New status highlight stronger than the base tint */
+/* New rows */
 #newTable tr.status-new td{
-  background: rgba(96,165,250,0.22) !important;
+  background: rgba(96,165,250,0.12) !important;
+}
+#newTable tr.status-new:hover td{
+  background: rgba(96,165,250,0.24) !important;
 }
 
-
-    /* ===== Sent Transfers (green-tint card to match Priority/New styling style) ===== */
-.sent-card{
-  border-color: rgba(22,163,74,0.35) !important;
-  background: rgba(22,163,74,0.06) !important; /* light green tint */
+/* Dropped rows */
+tr.status-dropped td{
+  background: rgba(245,158,11,0.10) !important;
+}
+tr.status-dropped:hover td{
+  background: rgba(245,158,11,0.22) !important;
 }
 
-.sent-card .cardhead h2{
-  color: #166534; /* green header text */
+/* Sent rows */
+tr.status-sent td{
+  background: rgba(22,163,74,0.09) !important;
 }
-
-/* green-tint row background */
-#sentTable tbody td{
-  background: rgba(22,163,74,0.06);
-}
-
-#sentTable tr:hover td{
-  background: rgba(22,163,74,0.10);
-}
-
-/* keep Sent status highlight stronger than the base tint */
-#sentTable tr.status-sent td{
+tr.status-sent:hover td{
   background: rgba(22,163,74,0.18) !important;
 }
 
-
-    /* ===== Cancellations (red/grey-tint card) ===== */
-.cancel-card{
-  border-color: rgba(185,28,28,0.35) !important;
-  background: rgba(185,28,28,0.05) !important; /* very light red/grey tint */
+/* Cancelled rows */
+tr.status-cancel td{
+  background: rgba(239,68,68,0.09) !important;
 }
-
-.cancel-card .cardhead h2{
-  color: #7f1d1d; /* dark muted red */
-}
-
-/* red/grey-tint row background */
-#cancelTable tbody td{
-  background: rgba(185,28,28,0.04);
-}
-
-#cancelTable tr:hover td{
-  background: rgba(185,28,28,0.08);
-}
-
-/* keep Cancelled status highlight stronger than base tint */
-#cancelTable tr.status-cancel td{
+tr.status-cancel:hover td{
   background: rgba(239,68,68,0.18) !important;
 }
 
+/* ===== Outstanding Priority Transfers ===== */
+.priority-card{
+  border-color: rgba(185,28,28,0.35) !important;
+  background: rgba(185,28,28,0.06) !important;
+}
+
+.priority-card .cardhead h2{
+  color: #7f1d1d;
+}
+
+#priorityTable tbody tr td{
+  background: rgba(185,28,28,0.07) !important;
+}
+
+#priorityTable tbody tr:hover td{
+  background: rgba(185,28,28,0.16) !important;
+}
+
+/* ===== New Transfer Requests ===== */
+.new-card{
+  border-color: rgba(37,99,235,0.35) !important;
+  background: rgba(37,99,235,0.06) !important;
+}
+
+.new-card .cardhead h2{
+  color: #1d4ed8;
+}
+
+#newTable tbody tr:not(.status-new):not(.status-priority) td{
+  background: rgba(37,99,235,0.035) !important;
+}
+
+#newTable tbody tr:not(.status-new):not(.status-priority):hover td{
+  background: rgba(37,99,235,0.11) !important;
+}
+
+/* ===== Sent Transfers ===== */
+.sent-card{
+  border-color: rgba(22,163,74,0.35) !important;
+  background: rgba(22,163,74,0.06) !important;
+}
+
+.sent-card .cardhead h2{
+  color: #166534;
+}
+
+#sentTable tbody tr:not(.status-sent) td{
+  background: rgba(22,163,74,0.035) !important;
+}
+
+#sentTable tbody tr:not(.status-sent):hover td{
+  background: rgba(22,163,74,0.11) !important;
+}
+
+/* ===== Cancellations ===== */
+.cancel-card{
+  border-color: rgba(185,28,28,0.35) !important;
+  background: rgba(185,28,28,0.05) !important;
+}
+
+.cancel-card .cardhead h2{
+  color: #7f1d1d;
+}
+
+#cancelTable tbody tr:not(.status-cancel) td{
+  background: rgba(185,28,28,0.035) !important;
+}
+
+#cancelTable tbody tr:not(.status-cancel):hover td{
+  background: rgba(185,28,28,0.11) !important;
+}
+
+/* Keep inputs readable when row is coloured */
+#activeTable tbody tr:hover .cell-input,
+#activeTable tbody tr:hover .cell-select,
+#activeTable tbody tr:hover .cell-textarea{
+  background: rgba(255,255,255,0.82) !important;
+}
+
+    
    /* ===== Daily Summary ===== */
 .summary-card{
   border-color: rgba(17,24,39,0.18) !important;
@@ -1884,7 +1906,7 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
   // ===== Priority table (normal view only) =====
   if (!q){
     priorityBody.innerHTML = outstandingPrio.map(r => `
-      <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+      <tr class="status-priority" data-rowid="${r.rowId}">
         <td><input class="checkbox" type="checkbox" data-rowcheck="prio" data-rowid="${r.rowId}"></td>
         <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
         <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
