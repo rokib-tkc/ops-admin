@@ -2122,6 +2122,13 @@ async function savePatchInBackground(rowIds, patch, successMsg = "Saved"){
   }
 }
 
+    window.addEventListener("beforeunload", (e) => {
+  if (__pendingSaveCount > 0 || __failedSaves.length > 0){
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
     // ====== INPUT NORMALISATION ======
     document.addEventListener("input", (ev) => {
       const input = ev.target;
@@ -2155,7 +2162,18 @@ async function savePatchInBackground(rowIds, patch, successMsg = "Saved"){
       refresh(true);
     });
 
-    btnRefresh.addEventListener("click", () => resetToTodayAndRefresh(true));
+    btnRefresh.addEventListener("click", () => {
+  if (__pendingSaveCount > 0){
+    showToast("Please wait — changes are still saving.");
+    return;
+  }
+
+  if (__failedSaves.length > 0){
+    if (!confirm("There are failed saves on screen. Refreshing may lose visibility of unsaved changes. Continue?")) return;
+  }
+
+  resetToTodayAndRefresh(true);
+});
 
     // ====== PAGE SEARCH EVENTS ======
 productSearch.addEventListener("input", () => {
