@@ -157,6 +157,13 @@
     }
     #btnRefresh:hover{ filter: brightness(0.95); }
 
+    #refreshCountdown{
+  margin-left:6px;
+  color:#374151;
+  font-weight:800;
+  font-size:12px;
+}
+
     .pill{
       font-size:12px;
       padding:6px 10px;
@@ -711,7 +718,9 @@ tr.status-cancel:hover td{
           <input id="datePicker" type="date" class="cell-input" style="width:165px;">
         </div>
 
-        <button class="btn" id="btnRefresh">Refresh</button>
+        <button class="btn" id="btnRefresh" title="Manual refresh">
+          Refresh <span id="refreshCountdown">(5:00)</span>
+        </button>
         <button class="btn" id="btnAddLine">Add Line</button>
         <button class="btn" id="btnPasteUpload">Paste Upload</button>
       </div>
@@ -1077,9 +1086,33 @@ tr.status-cancel:hover td{
 })();
 
     // ====== SETTINGS ======
-    const AUTO_REFRESH_MS = 20 * 60 * 1000;
+    const AUTO_REFRESH_MS = 5 * 60 * 1000;
     const JSONP_URL_MAX = 1700;
 
+    // ====== AUTO REFRESH COUNTDOWN ======
+let nextAutoRefreshAt = Date.now() + AUTO_REFRESH_MS;
+
+function formatCountdown(ms){
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
+function resetAutoRefreshCountdown(){
+  nextAutoRefreshAt = Date.now() + AUTO_REFRESH_MS;
+  updateRefreshCountdown();
+}
+
+function updateRefreshCountdown(){
+  if (!refreshCountdown) return;
+  refreshCountdown.textContent = `(${formatCountdown(nextAutoRefreshAt - Date.now())})`;
+}
+
+setInterval(updateRefreshCountdown, 1000);
+
+
+    
     // ====== STATE ======
     let currentSheet = "PKY_TO_DTN";
     let currentDate = "";
@@ -1095,6 +1128,7 @@ tr.status-cancel:hover td{
     const datePicker = document.getElementById("datePicker");
 
     const btnRefresh = document.getElementById("btnRefresh");
+    const refreshCountdown = document.getElementById("refreshCountdown");
     const btnPasteUpload = document.getElementById("btnPasteUpload");
     const btnAddLine = document.getElementById("btnAddLine");
 
@@ -2130,12 +2164,6 @@ window.addEventListener("beforeunload", (e) => {
   }
 });
 
-    window.addEventListener("beforeunload", (e) => {
-  if (__pendingSaveCount > 0 || __failedSaves.length > 0){
-    e.preventDefault();
-    e.returnValue = "";
-  }
-});
 
     // ====== INPUT NORMALISATION ======
     document.addEventListener("input", (ev) => {
@@ -2191,7 +2219,7 @@ tabDTN.addEventListener("click", () => {
   refresh(true);
 });
 
-    btnRefresh.addEventListener("click", () => {
+   btnRefresh.addEventListener("click", () => {
   if (__pendingSaveCount > 0){
     showToast("Please wait — changes are still saving.");
     return;
@@ -2202,6 +2230,7 @@ tabDTN.addEventListener("click", () => {
   }
 
   resetToTodayAndRefresh(true);
+  resetAutoRefreshCountdown();
 });
 
     // ====== PAGE SEARCH EVENTS ======
@@ -2775,19 +2804,42 @@ window.addEventListener("resize", () => hideBarcodeOverlay());
 
             
 
+   
     // ====== AUTO REFRESH ======
-    setInterval(() => {
+setInterval(() => {
+
   if (isBusy()) return;
+  if (__pendingSaveCount > 0) return;
+  if (__failedSaves.length > 0) return;
+
+  const activeEl = document.activeElement;
+
+  if (
+    activeEl &&
+    (
+      activeEl.tagName === "INPUT" ||
+      activeEl.tagName === "TEXTAREA" ||
+      activeEl.tagName === "SELECT"
+    )
+  ){
+    return;
+  }
+
   resetToTodayAndRefresh(false);
+  resetAutoRefreshCountdown();
+
 }, AUTO_REFRESH_MS);
 
     
     // ====== START ======
-    (function(){
-      currentDate = todayISO();
-      datePicker.value = currentDate;
-      refresh(true);
-    })();
+    
+   (function(){
+  currentDate = todayISO();
+  datePicker.value = currentDate;
+  resetAutoRefreshCountdown();
+  refresh(true);
+})();
+    
   </script>
 </body>
 </html>
