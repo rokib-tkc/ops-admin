@@ -2090,7 +2090,12 @@ activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").fo
   checkAllPriority.checked = false;
 
   updateButtons();
+
+if (__pendingSaveCount > 0 || __failedSaves.length > 0){
+  updateSavingPill();
+} else {
   setStatus(`Loaded ${rows.length} lines`, "ok");
+}
 }
     
     async function refresh(showOverlay = true){
@@ -2161,15 +2166,20 @@ function updateRetryButton(){
   }
 }
 
-    function updateRetryButton(){
-  if (!btnRetrySaves) return;
+function updateSavingPill(){
+  updateRetryButton();
 
   if (__failedSaves.length > 0){
-    btnRetrySaves.classList.remove("hidden");
-    btnRetrySaves.textContent = `Retry Failed Saves (${__failedSaves.length})`;
-  } else {
-    btnRetrySaves.classList.add("hidden");
+    setStatus(`${__failedSaves.length} save issue(s)`, "err");
+    return;
   }
+
+  if (__pendingSaveCount > 0){
+    setStatus(`Saving ${__pendingSaveCount} change(s)…`, "warn");
+    return;
+  }
+
+  setStatus("Saved", "ok");
 }
 
 async function savePatchInBackground(rowIds, patch, successMsg = "Saved"){
@@ -2177,10 +2187,16 @@ async function savePatchInBackground(rowIds, patch, successMsg = "Saved"){
   updateSavingPill();
 
   try{
-    if (rowIds.length === 1){
-      await patchRow(rowIds[0], patch);
+    const cleanIds = rowIds.map(Number).filter(n => !Number.isNaN(n));
+
+    if (!cleanIds.length){
+      throw new Error("No valid row IDs found for save.");
+    }
+
+    if (cleanIds.length === 1){
+      await patchRow(cleanIds[0], patch);
     } else {
-      await bulkPatch(rowIds, patch);
+      await bulkPatch(cleanIds, patch);
     }
 
     showToast(successMsg);
@@ -2194,7 +2210,7 @@ async function savePatchInBackground(rowIds, patch, successMsg = "Saved"){
       time: new Date().toISOString()
     });
 
-    showToast("Save failed — change is still shown on screen. Please refresh/check before repeating the work.");
+    showToast("Save failed — change is still shown on screen. Use Retry before refreshing.");
     console.error("Background save failed:", e, { rowIds, patch });
 
   } finally {
