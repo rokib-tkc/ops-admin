@@ -230,11 +230,27 @@ th:nth-child(3), td:nth-child(3){
   font-size:12px;
   color:var(--muted);
   user-select:none;
+  background:var(--card);
+}
+
+/* Sticky row headers only for the main transfer tables */
+#priorityTable th,
+#newTable th,
+#activeTable th,
+#sentTable th,
+#cancelTable th{
   position:sticky;
   top: calc(var(--appHeaderH) + var(--tableActionHeaderH) - 12px);
-  background:var(--card);
   z-index:25;
   box-shadow: 0 1px 0 rgba(17,24,39,0.08);
+}
+
+/* Daily Summary header should stay normal */
+#summaryTable th{
+  position:static;
+  top:auto;
+  z-index:auto;
+  box-shadow:none;
 }
     
 /* ===== Row colour system: light default, darker on hover ===== */
