@@ -2122,6 +2122,14 @@ async function savePatchInBackground(rowIds, patch, successMsg = "Saved"){
   }
 }
 
+    /* ====== WARN BEFORE REFRESH/CLOSE IF SAVES PENDING ====== */
+window.addEventListener("beforeunload", (e) => {
+  if (__pendingSaveCount > 0 || __failedSaves.length > 0){
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
     window.addEventListener("beforeunload", (e) => {
   if (__pendingSaveCount > 0 || __failedSaves.length > 0){
     e.preventDefault();
@@ -2148,19 +2156,40 @@ async function savePatchInBackground(rowIds, patch, successMsg = "Saved"){
 
     // ====== EVENTS ======
     tabPKY.addEventListener("click", () => {
-      if (isBusy()) return;
-      currentSheet = "PKY_TO_DTN";
-      tabPKY.classList.add("active");
-      tabDTN.classList.remove("active");
-      refresh(true);
-    });
-    tabDTN.addEventListener("click", () => {
-      if (isBusy()) return;
-      currentSheet = "DTN_TO_PKY";
-      tabDTN.classList.add("active");
-      tabPKY.classList.remove("active");
-      refresh(true);
-    });
+  if (isBusy()) return;
+
+  if (__pendingSaveCount > 0){
+    showToast("Please wait — changes are still saving.");
+    return;
+  }
+
+  if (__failedSaves.length > 0){
+    if (!confirm("There are failed saves on screen. Switching tabs may lose visibility of unsaved changes. Continue?")) return;
+  }
+
+  currentSheet = "PKY_TO_DTN";
+  tabPKY.classList.add("active");
+  tabDTN.classList.remove("active");
+  refresh(true);
+});
+
+tabDTN.addEventListener("click", () => {
+  if (isBusy()) return;
+
+  if (__pendingSaveCount > 0){
+    showToast("Please wait — changes are still saving.");
+    return;
+  }
+
+  if (__failedSaves.length > 0){
+    if (!confirm("There are failed saves on screen. Switching tabs may lose visibility of unsaved changes. Continue?")) return;
+  }
+
+  currentSheet = "DTN_TO_PKY";
+  tabDTN.classList.add("active");
+  tabPKY.classList.remove("active");
+  refresh(true);
+});
 
     btnRefresh.addEventListener("click", () => {
   if (__pendingSaveCount > 0){
