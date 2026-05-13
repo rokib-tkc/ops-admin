@@ -2059,32 +2059,38 @@ activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").fo
   updateButtons();
   setStatus(`Loaded ${rows.length} lines`, "ok");
 }
-
-
     
     async function refresh(showOverlay = true){
-      if (showOverlay && isBusy()) return;
-      const doWork = async () => {
-        try {
-          setStatus("Loading…", "warn");
-          const data = await apiCall("list");
-          if (!data.ok) throw new Error(data.error || "API error");
-          rows = data.rows || [];
-          render();
-          // Keep both direction badges up to date (background)
-          refreshBothTabBadges();
-        } catch (e) {
-          setStatus("Error loading", "err");
-          showToast(String(e.message || e));
-        }
-      };
+  if (showOverlay && isBusy()) return;
 
-      if (showOverlay){
-        await withLoading("Loading transfers…", doWork, "Fetching the latest lines…");
-      } else {
-        await doWork();
-      }
+  const doWork = async () => {
+    try {
+      setStatus("Loading…", "warn");
+
+      const data = await apiCall("list");
+      if (!data.ok) throw new Error(data.error || "API error");
+
+      rows = data.rows || [];
+      render();
+
+      // Restart countdown after any successful page data refresh
+      resetAutoRefreshCountdown();
+
+      // Keep both direction badges up to date in the background
+      refreshBothTabBadges();
+
+    } catch (e) {
+      setStatus("Error loading", "err");
+      showToast(String(e.message || e));
     }
+  };
+
+  if (showOverlay){
+    await withLoading("Loading transfers…", doWork, "Fetching the latest lines…");
+  } else {
+    await doWork();
+  }
+}
 
     async function patchRow(rowId, patch){
   const res = await apiCall("update", { rowId, patch });
@@ -2230,7 +2236,6 @@ tabDTN.addEventListener("click", () => {
   }
 
   resetToTodayAndRefresh(true);
-  resetAutoRefreshCountdown();
 });
 
     // ====== PAGE SEARCH EVENTS ======
@@ -2826,7 +2831,6 @@ setInterval(() => {
   }
 
   resetToTodayAndRefresh(false);
-  resetAutoRefreshCountdown();
 
 }, AUTO_REFRESH_MS);
 
@@ -2836,7 +2840,6 @@ setInterval(() => {
    (function(){
   currentDate = todayISO();
   datePicker.value = currentDate;
-  resetAutoRefreshCountdown();
   refresh(true);
 })();
     
