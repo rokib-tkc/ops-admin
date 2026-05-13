@@ -31,6 +31,9 @@
 
       --shadow: 0 6px 16px rgba(0,0,0,0.08);
       --radius: 12px;
+
+      --appHeaderH: 72px;
+      --tableActionHeaderH: 74px;
     }
 
     *{ box-sizing:border-box; font-family: Arial, sans-serif; }
@@ -184,9 +187,25 @@
       padding:14px;
     }
     .cardhead{
-      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
-      margin-bottom:10px;
-    }
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+/* Keep each table title/buttons visible while scrolling within that table section */
+.card:not(.search-card) > .cardhead{
+  position: sticky;
+  top: var(--appHeaderH);
+  z-index: 30;
+  background: inherit;
+  padding: 10px 0;
+  margin-top: -10px;
+  border-bottom: 1px solid rgba(17,24,39,0.08);
+  backdrop-filter: blur(6px);
+}
     .cardhead h2{ font-size:15px; margin:0; }
     .sub{ color:var(--muted); font-size:12px; }
     .row-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
@@ -206,15 +225,16 @@ th:nth-child(3), td:nth-child(3){
   text-align: center;
 }
     th{
-      text-align:left;
-      font-size:12px;
-      color:var(--muted);
-      user-select:none;
-      position:sticky;
-      top:0;
-      background:var(--card);
-      z-index:10;
-    }
+  text-align:left;
+  font-size:12px;
+  color:var(--muted);
+  user-select:none;
+  position:sticky;
+  top: calc(var(--appHeaderH) + var(--tableActionHeaderH));
+  background:var(--card);
+  z-index:25;
+  box-shadow: 0 1px 0 rgba(17,24,39,0.08);
+}
 
 /* ===== Row colour system: light default, darker on hover ===== */
 
@@ -2834,10 +2854,30 @@ setInterval(() => {
 
 }, AUTO_REFRESH_MS);
 
+
+// ====== DYNAMIC STICKY OFFSETS ======
+function updateStickyOffsets(){
+  const mainHeader = document.querySelector("body > header");
+  const headerH = mainHeader ? Math.ceil(mainHeader.getBoundingClientRect().height) : 72;
+
+  document.documentElement.style.setProperty("--appHeaderH", `${headerH}px`);
+
+  const cardHeads = [...document.querySelectorAll(".card:not(.search-card) > .cardhead")];
+  const maxCardHeadH = cardHeads.length
+    ? Math.ceil(Math.max(...cardHeads.map(h => h.getBoundingClientRect().height))) + 12
+    : 74;
+
+  document.documentElement.style.setProperty("--tableActionHeaderH", `${maxCardHeadH}px`);
+}
+
+window.addEventListener("resize", updateStickyOffsets);
+window.addEventListener("load", updateStickyOffsets);
+
     
     // ====== START ======
     
    (function(){
+  updateStickyOffsets();
   currentDate = todayISO();
   datePicker.value = currentDate;
   refresh(true);
