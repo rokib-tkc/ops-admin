@@ -373,12 +373,14 @@ tr.status-cancel:hover td{
 }
 
 /* Keep inputs readable when row is coloured */
+#newTable tbody tr:hover .cell-input,
+#newTable tbody tr:hover .cell-select,
+#newTable tbody tr:hover .cell-textarea,
 #activeTable tbody tr:hover .cell-input,
 #activeTable tbody tr:hover .cell-select,
 #activeTable tbody tr:hover .cell-textarea{
   background: rgba(255,255,255,0.82) !important;
 }
-
     
    /* ===== Daily Summary ===== */
 .summary-card{
@@ -2012,19 +2014,19 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
 
 
   // ===== Render New =====
-  newBody.innerHTML = newRows.map(r => `
-    <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-      <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
-      <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
-      <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
-      <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
-      <td>${escapeHtml(r.PRODUCT)}</td>
-      <td>${escapeHtml(r.QTY)}</td>
-      <td>${escapeHtml(r.WH)}</td>
-      <td>${escapeHtml(r.BIN)}</td>
-      <td>${escapeHtml(r.COMMENTS)}</td>
-    </tr>
-  `).join("");
+newBody.innerHTML = newRows.map(r => `
+  <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+    <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
+    <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
+    <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
+    <td data-col="TYPE">${buildSelect(["SPLIT","BULK","ORDER"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
+    <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
+    <td data-col="QTY">${buildInput(r.QTY, "number")}</td>
+    <td data-col="WH">${buildInput(r.WH)}</td>
+    <td data-col="BIN">${buildInput(r.BIN)}</td>
+    <td data-col="COMMENTS">${buildTextarea(r.COMMENTS)}</td>
+  </tr>
+`).join("");
 
   // ===== Render Active =====
   activeBody.innerHTML = activeRows.map(r => `
@@ -2043,25 +2045,32 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
     </tr>
   `).join("");
 
-  // Apply TYPE colouring to Active table
-  activeBody.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => applyTypeColour(sel));
-
- // ===== Auto-grow COMMENTS textareas (Active only) =====
-activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").forEach(ta => {
-  const BASE_H = 34;       // must match CSS height/min-height
-  const TOLERANCE = 2;
-
-  const fit = () => {
-    ta.style.height = BASE_H + "px";   // reset to 1-line height
-    ta.style.height = "auto";          // let it measure
-    const needed = ta.scrollHeight;
-
-    ta.style.height = (needed > BASE_H + TOLERANCE ? needed : BASE_H) + "px";
-  };
-
-  fit();
-  ta.addEventListener("input", fit);
+  // Apply TYPE colouring to New + Active tables
+[newBody, activeBody].forEach(body => {
+  body.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => applyTypeColour(sel));
 });
+
+ // ===== Auto-grow COMMENTS textareas (New + Active) =====
+function fitCommentTextareas(body){
+  body.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").forEach(ta => {
+    const BASE_H = 34;
+    const TOLERANCE = 2;
+
+    const fit = () => {
+      ta.style.height = BASE_H + "px";
+      ta.style.height = "auto";
+      const needed = ta.scrollHeight;
+
+      ta.style.height = (needed > BASE_H + TOLERANCE ? needed : BASE_H) + "px";
+    };
+
+    fit();
+    ta.addEventListener("input", fit);
+  });
+}
+
+fitCommentTextareas(newBody);
+fitCommentTextareas(activeBody);
 
 
   // ===== Render Sent =====
