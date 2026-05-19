@@ -479,7 +479,6 @@ tr.status-cancel:hover td{
 }
 
 /* Only highlight when text exists */
-.cell-textarea:not(:placeholder-shown),
 .cell-textarea.has-text{
   background:
     linear-gradient(
@@ -502,21 +501,7 @@ tr.status-cancel:hover td{
       box-shadow:0 0 0 3px rgba(37,99,235,0.12);
     }
 
-    
-//* ======= COMMENTS highlight state ===== */
-function updateCommentHighlightState(){
-  document.querySelectorAll(".cell-textarea").forEach(ta => {
-    ta.classList.toggle("has-text", !!ta.value.trim());
-  });
-}
-    
-    updateCommentHighlightState();
 
-document.addEventListener("input", (ev) => {
-  if (ev.target && ev.target.classList.contains("cell-textarea")){
-    ev.target.classList.toggle("has-text", !!ev.target.value.trim());
-  }
-});
     
     /* ===== TYPE colouring ===== */
 
@@ -1853,6 +1838,13 @@ async function apiCallForSheet(sheet, action, payload = {}){
       return `<textarea class="cell-textarea" rows="1">${escapeHtml(value ?? "")}</textarea>`;
     }
 
+    
+    /* ===== COMMENTS highlight state ===== */
+function updateCommentHighlightState(){
+  document.querySelectorAll(".cell-textarea").forEach(ta => {
+    ta.classList.toggle("has-text", !!ta.value.trim());
+  });
+}
 
     function buildPrioFlag(priorityYes){
       if (priorityYes){
@@ -2114,7 +2106,7 @@ function fitCommentTextareas(body){
 
 fitCommentTextareas(newBody);
 fitCommentTextareas(activeBody);
-
+updateCommentHighlightState();
 
   // ===== Render Sent =====
   sentBody.innerHTML = sentRows.map(r => `
