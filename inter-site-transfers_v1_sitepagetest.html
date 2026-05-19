@@ -455,22 +455,40 @@ tr.status-cancel:hover td{
     
     /* ===== Auto-grow textarea for COMMENTS in Active table ===== */
     .cell-textarea{
-      width:100%;
-      height:34px;          /* force same visible height as other inputs */
-      min-height:34px;
-      padding:7px 8px;
-      border:1px solid var(--border);
-      border-radius:8px;
-      font-size:13px;
-      background:#fff;
-      resize:none;
-      overflow:hidden;
-      line-height:20px;     /* stable 1-line baseline */
-      white-space:pre-wrap;
-      word-break:break-word;
-      display:block;
-      margin:0;
-    }
+  width:100%;
+  height:34px;
+  min-height:34px;
+  padding:7px 8px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  font-size:13px;
+  background:#fff;
+  resize:none;
+  overflow:hidden;
+  line-height:20px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  display:block;
+  margin:0;
+
+  /* Highlighted comment text */
+  color:#111827;
+  font-weight:700;
+  text-shadow:
+    0 0 0 #111827;
+}
+
+/* Only highlight when text exists */
+.cell-textarea:not(:placeholder-shown),
+.cell-textarea.has-text{
+  background:
+    linear-gradient(
+      transparent 32%,
+      rgba(255, 235, 59, 0.75) 32%,
+      rgba(255, 235, 59, 0.75) 88%,
+      transparent 88%
+    );
+}
 
     .cell-textarea:focus{
       outline:none;
@@ -484,7 +502,22 @@ tr.status-cancel:hover td{
       box-shadow:0 0 0 3px rgba(37,99,235,0.12);
     }
 
-    /* ===== TYPE colouring in Active table ===== */
+    
+//* ======= COMMENTS highlight state ===== */
+function updateCommentHighlightState(){
+  document.querySelectorAll(".cell-textarea").forEach(ta => {
+    ta.classList.toggle("has-text", !!ta.value.trim());
+  });
+}
+    
+    updateCommentHighlightState();
+
+document.addEventListener("input", (ev) => {
+  if (ev.target && ev.target.classList.contains("cell-textarea")){
+    ev.target.classList.toggle("has-text", !!ev.target.value.trim());
+  }
+});
+    
     /* ===== TYPE colouring ===== */
 
 .type-split{
