@@ -1783,64 +1783,96 @@ async function apiCallForSheet(sheet, action, payload = {}){
     }
 
     // ====== PRINTING ======
-    function printLines(title, lines){
-      const w = window.open("", "_blank");
-      const safeTitle = escapeHtml(title);
-      const dateTxt = escapeHtml(currentDate);
-      const dirTxt = escapeHtml(currentSheet);
+      function printLines(title, lines){
+  const safeTitle = escapeHtml(title);
+  const dateTxt = escapeHtml(currentDate);
+  const dirTxt = escapeHtml(currentSheet);
 
-      const rowsHtml = lines.map(r => `
-        <tr>
-          <td>${escapeHtml(r.ITEM_NO)}</td>
-          <td>${escapeHtml((r.TYPE||"").toUpperCase())}</td>
-          <td>${escapeHtml(r.PRODUCT)}</td>
-          <td>${escapeHtml(r.QTY)}</td>
-          <td>${escapeHtml(r.WH)}</td>
-          <td>${escapeHtml(r.BIN)}</td>
-          <td>${escapeHtml(r.COMMENTS)}</td>
-        </tr>
-      `).join("");
+  const rowsHtml = lines.map(r => `
+    <tr>
+      <td>${escapeHtml(r.ITEM_NO)}</td>
+      <td>${escapeHtml((r.TYPE||"").toUpperCase())}</td>
+      <td>${escapeHtml(r.PRODUCT)}</td>
+      <td>${escapeHtml(r.QTY)}</td>
+      <td>${escapeHtml(r.WH)}</td>
+      <td>${escapeHtml(r.BIN)}</td>
+      <td>${escapeHtml(r.COMMENTS)}</td>
+    </tr>
+  `).join("");
 
-      const closeScript = "</scr" + "ipt>";
+  const printHtml = `
+    <!doctype html>
+    <html>
+    <head>
+      <title>${safeTitle}</title>
+      <meta charset="utf-8">
+      <style>
+        body{ font-family: Arial, sans-serif; padding:16px; }
+        h1{ margin:0 0 6px 0; font-size:18px; }
+        .meta{ margin:0 0 12px 0; color:#555; font-size:12px; }
+        table{ width:100%; border-collapse:collapse; }
+        th, td{ border:1px solid #ddd; padding:8px; font-size:12px; text-align:left; }
+        th{ background:#f3f4f6; }
+      </style>
+    </head>
+    <body>
+      <h1>${safeTitle}</h1>
+      <p class="meta">Date: ${dateTxt} • Direction: ${dirTxt}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>ITEM</th>
+            <th>TYPE</th>
+            <th>PRODUCT</th>
+            <th>QTY</th>
+            <th>WH</th>
+            <th>BIN</th>
+            <th>COMMENTS</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </body>
+    </html>
+  `;
 
-      w.document.write(`
-        <html>
-        <head>
-          <title>${safeTitle}</title>
-          <meta charset="utf-8">
-          <style>
-            body{ font-family: Arial, sans-serif; padding:16px; }
-            h1{ margin:0 0 6px 0; font-size:18px; }
-            .meta{ margin:0 0 12px 0; color:#555; font-size:12px; }
-            table{ width:100%; border-collapse:collapse; }
-            th, td{ border:1px solid #ddd; padding:8px; font-size:12px; text-align:left; }
-            th{ background:#f3f4f6; }
-          </style>
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.style.opacity = "0";
+  iframe.setAttribute("aria-hidden", "true");
 
-          
-        </head>
+  document.body.appendChild(iframe);
 
-        
-        <body>
-          <h1>${safeTitle}</h1>
-          <p class="meta">Date: ${dateTxt} • Direction: ${dirTxt}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>ITEM</th><th>TYPE</th><th>PRODUCT</th><th>QTY</th><th>WH</th><th>BIN</th><th>COMMENTS</th>
-              </tr>
-            </thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>
-          <script>
-            window.onload = function(){ window.print(); };
-          ${closeScript}
-        </body>
-        </html>
-      `);
+  const iframeWindow = iframe.contentWindow;
+  const iframeDoc = iframeWindow.document;
 
-      w.document.close();
-    }
+  iframeDoc.open();
+  iframeDoc.write(printHtml);
+  iframeDoc.close();
+
+  const cleanup = () => {
+    setTimeout(() => {
+      if (iframe && iframe.parentNode){
+        iframe.parentNode.removeChild(iframe);
+      }
+    }, 500);
+  };
+
+  iframeWindow.onafterprint = cleanup;
+
+  setTimeout(() => {
+    iframeWindow.focus();
+    iframeWindow.print();
+
+    // Fallback cleanup in case browser does not fire afterprint reliably
+    setTimeout(cleanup, 3000);
+  }, 250);
+}
 
     // ====== RENDERING ======
     function rowClass(r){
