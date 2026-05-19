@@ -31,6 +31,9 @@
 
       --shadow: 0 6px 16px rgba(0,0,0,0.08);
       --radius: 12px;
+
+      --appHeaderH: 72px;
+      --tableActionHeaderH: 74px;
     }
 
     *{ box-sizing:border-box; font-family: Arial, sans-serif; }
@@ -42,7 +45,7 @@
       background:var(--card);
       box-shadow:var(--shadow);
       padding:14px 18px;
-      position:sticky; top:0; z-index:20;
+      position:sticky; top:0; z-index:1000;
     }
     .wrap{ max-width:1200px; margin:0 auto; }
     .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
@@ -157,6 +160,13 @@
     }
     #btnRefresh:hover{ filter: brightness(0.95); }
 
+    #refreshCountdown{
+  margin-left:6px;
+  color:#374151;
+  font-weight:800;
+  font-size:12px;
+}
+
     .pill{
       font-size:12px;
       padding:6px 10px;
@@ -177,9 +187,26 @@
       padding:14px;
     }
     .cardhead{
-      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
-      margin-bottom:10px;
-    }
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+/* Keep each table title/buttons visible while scrolling within that table section */
+.card:not(.search-card) > .cardhead{
+  position: sticky;
+  top: var(--appHeaderH);
+  z-index: 30;
+  background: inherit;
+  padding: 10px 0 6px 0;
+  margin-top: -10px;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(17,24,39,0.08);
+  backdrop-filter: blur(6px);
+}
     .cardhead h2{ font-size:15px; margin:0; }
     .sub{ color:var(--muted); font-size:12px; }
     .row-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
@@ -198,17 +225,34 @@ th:nth-child(3), td:nth-child(3){
   padding-right: 4px;
   text-align: center;
 }
-    th{
-      text-align:left;
-      font-size:12px;
-      color:var(--muted);
-      user-select:none;
-      position:sticky;
-      top:0;
-      background:var(--card);
-      z-index:10;
-    }
+   th{
+  text-align:left;
+  font-size:12px;
+  color:var(--muted);
+  user-select:none;
+  background:var(--card);
+}
 
+/* Sticky row headers only for the main transfer tables */
+#priorityTable th,
+#newTable th,
+#activeTable th,
+#sentTable th,
+#cancelTable th{
+  position:sticky;
+  top: calc(var(--appHeaderH) + var(--tableActionHeaderH) - 12px);
+  z-index:25;
+  box-shadow: 0 1px 0 rgba(17,24,39,0.08);
+}
+
+/* Daily Summary header should stay normal */
+#summaryTable th{
+  position:static;
+  top:auto;
+  z-index:auto;
+  box-shadow:none;
+}
+    
 /* ===== Row colour system: light default, darker on hover ===== */
 
 /* Plain/white rows */
@@ -329,12 +373,14 @@ tr.status-cancel:hover td{
 }
 
 /* Keep inputs readable when row is coloured */
+#newTable tbody tr:hover .cell-input,
+#newTable tbody tr:hover .cell-select,
+#newTable tbody tr:hover .cell-textarea,
 #activeTable tbody tr:hover .cell-input,
 #activeTable tbody tr:hover .cell-select,
 #activeTable tbody tr:hover .cell-textarea{
   background: rgba(255,255,255,0.82) !important;
 }
-
     
    /* ===== Daily Summary ===== */
 .summary-card{
@@ -409,22 +455,28 @@ tr.status-cancel:hover td{
     
     /* ===== Auto-grow textarea for COMMENTS in Active table ===== */
     .cell-textarea{
-      width:100%;
-      height:34px;          /* force same visible height as other inputs */
-      min-height:34px;
-      padding:7px 8px;
-      border:1px solid var(--border);
-      border-radius:8px;
-      font-size:13px;
-      background:#fff;
-      resize:none;
-      overflow:hidden;
-      line-height:20px;     /* stable 1-line baseline */
-      white-space:pre-wrap;
-      word-break:break-word;
-      display:block;
-      margin:0;
-    }
+  width:100%;
+  height:34px;
+  min-height:34px;
+  padding:7px 8px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  font-size:13px;
+  background:#fff;
+  resize:none;
+  overflow:hidden;
+  line-height:20px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  display:block;
+  margin:0;
+
+  /* Highlighted comment text */
+  color:#111827;
+  font-weight:700;
+  text-shadow:
+    0 0 0 #111827;
+}
 
     .cell-textarea:focus{
       outline:none;
@@ -432,24 +484,65 @@ tr.status-cancel:hover td{
       box-shadow:0 0 0 3px rgba(37,99,235,0.12);
     }
 
+    .comment-wrap{
+  position:relative;
+}
+
+.comment-highlight{
+  position:absolute;
+  inset:1px;
+  padding:7px 8px;
+  border:1px solid transparent;
+  border-radius:8px;
+  font-size:13px;
+  line-height:20px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  pointer-events:none;
+  color:transparent;
+  overflow:hidden;
+  z-index:1;
+}
+
+.comment-highlight span{
+  background: rgba(250,204,21,0.65);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.comment-wrap .cell-textarea{
+  position:relative;
+  z-index:2;
+  background:transparent !important;
+}
+
     .cell-input:focus, .cell-select:focus{
       outline:none;
       border-color:var(--accent);
       box-shadow:0 0 0 3px rgba(37,99,235,0.12);
     }
 
-    /* ===== TYPE colouring in Active table ===== */
-    .type-split{
-      background: rgba(250, 204, 21, 0.35) !important; /* yellow */
-    }
 
-    .type-bulk{
-      background: rgba(239, 68, 68, 0.25) !important; /* light red */
-    }
+    
+    /* ===== TYPE colouring ===== */
 
-    .type-order{
-      background: rgba(196, 181, 253, 0.35) !important; /* pastel purple */
-    }
+.type-split{
+  background: rgba(255, 235, 59, 0.75) !important;   /* bright yellow */
+  border-color: rgba(202, 138, 4, 0.65) !important;
+  color:#111827 !important;
+}
+
+.type-bulk{
+  background: rgba(248, 113, 113, 0.38) !important;  /* stronger soft red */
+  border-color: rgba(185, 28, 28, 0.55) !important;
+  color:#111827 !important;
+}
+
+.type-order{
+  background: rgba(167, 139, 250, 0.38) !important;  /* richer purple */
+  border-color: rgba(109, 40, 217, 0.50) !important;
+  color:#111827 !important;
+}
 
     .checkbox{ width:16px; height:16px; }
     .small{ font-size:12px; color:var(--muted); }
@@ -688,7 +781,17 @@ tr.status-cancel:hover td{
     <div class="wrap topbar">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <h1>Inter-Site Stock Transfers</h1>
-        <span id="statusPill" class="pill">Ready</span>
+        <div id="statusWrap" style="display:flex;align-items:center;gap:8px;">
+  <span id="statusPill" class="pill">Ready</span>
+
+  <button
+    class="btn danger hidden"
+    id="btnRetrySaves"
+    style="padding:6px 10px;font-size:12px;"
+  >
+    Retry Failed Saves
+  </button>
+</div>
       </div>
 
       <div class="controls">
@@ -711,7 +814,10 @@ tr.status-cancel:hover td{
           <input id="datePicker" type="date" class="cell-input" style="width:165px;">
         </div>
 
-        <button class="btn" id="btnRefresh">Refresh</button>
+        <button class="btn" id="btnRefresh" title="Manual refresh">
+          Refresh <span id="refreshCountdown">(5:00)</span>
+        </button>
+        
         <button class="btn" id="btnAddLine">Add Line</button>
         <button class="btn" id="btnPasteUpload">Paste Upload</button>
       </div>
@@ -1077,9 +1183,33 @@ tr.status-cancel:hover td{
 })();
 
     // ====== SETTINGS ======
-    const AUTO_REFRESH_MS = 20 * 60 * 1000;
+    const AUTO_REFRESH_MS = 5 * 60 * 1000;
     const JSONP_URL_MAX = 1700;
 
+    // ====== AUTO REFRESH COUNTDOWN ======
+let nextAutoRefreshAt = Date.now() + AUTO_REFRESH_MS;
+
+function formatCountdown(ms){
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
+function resetAutoRefreshCountdown(){
+  nextAutoRefreshAt = Date.now() + AUTO_REFRESH_MS;
+  updateRefreshCountdown();
+}
+
+function updateRefreshCountdown(){
+  if (!refreshCountdown) return;
+  refreshCountdown.textContent = `(${formatCountdown(nextAutoRefreshAt - Date.now())})`;
+}
+
+setInterval(updateRefreshCountdown, 1000);
+
+
+    
     // ====== STATE ======
     let currentSheet = "PKY_TO_DTN";
     let currentDate = "";
@@ -1095,6 +1225,8 @@ tr.status-cancel:hover td{
     const datePicker = document.getElementById("datePicker");
 
     const btnRefresh = document.getElementById("btnRefresh");
+    const btnRetrySaves = document.getElementById("btnRetrySaves");
+    const refreshCountdown = document.getElementById("refreshCountdown");
     const btnPasteUpload = document.getElementById("btnPasteUpload");
     const btnAddLine = document.getElementById("btnAddLine");
 
@@ -1535,20 +1667,22 @@ async function apiCallForSheet(sheet, action, payload = {}){
   return await jsonp(buildApiUrlForSheet(sheet, action, payload));
 }
 
-    async function refreshBothTabBadges(){
-  // If you're already loading, skip to avoid piling requests
-  if (isBusy()) return;
-
+   async function refreshBothTabBadges(){
   try{
     const [pkyRes, dtnRes] = await Promise.all([
       apiCallForSheet("PKY_TO_DTN", "list"),
       apiCallForSheet("DTN_TO_PKY", "list"),
     ]);
 
-    if (pkyRes && pkyRes.ok) setBadge(badgePKY, countOutstandingFromRows(pkyRes.rows || []));
-    if (dtnRes && dtnRes.ok) setBadge(badgeDTN, countOutstandingFromRows(dtnRes.rows || []));
+    if (pkyRes && pkyRes.ok){
+      setBadge(badgePKY, countOutstandingFromRows(pkyRes.rows || []));
+    }
+
+    if (dtnRes && dtnRes.ok){
+      setBadge(badgeDTN, countOutstandingFromRows(dtnRes.rows || []));
+    }
   } catch(e){
-    // silent fail: badge isn't critical enough to toast the user
+    console.warn("Badge refresh failed:", e);
   }
 }
 
@@ -1721,10 +1855,39 @@ async function apiCallForSheet(sheet, action, payload = {}){
     }
 
     
-    function buildTextarea(value){
-      return `<textarea class="cell-textarea" rows="1">${escapeHtml(value ?? "")}</textarea>`;
-    }
+   function buildCommentHighlight(value){
+  const txt = String(value ?? "");
+  if (!txt.trim()) return "";
+  return `<span>${escapeHtml(txt)}</span>`;
+}
 
+function buildTextarea(value){
+  return `
+    <div class="comment-wrap">
+      <div class="comment-highlight" aria-hidden="true">${buildCommentHighlight(value)}</div>
+      <textarea class="cell-textarea" rows="1">${escapeHtml(value ?? "")}</textarea>
+    </div>
+  `;
+}
+
+    
+    /* ===== COMMENTS highlight state ===== */
+
+
+    function syncCommentHighlight(ta){
+  const wrap = ta.closest(".comment-wrap");
+  if (!wrap) return;
+
+  const highlight = wrap.querySelector(".comment-highlight");
+  if (!highlight) return;
+
+  const txt = ta.value || "";
+  highlight.innerHTML = txt.trim() ? `<span>${escapeHtml(txt)}</span>` : "";
+}
+
+function updateCommentHighlightState(){
+  document.querySelectorAll(".comment-wrap textarea.cell-textarea").forEach(syncCommentHighlight);
+}
 
     function buildPrioFlag(priorityYes){
       if (priorityYes){
@@ -1929,19 +2092,19 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
 
 
   // ===== Render New =====
-  newBody.innerHTML = newRows.map(r => `
-    <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
-      <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
-      <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
-      <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
-      <td>${escapeHtml((r.TYPE || "").toUpperCase())}</td>
-      <td>${escapeHtml(r.PRODUCT)}</td>
-      <td>${escapeHtml(r.QTY)}</td>
-      <td>${escapeHtml(r.WH)}</td>
-      <td>${escapeHtml(r.BIN)}</td>
-      <td>${escapeHtml(r.COMMENTS)}</td>
-    </tr>
-  `).join("");
+newBody.innerHTML = newRows.map(r => `
+  <tr class="${rowClass(r)}" data-rowid="${r.rowId}">
+    <td><input class="checkbox" type="checkbox" data-rowcheck="new" data-rowid="${r.rowId}"></td>
+    <td><strong>${escapeHtml(r.ITEM_NO)}</strong></td>
+    <td>${buildPrioFlag(isYes(r.PRIORITY))}</td>
+    <td data-col="TYPE">${buildSelect(["SPLIT","BULK","ORDER"], (r.TYPE || "SPLIT").toString().toUpperCase())}</td>
+    <td data-col="PRODUCT">${buildInput(r.PRODUCT)}</td>
+    <td data-col="QTY">${buildInput(r.QTY, "number")}</td>
+    <td data-col="WH">${buildInput(r.WH)}</td>
+    <td data-col="BIN">${buildInput(r.BIN)}</td>
+    <td data-col="COMMENTS">${buildTextarea(r.COMMENTS)}</td>
+  </tr>
+`).join("");
 
   // ===== Render Active =====
   activeBody.innerHTML = activeRows.map(r => `
@@ -1960,26 +2123,33 @@ if (currentSheet === "DTN_TO_PKY") setBadge(badgeDTN, totalOutstanding);
     </tr>
   `).join("");
 
-  // Apply TYPE colouring to Active table
-  activeBody.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => applyTypeColour(sel));
-
- // ===== Auto-grow COMMENTS textareas (Active only) =====
-activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").forEach(ta => {
-  const BASE_H = 34;       // must match CSS height/min-height
-  const TOLERANCE = 2;
-
-  const fit = () => {
-    ta.style.height = BASE_H + "px";   // reset to 1-line height
-    ta.style.height = "auto";          // let it measure
-    const needed = ta.scrollHeight;
-
-    ta.style.height = (needed > BASE_H + TOLERANCE ? needed : BASE_H) + "px";
-  };
-
-  fit();
-  ta.addEventListener("input", fit);
+  // Apply TYPE colouring to New + Active tables
+[newBody, activeBody].forEach(body => {
+  body.querySelectorAll("td[data-col='TYPE'] select").forEach(sel => applyTypeColour(sel));
 });
 
+ // ===== Auto-grow COMMENTS textareas (New + Active) =====
+function fitCommentTextareas(body){
+  body.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").forEach(ta => {
+    const BASE_H = 34;
+    const TOLERANCE = 2;
+
+    const fit = () => {
+      ta.style.height = BASE_H + "px";
+      ta.style.height = "auto";
+      const needed = ta.scrollHeight;
+
+      ta.style.height = (needed > BASE_H + TOLERANCE ? needed : BASE_H) + "px";
+    };
+
+    fit();
+    ta.addEventListener("input", fit);
+  });
+}
+
+fitCommentTextareas(newBody);
+fitCommentTextareas(activeBody);
+updateCommentHighlightState();
 
   // ===== Render Sent =====
   sentBody.innerHTML = sentRows.map(r => `
@@ -2023,44 +2193,143 @@ activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").fo
   checkAllPriority.checked = false;
 
   updateButtons();
+
+if (__pendingSaveCount > 0 || __failedSaves.length > 0){
+  updateSavingPill();
+} else {
   setStatus(`Loaded ${rows.length} lines`, "ok");
 }
-
-
+}
     
     async function refresh(showOverlay = true){
-      if (showOverlay && isBusy()) return;
-      const doWork = async () => {
-        try {
-          setStatus("Loading…", "warn");
-          const data = await apiCall("list");
-          if (!data.ok) throw new Error(data.error || "API error");
-          rows = data.rows || [];
-          render();
-          // Keep both direction badges up to date (background)
-          refreshBothTabBadges();
-        } catch (e) {
-          setStatus("Error loading", "err");
-          showToast(String(e.message || e));
-        }
-      };
+  if (showOverlay && isBusy()) return;
 
-      if (showOverlay){
-        await withLoading("Loading transfers…", doWork, "Fetching the latest lines…");
-      } else {
-        await doWork();
-      }
+  const doWork = async () => {
+    try {
+      setStatus("Loading…", "warn");
+
+      const data = await apiCall("list");
+      if (!data.ok) throw new Error(data.error || "API error");
+
+      rows = data.rows || [];
+      render();
+
+      // Restart countdown after any successful page data refresh
+      resetAutoRefreshCountdown();
+
+      // Keep both direction badges up to date in the background
+      refreshBothTabBadges();
+
+    } catch (e) {
+      setStatus("Error loading", "err");
+      showToast(String(e.message || e));
     }
+  };
+
+  if (showOverlay){
+    await withLoading("Loading transfers…", doWork, "Fetching the latest lines…");
+  } else {
+    await doWork();
+  }
+}
 
     async function patchRow(rowId, patch){
-      const res = await apiCall("update", { rowId, patch });
-      if (!res.ok) throw new Error(res.error || "Update failed");
+  const res = await apiCall("update", { rowId, patch });
+  if (!res.ok) throw new Error(res.error || "Update failed");
+}
+
+async function bulkPatch(rowIds, patch){
+  const res = await apiCall("bulkUpdate", { rowIds, patch });
+  if (!res.ok) throw new Error(res.error || "Bulk update failed");
+}
+
+/* ====== FAST SCREEN UPDATE + BACKGROUND SAVE ====== */
+let __pendingSaveCount = 0;
+let __failedSaves = [];
+
+function updateLocalRows(rowIds, patch){
+  const idSet = new Set(rowIds.map(Number));
+
+  rows = rows.map(r => {
+    if (!idSet.has(Number(r.rowId))) return r;
+    return { ...r, ...patch };
+  });
+
+  render();
+}
+
+function updateRetryButton(){
+  if (!btnRetrySaves) return;
+
+  if (__failedSaves.length > 0){
+    btnRetrySaves.classList.remove("hidden");
+    btnRetrySaves.textContent = `Retry (${__failedSaves.length})`;
+  } else {
+    btnRetrySaves.classList.add("hidden");
+  }
+}
+
+function updateSavingPill(){
+  updateRetryButton();
+
+  if (__failedSaves.length > 0){
+    setStatus(`${__failedSaves.length} save issue(s)`, "err");
+    return;
+  }
+
+  if (__pendingSaveCount > 0){
+    setStatus(`Saving ${__pendingSaveCount} change(s)…`, "warn");
+    return;
+  }
+
+  setStatus("Saved", "ok");
+}
+
+async function savePatchInBackground(rowIds, patch, successMsg = "Saved"){
+  __pendingSaveCount++;
+  updateSavingPill();
+
+  try{
+    const cleanIds = rowIds.map(Number).filter(n => !Number.isNaN(n));
+
+    if (!cleanIds.length){
+      throw new Error("No valid row IDs found for save.");
     }
 
-    async function bulkPatch(rowIds, patch){
-      const res = await apiCall("bulkUpdate", { rowIds, patch });
-      if (!res.ok) throw new Error(res.error || "Bulk update failed");
+    if (cleanIds.length === 1){
+      await patchRow(cleanIds[0], patch);
+    } else {
+      await bulkPatch(cleanIds, patch);
     }
+
+    showToast(successMsg);
+    refreshBothTabBadges();
+
+  } catch(e){
+    __failedSaves.push({
+      rowIds: [...rowIds],
+      patch: { ...patch },
+      error: String(e.message || e),
+      time: new Date().toISOString()
+    });
+
+    showToast("Save failed — change is still shown on screen. Use Retry before refreshing.");
+    console.error("Background save failed:", e, { rowIds, patch });
+
+  } finally {
+    __pendingSaveCount = Math.max(0, __pendingSaveCount - 1);
+    updateSavingPill();
+  }
+}
+
+    /* ====== WARN BEFORE REFRESH/CLOSE IF SAVES PENDING ====== */
+window.addEventListener("beforeunload", (e) => {
+  if (__pendingSaveCount > 0 || __failedSaves.length > 0){
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
 
     // ====== INPUT NORMALISATION ======
     document.addEventListener("input", (ev) => {
@@ -2076,26 +2345,110 @@ activeBody.querySelectorAll("td[data-col='COMMENTS'] textarea.cell-textarea").fo
         input.value = input.value.toUpperCase();
         try { input.setSelectionRange(pos, pos); } catch(e){}
       }
+
+      if (col === "COMMENTS") {
+  syncCommentHighlight(input);
+}
     });
 
+
+    async function retryFailedSaves(){
+  if (!__failedSaves.length) return;
+
+  if (isBusy()) return;
+
+  const retryQueue = [...__failedSaves];
+  __failedSaves = [];
+
+  updateSavingPill();
+
+  showToast(`Retrying ${retryQueue.length} failed save(s)...`);
+
+  for (const item of retryQueue){
+
+    try{
+
+      if (item.rowIds.length === 1){
+        await patchRow(item.rowIds[0], item.patch);
+      } else {
+        await bulkPatch(item.rowIds, item.patch);
+      }
+
+    } catch(e){
+
+      __failedSaves.push({
+        ...item,
+        error: String(e.message || e),
+        retryTime: new Date().toISOString()
+      });
+
+    }
+  }
+
+  updateSavingPill();
+
+  if (__failedSaves.length){
+    showToast(`${__failedSaves.length} save(s) still failing`);
+  } else {
+    showToast("All failed saves successfully retried");
+    refreshBothTabBadges();
+  }
+}
 
     // ====== EVENTS ======
-    tabPKY.addEventListener("click", () => {
-      if (isBusy()) return;
-      currentSheet = "PKY_TO_DTN";
-      tabPKY.classList.add("active");
-      tabDTN.classList.remove("active");
-      refresh(true);
-    });
-    tabDTN.addEventListener("click", () => {
-      if (isBusy()) return;
-      currentSheet = "DTN_TO_PKY";
-      tabDTN.classList.add("active");
-      tabPKY.classList.remove("active");
-      refresh(true);
-    });
 
-    btnRefresh.addEventListener("click", () => resetToTodayAndRefresh(true));
+    btnRetrySaves.addEventListener("click", async () => {
+  await retryFailedSaves();
+});
+    
+    tabPKY.addEventListener("click", () => {
+  if (isBusy()) return;
+
+  if (__pendingSaveCount > 0){
+    showToast("Please wait — changes are still saving.");
+    return;
+  }
+
+  if (__failedSaves.length > 0){
+    if (!confirm("There are failed saves on screen. Switching tabs may lose visibility of unsaved changes. Continue?")) return;
+  }
+
+  currentSheet = "PKY_TO_DTN";
+  tabPKY.classList.add("active");
+  tabDTN.classList.remove("active");
+  refresh(true);
+});
+
+tabDTN.addEventListener("click", () => {
+  if (isBusy()) return;
+
+  if (__pendingSaveCount > 0){
+    showToast("Please wait — changes are still saving.");
+    return;
+  }
+
+  if (__failedSaves.length > 0){
+    if (!confirm("There are failed saves on screen. Switching tabs may lose visibility of unsaved changes. Continue?")) return;
+  }
+
+  currentSheet = "DTN_TO_PKY";
+  tabDTN.classList.add("active");
+  tabPKY.classList.remove("active");
+  refresh(true);
+});
+
+   btnRefresh.addEventListener("click", () => {
+  if (__pendingSaveCount > 0){
+    showToast("Please wait — changes are still saving.");
+    return;
+  }
+
+  if (__failedSaves.length > 0){
+    if (!confirm("There are failed saves on screen. Refreshing may lose visibility of unsaved changes. Continue?")) return;
+  }
+
+  resetToTodayAndRefresh(true);
+});
 
     // ====== PAGE SEARCH EVENTS ======
 productSearch.addEventListener("input", () => {
@@ -2189,40 +2542,23 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
       // PRODUCT still required, but WH/BIN now allowed to be blank
       if (col === "PRODUCT" && value === "") { showToast("Product cannot be blank"); await refresh(true); return; }
 
-      await withLoading("Saving changes…", async () => {
-        try{
-          setStatus("Saving…", "warn");
-          await patchRow(rowId, { [col]: value });
-          showToast("Saved");
-          await refresh(false);
-        } catch(e){
-          setStatus("Save failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Updating and refreshing the page…");
+      updateLocalRows([rowId], { [col]: value });
+      savePatchInBackground([rowId], { [col]: value }, "Saved");
     });
 
     // ====== PRIORITY ACTIONS ======
-    async function togglePriorityForSelected(which){
-      const ids = selectedRowIds(`input[data-rowcheck='${which}']:checked`);
-      if (!ids.length) return;
+  async function togglePriorityForSelected(which){
+  const ids = selectedRowIds(`input[data-rowcheck='${which}']:checked`);
+  if (!ids.length) return;
 
-      const selected = selectedRowsByIds(ids);
-      const allPriority = selected.length > 0 && selected.every(r => isYes(r.PRIORITY));
-      const newValue = allPriority ? "" : "YES";
+  const selected = selectedRowsByIds(ids);
+  const allPriority = selected.length > 0 && selected.every(r => isYes(r.PRIORITY));
+  const newValue = allPriority ? "" : "YES";
+  const patch = { PRIORITY: newValue };
 
-      await withLoading(allPriority ? "Removing Priority…" : "Setting Priority…", async () => {
-        try{
-          setStatus("Saving…", "warn");
-          await bulkPatch(ids, { PRIORITY: newValue });
-          showToast(allPriority ? "Priority removed" : "Marked as Priority");
-          await refresh(false);
-        } catch(e){
-          setStatus("Priority update failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Updating selected lines…");
-    }
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, allPriority ? "Priority removed" : "Marked as Priority");
+}
 
     btnPriorityNew.addEventListener("click", async () => {
       if (isBusy()) return;
@@ -2236,22 +2572,16 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
 
     // ====== NEW ACTIONS ======
     btnAcceptNew.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='new']:checked");
-      if (!ids.length) return;
+  if (isBusy()) return;
 
-      await withLoading("Accepting request(s)…", async () => {
-        try{
-          setStatus("Accepting…", "warn");
-          await bulkPatch(ids, { STATUS: "ACTIVE" });
-          showToast("Accepted");
-          await refresh(false);
-        } catch(e){
-          setStatus("Accept failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Moving selected lines to Active Transfers…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='new']:checked");
+  if (!ids.length) return;
+
+  const patch = { STATUS: "ACTIVE" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Accepted");
+});
 
     btnPrintNew.addEventListener("click", () => {
       const ids = selectedRowIds("input[data-rowcheck='new']:checked");
@@ -2265,25 +2595,18 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
       printLines("Outstanding Priority Transfers", selectedRowsByIds(ids));
     });
 
-
     btnCancelNew.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='new']:checked");
-      if (!ids.length) return;
-      if (!confirm("Cancel the selected request(s)?")) return;
+  if (isBusy()) return;
 
-      await withLoading("Cancelling request(s)…", async () => {
-        try{
-          setStatus("Cancelling…", "warn");
-          await bulkPatch(ids, { STATUS: "CANCELLED" });
-          showToast("Cancelled");
-          await refresh(false);
-        } catch(e){
-          setStatus("Cancel failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Updating and refreshing the page…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='new']:checked");
+  if (!ids.length) return;
+  if (!confirm("Cancel the selected request(s)?")) return;
+
+  const patch = { STATUS: "CANCELLED" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Cancelled");
+});
 
     // ====== ACTIVE ACTIONS ======
     btnPrintActive.addEventListener("click", () => {
@@ -2293,59 +2616,41 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
     });
 
     btnBulkDropped.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='active']:checked");
-      if (!ids.length) return;
+  if (isBusy()) return;
 
-      await withLoading("Marking Dropped…", async () => {
-        try{
-          setStatus("Saving…", "warn");
-          await bulkPatch(ids, { DROPPED: "YES" });
-          showToast("Marked Dropped");
-          await refresh(false);
-        } catch(e){
-          setStatus("Bulk save failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Setting DROPPED = YES for selected lines…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='active']:checked");
+  if (!ids.length) return;
+
+  const patch = { DROPPED: "YES" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Marked Dropped");
+});
 
     btnBulkSent.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='active']:checked");
-      if (!ids.length) return;
+  if (isBusy()) return;
 
-      await withLoading("Marking Sent…", async () => {
-        try{
-          setStatus("Saving…", "warn");
-          await bulkPatch(ids, { SENT: "YES" });
-          showToast("Marked Sent");
-          await refresh(false);
-        } catch(e){
-          setStatus("Bulk save failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Setting SENT = YES for selected lines…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='active']:checked");
+  if (!ids.length) return;
+
+  const patch = { SENT: "YES" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Marked Sent");
+});
 
     btnCancelActive.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='active']:checked");
-      if (!ids.length) return;
-      if (!confirm("Cancel the selected active transfer(s)?")) return;
+  if (isBusy()) return;
 
-      await withLoading("Cancelling transfer(s)…", async () => {
-        try{
-          setStatus("Cancelling…", "warn");
-          await bulkPatch(ids, { STATUS: "CANCELLED" });
-          showToast("Cancelled");
-          await refresh(false);
-        } catch(e){
-          setStatus("Cancel failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Updating and refreshing the page…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='active']:checked");
+  if (!ids.length) return;
+  if (!confirm("Cancel the selected active transfer(s)?")) return;
+
+  const patch = { STATUS: "CANCELLED" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Cancelled");
+});
 
     // ====== SENT ACTIONS ======
     btnPrintSent.addEventListener("click", () => {
@@ -2355,23 +2660,17 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
     });
 
     btnReverseSent.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='sent']:checked");
-      if (!ids.length) return;
-      if (!confirm("Reverse 'Sent' for the selected line(s)? They will return to Active Transfers.")) return;
+  if (isBusy()) return;
 
-      await withLoading("Reversing Sent…", async () => {
-        try{
-          setStatus("Reversing…", "warn");
-          await bulkPatch(ids, { SENT: "", STATUS: "ACTIVE" });
-          showToast("Reversed Sent");
-          await refresh(false);
-        } catch(e){
-          setStatus("Reverse failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Moving selected lines back to Active Transfers…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='sent']:checked");
+  if (!ids.length) return;
+  if (!confirm("Reverse 'Sent' for the selected line(s)? They will return to Active Transfers.")) return;
+
+  const patch = { SENT: "", STATUS: "ACTIVE" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Reversed Sent");
+});
 
     btnToggleSent.addEventListener("click", () => {
       const hidden = sentWrap.style.display === "none";
@@ -2389,23 +2688,17 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
 
     // ====== CANCELLED ACTIONS ======
     btnReverseCancel.addEventListener("click", async () => {
-      if (isBusy()) return;
-      const ids = selectedRowIds("input[data-rowcheck='cancel']:checked");
-      if (!ids.length) return;
-      if (!confirm("Reverse cancellation for the selected line(s)? They will return to Active Transfers.")) return;
+  if (isBusy()) return;
 
-      await withLoading("Reversing cancellation…", async () => {
-        try{
-          setStatus("Reversing…", "warn");
-          await bulkPatch(ids, { STATUS: "ACTIVE" });
-          showToast("Reversed Cancellation");
-          await refresh(false);
-        } catch(e){
-          setStatus("Reverse failed", "err");
-          showToast(String(e.message || e));
-        }
-      }, "Returning selected lines to Active Transfers…");
-    });
+  const ids = selectedRowIds("input[data-rowcheck='cancel']:checked");
+  if (!ids.length) return;
+  if (!confirm("Reverse cancellation for the selected line(s)? They will return to Active Transfers.")) return;
+
+  const patch = { STATUS: "ACTIVE" };
+
+  updateLocalRows(ids, patch);
+  savePatchInBackground(ids, patch, "Reversed Cancellation");
+});
 
     // ====== PASTE UPLOAD (unchanged rules: requires PRODUCT, WH, BIN) ======
     btnPasteUpload.addEventListener("click", () => {
@@ -2728,19 +3021,60 @@ window.addEventListener("resize", () => hideBarcodeOverlay());
 
             
 
+   
     // ====== AUTO REFRESH ======
-    setInterval(() => {
+setInterval(() => {
+
   if (isBusy()) return;
+  if (__pendingSaveCount > 0) return;
+  if (__failedSaves.length > 0) return;
+
+  const activeEl = document.activeElement;
+
+  if (
+    activeEl &&
+    (
+      activeEl.tagName === "INPUT" ||
+      activeEl.tagName === "TEXTAREA" ||
+      activeEl.tagName === "SELECT"
+    )
+  ){
+    return;
+  }
+
   resetToTodayAndRefresh(false);
+
 }, AUTO_REFRESH_MS);
+
+
+// ====== DYNAMIC STICKY OFFSETS ======
+function updateStickyOffsets(){
+  const mainHeader = document.querySelector("body > header");
+  const headerH = mainHeader ? Math.ceil(mainHeader.getBoundingClientRect().height) : 72;
+
+  document.documentElement.style.setProperty("--appHeaderH", `${headerH}px`);
+
+  const cardHeads = [...document.querySelectorAll(".card:not(.search-card) > .cardhead")];
+  const maxCardHeadH = cardHeads.length
+    ? Math.ceil(Math.max(...cardHeads.map(h => h.getBoundingClientRect().height))) + 12
+    : 74;
+
+  document.documentElement.style.setProperty("--tableActionHeaderH", `${maxCardHeadH}px`);
+}
+
+window.addEventListener("resize", updateStickyOffsets);
+window.addEventListener("load", updateStickyOffsets);
 
     
     // ====== START ======
-    (function(){
-      currentDate = todayISO();
-      datePicker.value = currentDate;
-      refresh(true);
-    })();
+    
+   (function(){
+  updateStickyOffsets();
+  currentDate = todayISO();
+  datePicker.value = currentDate;
+  refresh(true);
+})();
+    
   </script>
 </body>
 </html>
