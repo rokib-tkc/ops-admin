@@ -478,22 +478,43 @@ tr.status-cancel:hover td{
     0 0 0 #111827;
 }
 
-/* Only highlight when text exists */
-.cell-textarea.has-text{
-  background:
-    linear-gradient(
-      transparent 32%,
-      rgba(255, 235, 59, 0.75) 32%,
-      rgba(255, 235, 59, 0.75) 88%,
-      transparent 88%
-    );
-}
-
     .cell-textarea:focus{
       outline:none;
       border-color:var(--accent);
       box-shadow:0 0 0 3px rgba(37,99,235,0.12);
     }
+
+    .comment-wrap{
+  position:relative;
+}
+
+.comment-highlight{
+  position:absolute;
+  inset:1px;
+  padding:7px 8px;
+  border:1px solid transparent;
+  border-radius:8px;
+  font-size:13px;
+  line-height:20px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  pointer-events:none;
+  color:transparent;
+  overflow:hidden;
+  z-index:1;
+}
+
+.comment-highlight span{
+  background: rgba(250,204,21,0.65);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.comment-wrap .cell-textarea{
+  position:relative;
+  z-index:2;
+  background:transparent !important;
+}
 
     .cell-input:focus, .cell-select:focus{
       outline:none;
@@ -1834,16 +1855,38 @@ async function apiCallForSheet(sheet, action, payload = {}){
     }
 
     
-    function buildTextarea(value){
-      return `<textarea class="cell-textarea" rows="1">${escapeHtml(value ?? "")}</textarea>`;
-    }
+   function buildCommentHighlight(value){
+  const txt = String(value ?? "");
+  if (!txt.trim()) return "";
+  return `<span>${escapeHtml(txt)}</span>`;
+}
+
+function buildTextarea(value){
+  return `
+    <div class="comment-wrap">
+      <div class="comment-highlight" aria-hidden="true">${buildCommentHighlight(value)}</div>
+      <textarea class="cell-textarea" rows="1">${escapeHtml(value ?? "")}</textarea>
+    </div>
+  `;
+}
 
     
     /* ===== COMMENTS highlight state ===== */
+
+
+    function syncCommentHighlight(ta){
+  const wrap = ta.closest(".comment-wrap");
+  if (!wrap) return;
+
+  const highlight = wrap.querySelector(".comment-highlight");
+  if (!highlight) return;
+
+  const txt = ta.value || "";
+  highlight.innerHTML = txt.trim() ? `<span>${escapeHtml(txt)}</span>` : "";
+}
+
 function updateCommentHighlightState(){
-  document.querySelectorAll(".cell-textarea").forEach(ta => {
-    ta.classList.toggle("has-text", !!ta.value.trim());
-  });
+  document.querySelectorAll(".comment-wrap textarea.cell-textarea").forEach(syncCommentHighlight);
 }
 
     function buildPrioFlag(priorityYes){
@@ -2302,6 +2345,10 @@ window.addEventListener("beforeunload", (e) => {
         input.value = input.value.toUpperCase();
         try { input.setSelectionRange(pos, pos); } catch(e){}
       }
+
+      if (col === "COMMENTS") {
+  syncCommentHighlight(input);
+}
     });
 
 
