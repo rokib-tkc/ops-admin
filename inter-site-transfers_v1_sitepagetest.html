@@ -1628,20 +1628,22 @@ async function apiCallForSheet(sheet, action, payload = {}){
   return await jsonp(buildApiUrlForSheet(sheet, action, payload));
 }
 
-    async function refreshBothTabBadges(){
-  // If you're already loading, skip to avoid piling requests
-  if (isBusy()) return;
-
+   async function refreshBothTabBadges(){
   try{
     const [pkyRes, dtnRes] = await Promise.all([
       apiCallForSheet("PKY_TO_DTN", "list"),
       apiCallForSheet("DTN_TO_PKY", "list"),
     ]);
 
-    if (pkyRes && pkyRes.ok) setBadge(badgePKY, countOutstandingFromRows(pkyRes.rows || []));
-    if (dtnRes && dtnRes.ok) setBadge(badgeDTN, countOutstandingFromRows(dtnRes.rows || []));
+    if (pkyRes && pkyRes.ok){
+      setBadge(badgePKY, countOutstandingFromRows(pkyRes.rows || []));
+    }
+
+    if (dtnRes && dtnRes.ok){
+      setBadge(badgeDTN, countOutstandingFromRows(dtnRes.rows || []));
+    }
   } catch(e){
-    // silent fail: badge isn't critical enough to toast the user
+    console.warn("Badge refresh failed:", e);
   }
 }
 
