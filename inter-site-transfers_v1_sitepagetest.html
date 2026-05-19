@@ -1546,6 +1546,25 @@ function scheduleHideBarcodeOverlay(delayMs = 120){
       return (v || "").toString().trim().toUpperCase() === "YES";
     }
 
+    function markedSentStamp(){
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `[MARKED SENT @ ${hh}:${mm}]`;
+}
+
+function appendMarkedSentComment(existingComment){
+  const current = (existingComment || "").toString().trim();
+  const stamp = markedSentStamp();
+
+  if (!current) return stamp;
+
+  // Prevent duplicate stamp if the same action gets triggered twice
+  if (current.includes("[MARKED SENT @")) return current;
+
+  return `${current} ${stamp}`;
+}
+
     function setBadge(el, count){
   const n = Number(count || 0);
   if (!el) return;
@@ -2542,8 +2561,15 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
       // PRODUCT still required, but WH/BIN now allowed to be blank
       if (col === "PRODUCT" && value === "") { showToast("Product cannot be blank"); await refresh(true); return; }
 
-      updateLocalRows([rowId], { [col]: value });
-      savePatchInBackground([rowId], { [col]: value }, "Saved");
+      let patch = { [col]: value };
+
+if (col === "SENT" && value === "YES"){
+  const existingRow = rows.find(r => Number(r.rowId) === Number(rowId));
+  patch.COMMENTS = appendMarkedSentComment(existingRow ? existingRow.COMMENTS : "");
+}
+
+updateLocalRows([rowId], patch);
+savePatchInBackground([rowId], patch, "Saved");
     });
 
     // ====== PRIORITY ACTIONS ======
@@ -2633,10 +2659,18 @@ if (col === "TYPE" && ev.target.tagName === "SELECT"){
   const ids = selectedRowIds("input[data-rowcheck='active']:checked");
   if (!ids.length) return;
 
-  const patch = { SENT: "YES" };
+  const selected = selectedRowsByIds(ids);
 
-  updateLocalRows(ids, patch);
-  savePatchInBackground(ids, patch, "Marked Sent");
+selected.forEach(r => {
+  const patch = {
+    SENT: "YES",
+    COMMENTS: appendMarkedSentComment(r.COMMENTS)
+  };
+
+  updateLocalRows([r.rowId], patch);
+  savePatchInBackground([r.rowId], patch, "Marked Sent");
+});
+      
 });
 
     btnCancelActive.addEventListener("click", async () => {
