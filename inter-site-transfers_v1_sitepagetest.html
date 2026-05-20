@@ -828,6 +828,19 @@ tr.status-cancel:hover td{
   <main class="wrap">
     <div class="grid">
 
+<!-- Page Context Header -->
+<section id="pageContextHeader" style="padding:2px 2px 0 2px;">
+  <h2 id="pageContextTitle" style="
+    margin:0 0 8px 0;
+    font-size:28px;
+    font-weight:800;
+    color:#111827;
+    letter-spacing:-0.3px;
+  ">
+    PKY TO DTN, Wednesday 20/05/2026
+  </h2>
+</section>
+
 <!-- Product Search (filters page to one table + matching lines only) -->
 <section class="card search-card" id="searchCard">
   <div class="searchbar">
@@ -1348,6 +1361,32 @@ const sentCard = document.getElementById("sentCard");
       const dd = String(d.getDate()).padStart(2,"0");
       return `${yyyy}-${mm}-${dd}`;
     }
+
+    function formatDisplayDate(dateStr){
+  if (!dateStr) return "";
+
+  const d = new Date(dateStr + "T00:00:00");
+
+  const weekday = d.toLocaleDateString("en-GB", { weekday:"long" });
+
+  const dd = String(d.getDate()).padStart(2,"0");
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const yyyy = d.getFullYear();
+
+  return `${weekday} ${dd}/${mm}/${yyyy}`;
+}
+
+function updatePageContextHeader(){
+  const el = document.getElementById("pageContextTitle");
+  if (!el) return;
+
+  const dir =
+    currentSheet === "PKY_TO_DTN"
+      ? "PKY TO DTN"
+      : "DTN TO PKY";
+
+  el.textContent = `${dir}, ${formatDisplayDate(currentDate)}`;
+}
 
     function resetToTodayAndRefresh(showOverlay = true){
     const t = todayISO();
@@ -2260,6 +2299,8 @@ if (__pendingSaveCount > 0 || __failedSaves.length > 0){
       if (!data.ok) throw new Error(data.error || "API error");
 
       rows = data.rows || [];
+
+      updatePageContextHeader();
       render();
 
       // Restart countdown after any successful page data refresh
