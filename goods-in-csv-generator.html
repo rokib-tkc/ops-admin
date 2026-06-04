@@ -2,1993 +2,542 @@
 <html lang="en-GB">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Goods In CSV Generator</title>
 
-  <!-- SheetJS (Excel) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
   <style>
     :root{
-      --bg:#f5f6f8;
-      --card:#ffffff;
-      --text:#111827;
-      --muted:#6b7280;
-      --border:#e5e7eb;
-
-      --accent:#2563eb;
-      --accent2:#1d4ed8;
-
-      --ok:#16a34a;
-      --warn:#f59e0b;
-      --bad:#ef4444;
-
-      --shadow:0 10px 30px rgba(0,0,0,.08);
-      --radius:16px;
-      --focus: 0 0 0 4px rgba(147,197,253,.35);
+      --bg:#f4f7fb;
+      --panel:#ffffff;
+      --ink:#172033;
+      --muted:#667085;
+      --line:#d9e1ec;
+      --soft:#eef4ff;
+      --soft2:#f8fafc;
+      --blue:#175cd3;
+      --blue2:#0b4fb3;
+      --green:#067647;
+      --red:#b42318;
+      --amber:#b54708;
+      --shadow:0 16px 40px rgba(16,24,40,.08);
+      --radius:18px;
+      --focus:0 0 0 4px rgba(23,92,211,.14);
     }
 
-    *{ box-sizing:border-box; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
-    body{ margin:0; background:var(--bg); color:var(--text); }
-
-    .wrap{ max-width: 1200px; margin: 24px auto; padding: 0 16px 28px; }
-    header{
-      display:flex; gap:14px; align-items:flex-start; justify-content:space-between;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
-    }
-    .brand{ display:flex; flex-direction:column; gap:6px; }
-    .brand h1{ margin:0; font-size: 20px; }
-    .brand p{ margin:0; color:var(--muted); font-size: 13px; line-height: 1.35; }
-
-    .pill{
-      font-size: 12px; color: var(--muted);
-      border:1px solid var(--border);
-      padding: 6px 10px;
-      border-radius: 999px;
-      background:#fafafa;
-      white-space: nowrap;
-    }
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 360px 1fr;
-      gap: 14px;
-    }
-    @media (max-width: 980px){
-      .grid{ grid-template-columns: 1fr; }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#eff6ff 0%,var(--bg) 320px);
+      color:var(--ink);
+      font-family:Inter,Segoe UI,Arial,sans-serif;
     }
 
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px;
-    }
+    .wrap{max-width:1450px;margin:0 auto;padding:26px}
+    .card{background:var(--panel);border:1px solid rgba(217,225,236,.9);border-radius:var(--radius);box-shadow:var(--shadow)}
 
-    .sectionTitle{
-      display:flex; align-items:center; justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-    }
-    .sectionTitle h2{ margin:0; font-size: 15px; }
+    .hero{display:flex;flex-direction:column;gap:18px;align-items:stretch;margin-bottom:18px}
+    .intro{padding:26px}
+    h1{margin:0 0 8px;font-size:30px;letter-spacing:-.02em}
+    .intro p{margin:0;color:var(--muted);line-height:1.5;max-width:920px}
 
-    .supplierList{ display:flex; flex-direction:column; gap:10px; }
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}
+    .step{background:var(--soft2);border:1px solid var(--line);border-radius:14px;padding:13px}
+    .step b{display:block;margin-bottom:3px;font-size:14px}
+    .step span{color:var(--muted);font-size:13px;line-height:1.35}
 
-    .btn{
-      appearance:none;
-      border:1px solid var(--border);
+    .setup{padding:18px;display:grid;grid-template-columns:1fr;gap:14px}
+    .supplierGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .supplierBtn{
+      border:1px solid var(--line);
+      border-radius:14px;
       background:#fff;
-      border-radius: 12px;
-      padding: 12px 12px;
+      padding:13px;
+      cursor:pointer;
       text-align:left;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
+      color:#344054;
+      transition:.12s ease;
+      min-height:74px;
+    }
+    .supplierBtn:hover{transform:translateY(-1px);border-color:#9db7e8;background:#f8fbff}
+    .supplierBtn.active{background:#102a56;color:#fff;border-color:#102a56}
+    .supplierBtn strong{display:block;font-size:14px;margin-bottom:4px}
+    .supplierBtn span{display:block;font-size:12px;line-height:1.3;color:inherit;opacity:.78}
+    .supplierBtn.manual{background:#fff8ed;border-color:#fed7aa;color:#7c2d12}
+    .supplierBtn.manual.active{background:#b54708;color:#fff;border-color:#b54708}
+
+    .form{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    label{display:block;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+    input[type="text"],input[type="number"],input[type="search"]{
+      width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;background:#fff;color:var(--ink);outline:none;
+    }
+    input:focus{border-color:#84adff;box-shadow:var(--focus)}
+
+    .drop{
+      border:2px dashed #9db7e8;
+      background:#f8fbff;
+      border-radius:16px;
+      padding:14px 18px;
+      text-align:center;
+      transition:.15s ease;
       cursor:pointer;
-      transition: transform .05s ease, border-color .15s ease, background .15s ease, opacity .15s ease;
-      user-select:none;
-    }
-    .btn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
-    .btn:active{ transform: translateY(1px); }
-    .btn.primary{
-      background: linear-gradient(180deg, var(--accent), var(--accent2));
-      border-color: transparent;
-      color:#fff;
-    }
-    .btn.primary:hover{ filter: brightness(1.02); }
-
-    .btn:disabled{
-      opacity:.5;
-      cursor:not-allowed;
-      transform:none !important;
-    }
-
-    .btn .name{ font-weight: 800; }
-    .btn .meta{ font-size:12px; opacity:.85; line-height: 1.25; }
-
-    .form{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
-      margin-top: 8px;
-    }
-    @media (max-width: 760px){
-      .form{ grid-template-columns: 1fr; }
-    }
-
-    label{ display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-    input[type="text"], input[type="number"]{
-      width:100%;
-      padding: 10px 10px;
-      border-radius: 12px;
-      border:1px solid var(--border);
-      outline:none;
-      background:#fff;
-      font-size: 14px;
-    }
-    input[type="text"]:focus, input[type="number"]:focus{
-      border-color:#93c5fd;
-      box-shadow: var(--focus);
-    }
-
-    .twoCol{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 10px;
-      align-items: end;
-    }
-    @media (max-width: 760px){
-      .twoCol{ grid-template-columns: 1fr; }
-    }
-
-    .dropZone{
-      border:2px dashed #cbd5e1;
-      border-radius: 14px;
-      background: #fbfbfd;
-      padding: 14px;
+      min-height:86px;
       display:flex;
+      flex-direction:column;
+      justify-content:center;
       align-items:center;
-      justify-content:space-between;
-      gap: 12px;
-      min-height: 74px;
-      transition: border-color .15s ease, background .15s ease, transform .05s ease;
+      gap:8px;
     }
-    .dropZone strong{ display:block; }
-    .dropZone .dzText{
-      display:flex; flex-direction:column; gap:4px;
-      min-width: 0;
-    }
-    .dropZone .dzSub{
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.25;
-    }
-    .dropZone .dzFile{
-      color: #374151;
-      font-size: 12px;
-      margin-top: 4px;
-      word-break: break-word;
-    }
-    .dropZone.isDrag{
-      border-color:#60a5fa;
-      background: rgba(147,197,253,.18);
-    }
+    .drop:hover,.drop.drag{border-color:var(--blue);background:#eef6ff}
+    .drop.disabled{opacity:.55;cursor:not-allowed;background:#f5f5f5;border-color:#d0d5dd}
+    .drop strong{font-size:16px}.drop span{color:var(--muted);font-size:13px}
+    input[type=file]{display:none}.fileName{font-size:13px;color:var(--muted);word-break:break-word;min-height:18px}
 
-    .fileHidden{ display:none; }
-    .fileBtn{
-      border: 1px solid var(--border);
-      background: #fff;
-      border-radius: 12px;
-      padding: 10px 12px;
-      cursor:pointer;
-      white-space: nowrap;
-    }
-    .fileBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
+    .pieffeBox{display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:12px}
+    .pieffeBox.show{display:block}
 
-    .actions{
-      display:flex; gap:10px; flex-wrap:wrap;
-      margin-top: 12px;
-      align-items:center;
-    }
-    .actions .btn{ width:auto; padding: 11px 12px; text-align:center; }
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:14px 0}
+    .leftTools,.rightTools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    button{border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;background:#e6eefc;color:#123a75;transition:.12s ease;font-size:14px}
+    button:hover{transform:translateY(-1px);filter:brightness(.98)}
+    button.primary{background:var(--blue);color:#fff}button.primary:hover{background:var(--blue2)}
+    button.good{background:#dcfae6;color:#05603a}button.warn{background:#fff6e8;color:#93370d}button.danger{background:#fee4e2;color:#912018}
+    button:disabled{opacity:.45;cursor:not-allowed;transform:none}
 
-    .statusRow{
-      display:flex; gap:10px; align-items:center; justify-content:space-between;
-      margin-top: 12px;
-      padding: 12px;
-      border:1px dashed var(--border);
-      border-radius: 12px;
-      background:#fbfbfb;
-    }
-    .statusText{ display:flex; flex-direction:column; gap:4px; }
-    .statusText .small{ font-size: 12px; color: var(--muted); line-height: 1.35; }
+    .message{margin:12px 0;padding:12px 14px;border-radius:14px;background:#eff8ff;border:1px solid #b2ddff;color:#184e77;display:none}.message.show{display:block}.message.err{background:#fff1f0;border-color:#fecdca;color:#912018}.message.ok{background:#ecfdf3;border-color:#abefc6;color:#05603a}
 
-    .badge{
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      border:1px solid var(--border);
-      background:#fff;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-    .badge.ok{ border-color: rgba(22,163,74,.25); color: var(--ok); background: rgba(22,163,74,.07); }
-    .badge.warn{ border-color: rgba(245,158,11,.25); color: var(--warn); background: rgba(245,158,11,.08); }
-    .badge.bad{ border-color: rgba(239,68,68,.25); color: var(--bad); background: rgba(239,68,68,.08); }
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+    .stat{padding:16px}.stat label{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800}.stat div{font-size:28px;font-weight:850;margin-top:6px}.stat small{color:var(--muted)}
 
-    .summary{
-      margin-top: 12px;
-      display:grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-    }
-    @media (max-width: 980px){
-      .summary{ grid-template-columns: repeat(2, 1fr); }
-    }
-    .kpi{
-      border:1px solid var(--border);
-      background:#fff;
-      border-radius: 14px;
-      padding: 12px;
-    }
-    .kpi .k{ font-size: 12px; color: var(--muted); }
-    .kpi .v{ font-size: 22px; font-weight: 900; margin-top: 4px; }
+    .review{overflow:hidden}.reviewHead{display:flex;gap:12px;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--line);background:#fff}.reviewHead h2{margin:0;font-size:20px}.reviewHead p{margin:4px 0 0;color:var(--muted);font-size:13px}.search{display:flex;gap:10px;align-items:center}.search input{width:340px;max-width:48vw}
+    .tableWrap{max-height:none;overflow:visible;background:#fff}
 
-    table{
-      width:100%;
-      border-collapse: collapse;
-      margin-top: 12px;
-      overflow:hidden;
-      border-radius: 14px;
-      border:1px solid var(--border);
-      background:#fff;
-    }
-    thead th{
-      background:#f3f4f6;
-      text-align:left;
-      font-size: 12px;
-      color:#374151;
-      padding: 10px;
-      border-bottom:1px solid var(--border);
-    }
-    tbody td{
-      padding: 10px;
-      border-bottom:1px solid var(--border);
-      font-size: 13px;
-      vertical-align: top;
-    }
-    tbody tr:last-child td{ border-bottom:none; }
+    table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+    thead th{position:sticky;top:0;background:#f1f5fb;color:#344054;text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);z-index:3;white-space:nowrap}
+    tbody td{padding:8px 10px;border-bottom:1px solid #edf1f7;vertical-align:middle}
+    tbody tr:hover{background:#f8fbff}
+    .rowNo{width:58px;color:var(--muted)}.actionsCol{width:95px}.num{text-align:right}.centre{text-align:center}
+    input.cell{width:100%;border:1px solid transparent;border-radius:8px;padding:8px 9px;background:transparent;font:inherit;color:inherit}
+    input.cell:focus{outline:2px solid rgba(23,92,211,.18);border-color:#84adff;background:#fff}
+    .po{min-width:165px}.ref{min-width:160px}.part{min-width:180px}.qty{min-width:100px}.wh{min-width:90px}.bin{min-width:90px}
+    .rowBtn{padding:7px 9px;border-radius:10px;font-size:12px;background:#fff;border:1px solid var(--line);color:#344054}.rowBtn.danger{background:#fff1f0;color:#912018;border-color:#fecdca}
 
-    .hidden{ display:none !important; }
+    .emptyState{padding:34px;text-align:center;color:var(--muted);background:#fff}.emptyState strong{display:block;color:var(--ink);font-size:16px;margin-bottom:5px}
+    .hidden{display:none!important}.footerNote{color:var(--muted);font-size:12px;margin-top:10px;line-height:1.45}
 
-    .spinner{
-      width:16px; height:16px; border-radius:999px;
-      border: 2px solid rgba(0,0,0,.12);
-      border-top-color: rgba(0,0,0,.55);
-      animation: spin 0.85s linear infinite;
-    }
-    @keyframes spin{ to { transform: rotate(360deg); } }
-
-    .note{
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .historyTop{
-      display:flex; align-items:center; justify-content:space-between;
-      gap: 10px; flex-wrap: wrap;
-    }
-    .historyActions{ display:flex; gap: 10px; flex-wrap: wrap; }
-    .linkBtn{
-      appearance:none;
-      border: 1px solid var(--border);
-      background:#fff;
-      border-radius: 12px;
-      padding: 8px 10px;
-      cursor:pointer;
-      font-size: 12px;
-    }
-    .linkBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
-
-    .historyEmpty{
-      margin-top: 10px;
-      border:1px dashed var(--border);
-      border-radius: 12px;
-      background:#fbfbfb;
-      padding: 12px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .helpBox{
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: #fff;
-      padding: 12px;
-      margin-top: 10px;
-    }
-    .helpBox h3{ margin:0 0 6px 0; font-size: 13px; }
-    .helpBox ul{ margin:0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.45; }
-    .helpBox li{ margin: 4px 0; }
-
-    .dangerZone{
-      margin-top: 12px;
-      display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      align-items:center;
-    }
-    .danger{
-      border-color: rgba(239,68,68,.35) !important;
-      color: var(--bad);
-      background: rgba(239,68,68,.06);
-    }
-
-
-    /* Manual supplier button colour */
-.btn.manual{
-  background: rgba(245,158,11,.12);
-  border-color: rgba(245,158,11,.35);
-}
-.btn.manual:hover{ background: rgba(245,158,11,.16); border-color: rgba(245,158,11,.45); }
-
-/* Overlay editor */
-.overlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(17,24,39,.55);
-  display:flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: 9999;
-}
-.overlayCard{
-  width: min(1100px, 100%);
-  max-height: min(84vh, 900px);
-  background: #fff;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  display:flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.overlayTop{
-  padding: 14px 14px 10px;
-  border-bottom:1px solid var(--border);
-  display:flex;
-  align-items:flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.overlayTitle{ font-weight: 900; font-size: 14px; }
-.overlaySub{ color: var(--muted); font-size: 12px; margin-top: 4px; }
-.overlayActions{ display:flex; gap: 8px; flex-wrap: wrap; }
-
-.overlayBody{
-  padding: 12px 14px 14px;
-  overflow:auto;
-}
-
-.editTable{
-  width:100%;
-  border-collapse: collapse;
-  border:1px solid var(--border);
-  border-radius: 14px;
-  overflow:hidden;
-}
-.editTable thead th{
-  background:#f3f4f6;
-  text-align:left;
-  font-size: 12px;
-  color:#374151;
-  padding: 10px;
-  border-bottom:1px solid var(--border);
-}
-.editTable tbody td{
-  padding: 8px 10px;
-  border-bottom:1px solid var(--border);
-  font-size: 13px;
-  vertical-align: middle;
-  background:#fff;
-}
-.editTable tbody tr:last-child td{ border-bottom:none; }
-
-.rowGrip{
-  cursor: grab;
-  user-select:none;
-  font-size: 16px;
-  line-height: 1;
-  opacity: .65;
-}
-tr.dragging{ opacity: .4; }
-tr.dragOver{ outline: 2px dashed rgba(37,99,235,.45); outline-offset: -2px; }
-
-.cellInput{
-  width:100%;
-  padding: 8px 8px;
-  border-radius: 10px;
-  border:1px solid var(--border);
-  outline:none;
-  font-size: 13px;
-}
-.cellInput:focus{
-  border-color:#93c5fd;
-  box-shadow: var(--focus);
-}
-
-.rowBtns{
-  display:flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.rowBtn{
-  appearance:none;
-  border:1px solid var(--border);
-  background:#fff;
-  border-radius: 10px;
-  padding: 6px 8px;
-  cursor:pointer;
-  font-size: 12px;
-}
-.rowBtn:hover{ border-color:#cbd5e1; background:#fcfcfc; }
-.rowBtn.danger{
-  border-color: rgba(239,68,68,.35);
-  color: var(--bad);
-  background: rgba(239,68,68,.06);
-}
-    
+    @media(max-width:1100px){.supplierGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:980px){.steps,.stats,.form{grid-template-columns:1fr}.reviewHead{align-items:flex-start;flex-direction:column}.search input{width:100%;max-width:100%}.toolbar{align-items:stretch}.leftTools,.rightTools{width:100%}button{flex:1}.wrap{padding:14px}}
+    @media(max-width:680px){.supplierGrid{grid-template-columns:1fr}.drop{min-height:110px}}
   </style>
 </head>
-
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
+  <main class="wrap">
+    <section class="hero">
+      <div class="card intro">
         <h1>Goods In CSV Generator</h1>
-        <p>
-          Static web version • Download CSV files to the "Downloads" folder on your computer • produces CSV with columns: <span class="mono">PONum, Ref, Part, Qty, WH, Bin</span>
-        </p>
-      </div>
-      <div class="pill">CSV: <span class="mono">UTF-8 + BOM</span> (Excel-friendly)</div>
-    </header>
-
-    <div class="grid">
-      <!-- LEFT: Supplier + Help -->
-      <div class="card">
-        <div class="sectionTitle">
-          <h2>1) Choose supplier</h2>
-          <span class="pill" id="selectedSupplierPill">None selected</span>
-        </div>
-
-        <div class="supplierList">
-          <button class="btn" data-supplier="Saca">
-            <div>
-              <div class="name">Saca</div>
-              <div class="meta">Excel • columns: Numero conferma / Articolo esterno / Quantità spuntata</div>
-            </div>
-            <span>→</span>
-          </button>
-
-          <button class="btn" data-supplier="Decorative Panels">
-            <div>
-              <div class="name">Decorative Panels</div>
-              <div class="meta">PDF • splits qty by pallet</div>
-            </div>
-            <span>→</span>
-          </button>
-
-
-          <button class="btn" data-supplier="Pieffe Union">
-            <div>
-              <div class="name">Pieffe Union</div>
-              <div class="meta">Excel • auto-detect header row (Your PO / Item Code / Qty) • manual override available</div>
-            </div>
-            <span>→</span>
-          </button>
-
-          <button class="btn" data-supplier="Macfarlane">
-            <div>
-              <div class="name">Macfarlane</div>
-              <div class="meta">PDF • stops at “Outstanding goods”</div>
-            </div>
-            <span>→</span>
-          </button>
-
-
-          <button class="btn manual" id="manualEntryBtn" type="button">
-            <div>
-              <div class="name">Manual Entry</div>
-              <div class="meta">No file • create/edit rows manually • generate CSV</div>
-            </div>
-            <span>＋</span>
-          </button>
-
-
-          <button class="btn primary" id="resetBtn" type="button">
-            <div>
-              <div class="name">Reset</div>
-              <div class="meta">Clears supplier, file, results & preview</div>
-            </div>
-            <span>⟲</span>
-          </button>
-        </div>
-
-        <div class="helpBox">
-          <h3>Instructions</h3>
-          <ul>
-            <li>Pick the supplier (left).</li>
-            <li>Enter Ref, WH, Bin (right).</li>
-            <li>Drag & drop a supplier file (or click “Choose file”).</li>
-            <li>Click “Process”, then optionally 'Edit Table', then 'Generate & Download CSV'.</li>
-            <li>For Pieffe only: if upload fails, set “Header row override”.</li>
-            <li>If no file to upload: choose Manual Entry.</li>
-          </ul>
-        </div>
-
-        <div class="note">
-          Tip: the app will block “Process” until everything required is filled in correctly.
+        <p>Choose a supplier, upload the delivery document, review or edit the captured lines on screen, then download a clean UTF-8 CSV ready for goods-in processing.</p>
+        <div class="steps">
+          <div class="step"><b>1. Select supplier</b><span>SACA, Decorative Panels, Pieffe Union or Manual Entry.</span></div>
+          <div class="step"><b>2. Upload and process</b><span>Enter Ref, WH and Bin, then import the supplier file.</span></div>
+          <div class="step"><b>3. Review and export</b><span>Edit, add, delete or reorder lines before downloading the CSV.</span></div>
         </div>
       </div>
 
-      <!-- RIGHT: Processing -->
-      <div class="card">
-        <div class="sectionTitle">
-          <h2 id="rightTitle">2) Upload file & generate CSV</h2>
-          <span class="badge" id="statusBadge">Idle</span>
+      <div class="card setup">
+        <div class="supplierGrid">
+          <button class="supplierBtn" data-supplier="Saca"><strong>SACA</strong><span>Excel upload</span></button>
+          <button class="supplierBtn" data-supplier="Decorative Panels"><strong>Decorative Panels</strong><span>PDF upload, split by pallet</span></button>
+          <button class="supplierBtn" data-supplier="Pieffe Union"><strong>Pieffe Union</strong><span>Excel upload, header auto-detect</span></button>
+          <button class="supplierBtn manual" data-supplier="__MANUAL__"><strong>Manual Entry</strong><span>No file needed</span></button>
         </div>
 
         <div class="form">
-          <div>
-            <label for="ref">Delivery Ref <span class="mono">*</span></label>
-            <input id="ref" type="text" placeholder="e.g. SACAFAWB0558" autocomplete="off" />
-          </div>
-          <div>
-            <label for="wh">Warehouse (WH) <span class="mono">*</span></label>
-            <input id="wh" type="text" placeholder="e.g. 6Q" autocomplete="off" />
-          </div>
-          <div>
-            <label for="bin">Bin <span class="mono">*</span></label>
-            <input id="bin" type="text" placeholder="e.g. PRE" autocomplete="off" />
-          </div>
+          <div><label for="refInput">Delivery Ref</label><input id="refInput" type="text" placeholder="e.g. SACAFAWB0558" autocomplete="off"></div>
+          <div><label for="whInput">WH</label><input id="whInput" type="text" placeholder="e.g. 6Q" autocomplete="off"></div>
+          <div><label for="binInput">Bin</label><input id="binInput" type="text" placeholder="e.g. PRE" autocomplete="off"></div>
         </div>
 
-        <!-- Pieffe override row (only shown for Pieffe) -->
-        <div class="twoCol hidden" id="pieffeOverrideRow">
+        <div class="pieffeBox" id="pieffeBox">
+          <label for="pieffeHeaderOverride">Pieffe header row override (optional)</label>
+          <input id="pieffeHeaderOverride" type="number" min="1" step="1" placeholder="Leave blank to auto-detect">
+        </div>
+
+        <label class="drop" id="dropZone" for="fileInput">
+          <strong id="dropTitle">Select a supplier first</strong>
+          <span id="dropSub">Accepted file type will show here.</span>
+          <input id="fileInput" type="file">
+        </label>
+        <div class="fileName" id="fileName">No file uploaded yet.</div>
+      </div>
+    </section>
+
+    <div id="message" class="message"></div>
+
+    <section id="appArea">
+      <div class="stats">
+        <div class="card stat"><label>Total lines</label><div id="statTotal">0</div><small>Rows in review table</small></div>
+        <div class="card stat"><label>Captured</label><div id="statCaptured">0</div><small>Rows with PO, Part and Qty</small></div>
+        <div class="card stat"><label>Ignored</label><div id="statIgnored">0</div><small>Rows skipped or incomplete</small></div>
+        <div class="card stat"><label>Total pallets</label><div id="statPallets">—</div><small>Decorative Panels only</small></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="leftTools">
+          <button class="primary" id="processBtn" disabled>Process file</button>
+          <button class="good" id="downloadBtn" disabled>Generate & Download CSV</button>
+          <button id="addRowBtn">Add row</button>
+          <button id="add5RowsBtn">Add 5 rows</button>
+        </div>
+        <div class="rightTools">
+          <button class="warn" id="clearRowsBtn" disabled>Clear rows</button>
+          <button class="danger" id="resetBtn">Reset</button>
+        </div>
+      </div>
+
+      <section class="card review">
+        <div class="reviewHead">
           <div>
-            <label for="pieffeHeaderOverride">Pieffe header row override (optional)</label>
-            <input id="pieffeHeaderOverride" type="number" min="1" step="1" placeholder="Leave blank to auto-detect" />
-            <div class="note" style="margin-top:6px;">
-              Use this only if auto-detect fails. Enter the <strong>Excel row number</strong> where the header is (e.g. 22).
-            </div>
+            <h2 id="reviewTitle">CSV Line Review</h2>
+            <p id="reviewSubtitle">Process a file or use Manual Entry, then edit the CSV lines below before downloading.</p>
           </div>
-          <div>
-            <label>&nbsp;</label>
-            <div class="pill" id="pieffeOverrideHint">Auto-detect enabled</div>
+          <div class="search">
+            <input id="searchInput" type="search" placeholder="Search PO, part, qty, WH or bin...">
+            <button id="resetSearchBtn">Reset</button>
           </div>
         </div>
-
-        <!-- Drag & Drop -->
-        <div class="twoCol">
-          <div class="dropZone" id="dropZone" role="button" tabindex="0" aria-label="File drop area">
-            <div class="dzText">
-              <strong>3) Drop file here</strong>
-              <div class="dzSub" id="dropSub">Or click “Choose file”. Accepted type depends on supplier.</div>
-              <div class="dzFile mono" id="fileName">No file selected</div>
-            </div>
-            <button class="fileBtn" id="chooseFileBtn" type="button">Choose file</button>
-          </div>
-
-          <div>
-            <label for="fileInput">Hidden file input</label>
-            <input id="fileInput" class="fileHidden" type="file" />
-            <div class="note">
-              Output name: <span class="mono" id="outputNameHint">REF.csv</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="actions">
-          <button class="btn primary" id="processBtn" type="button" disabled>Process</button>
-          <button class="btn" id="editBtn" type="button" disabled>Edit Table</button>
-          <button class="btn" id="downloadBtn" type="button" disabled>Generate & Download CSV</button>
-          <button class="btn danger" id="clearFileBtn" type="button" disabled>Clear file</button>
-        </div>
-
-        <div class="statusRow" id="statusRow">
-          <div class="statusText">
-            <div id="statusLine"><strong>Status:</strong> Waiting for supplier + file</div>
-            <div class="small" id="statusDetail">Select supplier → fill Ref/WH/Bin → choose file → process.</div>
-          </div>
-          <div id="spinner" class="spinner hidden" aria-label="Processing"></div>
-        </div>
-
-        <div class="summary">
-          <div class="kpi"><div class="k">Total Lines</div><div class="v" id="kpiTotal">—</div></div>
-          <div class="kpi"><div class="k">Captured Lines</div><div class="v" id="kpiCaptured">—</div></div>
-          <div class="kpi"><div class="k">Ignored Lines</div><div class="v" id="kpiIgnored">—</div></div>
-          <div class="kpi"><div class="k">Total Pallets</div><div class="v" id="kpiPallets">—</div></div>
-        </div>
-
-        <table id="previewTable" class="hidden" aria-label="Preview">
-          <thead>
-            <tr>
-              <th>PONum</th><th>Ref</th><th>Part</th><th>Qty</th><th>WH</th><th>Bin</th>
-            </tr>
-          </thead>
-          <tbody id="previewBody"></tbody>
-        </table>
-
-        <!-- History Log -->
-        <div class="card" style="margin-top:14px; padding:14px;">
-          <div class="historyTop">
-            <div class="sectionTitle" style="margin:0;">
-              <h2>History log</h2>
-              <span class="pill" id="historyCount">0 runs</span>
-            </div>
-            <div class="historyActions">
-              <button class="linkBtn" id="exportHistoryBtn" type="button" disabled>Export history CSV</button>
-              <button class="linkBtn danger" id="clearHistoryBtn" type="button" disabled>Clear history</button>
-            </div>
-          </div>
-
-          <div id="historyEmpty" class="historyEmpty">No runs yet. Process a file and it will appear here.</div>
-
-          <table id="historyTable" class="hidden" aria-label="History table">
+        <div class="tableWrap">
+          <table id="reviewTable">
             <thead>
               <tr>
-                <th>When</th>
-                <th>Supplier</th>
-                <th>Input file</th>
-                <th>Output</th>
-                <th>Total</th>
-                <th>Captured</th>
-                <th>Ignored</th>
-                <th>Pallets</th>
-                <th>Action</th>
+                <th class="rowNo">#</th>
+                <th class="po">PONum</th>
+                <th class="ref">Ref</th>
+                <th class="part">Part</th>
+                <th class="qty num">Qty</th>
+                <th class="wh centre">WH</th>
+                <th class="bin centre">Bin</th>
+                <th class="actionsCol centre">Actions</th>
               </tr>
             </thead>
-            <tbody id="historyBody"></tbody>
+            <tbody id="tableBody"></tbody>
           </table>
-
-          <div class="note">
-            History is stored in your browser (localStorage) on this device only.
-          </div>
+          <div class="emptyState" id="emptyState"><strong>No lines loaded yet</strong>Select a supplier and process a file, or choose Manual Entry and add rows.</div>
         </div>
+      </section>
+      <p class="footerNote">CSV output columns are fixed as: PONum, Ref, Part, Qty, WH, Bin. Output is UTF-8 with BOM so Excel opens it cleanly.</p>
+    </section>
+  </main>
 
-        <div class="dangerZone">
-          <span class="pill">All processing is client-side. Nothing uploads anywhere.</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- EDIT TABLE OVERLAY -->
-<div class="overlay hidden" id="editOverlay" role="dialog" aria-modal="true" aria-label="Edit table">
-  <div class="overlayCard">
-    <div class="overlayTop">
-      <div>
-        <div class="overlayTitle">Edit CSV Rows</div>
-        <div class="overlaySub" id="overlaySub">Drag rows to reorder • double-check PO / Part / Qty</div>
-      </div>
-
-      <div class="overlayActions">
-        <button class="linkBtn" id="addRowTopBtn" type="button">Add row</button>
-        <button class="linkBtn" id="add5RowsBtn" type="button">Add 5 rows</button>
-        <button class="linkBtn danger" id="clearAllRowsBtn" type="button">Clear rows</button>
-        <button class="linkBtn" id="closeEditorBtn" type="button">Done</button>
-      </div>
-    </div>
-
-    <div class="overlayBody">
-      <table class="editTable" aria-label="Editable rows">
-        <thead>
-          <tr>
-            <th style="width:36px;"></th>
-            <th style="width:180px;">PONum</th>
-            <th style="width:260px;">Part</th>
-            <th style="width:120px;">Qty</th>
-            <th style="width:80px;">WH</th>
-            <th style="width:80px;">Bin</th>
-            <th style="width:120px;">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="editTbody"></tbody>
-      </table>
-
-      <div class="note" style="margin-top:10px;">
-        Tip: WH + Bin are auto-filled from the boxes on the right. You can still edit them per row if needed.
-      </div>
-    </div>
-  </div>
-</div>
-
-
-  <script type="module">
-    import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
-
-    // -----------------------------
-    // State
-    // -----------------------------
-    let selectedSupplier = null;
-    let selectedFile = null;
-
-    let lastCsvText = "";
-    let lastOutputName = "";
-    let lastRows = [];
-
-    // History persistence
-    const HISTORY_KEY = "goodsin_csv_history_v1";
-    const MAX_HISTORY = 50;
-
-    // Keep blob urls to revoke later
-    const blobUrlsToRevoke = new Set();
-
-    // -----------------------------
-    // Elements
-    // -----------------------------
-    const supplierButtons = document.querySelectorAll("[data-supplier]");
-    const selectedSupplierPill = document.getElementById("selectedSupplierPill");
-    const rightTitle = document.getElementById("rightTitle");
-
-    const refInput = document.getElementById("ref");
-    const whInput = document.getElementById("wh");
-    const binInput = document.getElementById("bin");
-
-    const pieffeOverrideRow = document.getElementById("pieffeOverrideRow");
-    const pieffeHeaderOverride = document.getElementById("pieffeHeaderOverride");
-    const pieffeOverrideHint = document.getElementById("pieffeOverrideHint");
-
-    const dropZone = document.getElementById("dropZone");
-    const chooseFileBtn = document.getElementById("chooseFileBtn");
-    const fileInput = document.getElementById("fileInput");
-    const fileName = document.getElementById("fileName");
-    const dropSub = document.getElementById("dropSub");
-
-    const processBtn = document.getElementById("processBtn");
-    const editBtn = document.getElementById("editBtn");
-    const downloadBtn = document.getElementById("downloadBtn");
-    const clearFileBtn = document.getElementById("clearFileBtn");
-    const resetBtn = document.getElementById("resetBtn");
-
-    const statusBadge = document.getElementById("statusBadge");
-    const statusLine = document.getElementById("statusLine");
-    const statusDetail = document.getElementById("statusDetail");
-    const spinner = document.getElementById("spinner");
-
-    const kpiTotal = document.getElementById("kpiTotal");
-    const kpiCaptured = document.getElementById("kpiCaptured");
-    const kpiIgnored = document.getElementById("kpiIgnored");
-    const kpiPallets = document.getElementById("kpiPallets");
-
-    const previewTable = document.getElementById("previewTable");
-    const previewBody = document.getElementById("previewBody");
-    const outputNameHint = document.getElementById("outputNameHint");
-
-    // History
-    const historyCount = document.getElementById("historyCount");
-    const historyEmpty = document.getElementById("historyEmpty");
-    const historyTable = document.getElementById("historyTable");
-    const historyBody = document.getElementById("historyBody");
-    const exportHistoryBtn = document.getElementById("exportHistoryBtn");
-    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
-
-    // Manual entry button
-    const manualEntryBtn = document.getElementById("manualEntryBtn");
-
-    // Editor overlay
-    const editOverlay = document.getElementById("editOverlay");
-    const editTbody = document.getElementById("editTbody");
-    const closeEditorBtn = document.getElementById("closeEditorBtn");
-    const addRowTopBtn = document.getElementById("addRowTopBtn");
-    const add5RowsBtn = document.getElementById("add5RowsBtn");
-    const clearAllRowsBtn = document.getElementById("clearAllRowsBtn");
-    const overlaySub = document.getElementById("overlaySub");
-    
-    // -----------------------------
-    // Supplier config
-    // -----------------------------
-    const supplierConfig = {
-      "Saca": {
-        title: "Saca — Excel upload",
-        accept: ".xlsx,.xls",
-        hint: "Accepted: .xlsx / .xls",
-        processor: processSacaExcel
-      },
-      "Decorative Panels": {
-        title: "Decorative Panels — PDF upload",
-        accept: ".pdf",
-        hint: "Accepted: .pdf (text PDF)",
-        processor: processDecorativePanelsPdf
-      },
-      "Pieffe Union": {
-        title: "Pieffe Union — Excel upload",
-        accept: ".xlsx,.xls",
-        hint: "Accepted: .xlsx / .xls (header row auto-detect; override optional)",
-        processor: processPieffeUnionExcelAutoHeaderOrOverride
-      },
-      "Macfarlane": {
-        title: "Macfarlane — PDF upload",
-        accept: ".pdf",
-        hint: "Accepted: .pdf (text PDF)",
-        processor: processMacfarlanePdf
-      }
-    };
-
-    // -----------------------------
-    // UI helpers
-    // -----------------------------
-    function escapeHtml(s){
-      return String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
-    }
-
-    function setBadge(kind, text){
-      statusBadge.className = "badge";
-      if (kind) statusBadge.classList.add(kind);
-      statusBadge.textContent = text;
-    }
-
-    function setStatus(main, detail, busy=false, badgeKind=null, badgeText=""){
-      statusLine.innerHTML = `<strong>Status:</strong> ${escapeHtml(main)}`;
-      statusDetail.textContent = detail || "";
-      spinner.classList.toggle("hidden", !busy);
-      if (badgeText) setBadge(badgeKind, badgeText);
-    }
-
-    function normaliseInputs(){
-      // Force uppercase and trim for idiot-proofing
-      const ref = (refInput.value || "").trim().toUpperCase();
-      const wh = (whInput.value || "").trim().toUpperCase();
-      const bin = (binInput.value || "").trim().toUpperCase();
-
-      // Reflect uppercase back in UI without jumping cursor badly (best effort)
-      if (refInput.value !== ref) refInput.value = ref;
-      if (whInput.value !== wh) whInput.value = wh;
-      if (binInput.value !== bin) binInput.value = bin;
-
-      return { ref, wh, bin };
-    }
-
-     function requiredReady(){
-    const { ref, wh, bin } = normaliseInputs();
-    if (!selectedSupplier) return false;
-
-    // Manual Entry doesn't require a file
-    if (selectedSupplier === "__MANUAL__"){
-      return Boolean(ref && wh && bin);
-    }
-
-    return Boolean(selectedFile && ref && wh && bin);
+<script>
+(() => {
+  const pdfjsLib = window.pdfjsLib;
+  if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
   }
 
-    function updateOutputNameHint(){
-      const { ref } = normaliseInputs();
-      outputNameHint.textContent = `${(ref || "REF")}.csv`;
-    }
-
-    function updatePieffeOverrideUI(){
-      const isPieffe = selectedSupplier === "Pieffe Union";
-      pieffeOverrideRow.classList.toggle("hidden", !isPieffe);
-
-      if (!isPieffe){
-        pieffeHeaderOverride.value = "";
-        pieffeOverrideHint.textContent = "Auto-detect enabled";
-        return;
-      }
-
-      const v = (pieffeHeaderOverride.value || "").trim();
-      if (v){
-        pieffeOverrideHint.textContent = `Override set: row ${v}`;
-      } else {
-        pieffeOverrideHint.textContent = "Auto-detect enabled";
-      }
-    }
-
-    function updateFileUI(){
-  if (!selectedSupplier){
-    fileInput.accept = "";
-    fileName.textContent = "No file selected";
-    dropSub.textContent = "Choose a supplier first (left).";
-    clearFileBtn.disabled = true;
-    chooseFileBtn.disabled = false;
-    return;
-  }
-
-  if (selectedSupplier === "__MANUAL__"){
-    fileInput.accept = "";
-    fileName.textContent = "No file needed (Manual Entry)";
-    dropSub.textContent = "Manual Entry mode: click “Edit Table” to create rows.";
-    clearFileBtn.disabled = true;
-    chooseFileBtn.disabled = true;
-    return;
-  }
-
-  // Normal suppliers
-  fileInput.accept = supplierConfig[selectedSupplier].accept;
-  dropSub.textContent = supplierConfig[selectedSupplier].hint;
-  chooseFileBtn.disabled = false;
-
-  if (!selectedFile){
-    fileName.textContent = "No file selected";
-    clearFileBtn.disabled = true;
-  } else {
-    fileName.textContent = selectedFile.name;
-    clearFileBtn.disabled = false;
-  }
-}
-
-
-    function updateButtons(){
-  processBtn.disabled = !requiredReady();
-
-  // Edit enabled once rows exist OR manual mode (so they can start creating rows)
-  const canEdit = (selectedSupplier === "__MANUAL__") || (Array.isArray(lastRows) && lastRows.length > 0);
-  editBtn.disabled = !canEdit;
-
-  // Generate enabled once rows exist
-  downloadBtn.disabled = !(Array.isArray(lastRows) && lastRows.length > 0);
-}
-
-    function clearResults(){
-      lastCsvText = "";
-      lastOutputName = "";
-      lastRows = [];
-      downloadBtn.disabled = true;
-
-      kpiTotal.textContent = "—";
-      kpiCaptured.textContent = "—";
-      kpiIgnored.textContent = "—";
-      kpiPallets.textContent = "—";
-
-      previewBody.innerHTML = "";
-      previewTable.classList.add("hidden");
-    }
-
-    function clearFile(){
-      selectedFile = null;
-      fileInput.value = "";
-      updateFileUI();
-      updateButtons();
-      clearResults();
-      setStatus("File cleared", "Choose a file to continue.", false, null, "Idle");
-    }
-
-    function resetAll(){
-      // Staff-proof: confirm reset only if something has been done
-      const hasWork = selectedSupplier || selectedFile || (refInput.value || whInput.value || binInput.value) || lastCsvText;
-      if (hasWork){
-        const ok = confirm("Reset everything on screen? (History log will NOT be deleted.)");
-        if (!ok) return;
-      }
-
-      selectedSupplier = null;
-      selectedFile = null;
-
-      supplierButtons.forEach(b => b.classList.remove("primary"));
-      selectedSupplierPill.textContent = "None selected";
-      rightTitle.textContent = "2) Upload file & generate CSV";
-
-      refInput.value = "";
-      whInput.value = "";
-      binInput.value = "";
-
-      pieffeHeaderOverride.value = "";
-      updatePieffeOverrideUI();
-
-      updateFileUI();
-      clearResults();
-      updateOutputNameHint();
-      updateButtons();
-
-      setStatus("Waiting", "Select supplier → fill Ref/WH/Bin → choose file → process.", false, null, "Idle");
-    }
-
-    function validateBasics(){
-  if (!selectedSupplier) throw new Error("Please select a supplier first.");
-  const { ref, wh, bin } = normaliseInputs();
-  if (!ref || !wh || !bin) throw new Error("Ref, WH and Bin are required.");
-
-  if (selectedSupplier !== "__MANUAL__"){
-    if (!selectedFile) throw new Error("Please choose a file (drag & drop or Choose file).");
-  }
-
-  return { ref, wh, bin, file: selectedFile };
-}
-
-    function renderPreview(rows){
-      previewBody.innerHTML = "";
-      const show = rows.slice(0, 25);
-      for (const r of show){
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${escapeHtml(r.PONum)}</td>
-          <td>${escapeHtml(r.Ref)}</td>
-          <td>${escapeHtml(r.Part)}</td>
-          <td>${escapeHtml(r.Qty)}</td>
-          <td>${escapeHtml(r.WH)}</td>
-          <td>${escapeHtml(r.Bin)}</td>
-        `;
-        previewBody.appendChild(tr);
-      }
-      previewTable.classList.toggle("hidden", rows.length === 0);
-    }
-
-
-    // -----------------------------
-// Editor: rows + overlay
-// -----------------------------
-function makeEmptyRow({ ref, wh, bin }){
-  return { PONum: "", Ref: ref, Part: "", Qty: "", WH: wh, Bin: bin };
-}
-
-function sanitiseRow(r){
-  // Ensure all required keys exist
-  return {
-    PONum: (r?.PONum ?? ""),
-    Ref: (r?.Ref ?? ""),
-    Part: (r?.Part ?? ""),
-    Qty: (r?.Qty ?? ""),
-    WH: (r?.WH ?? ""),
-    Bin: (r?.Bin ?? "")
+  const state = {
+    supplier: null,
+    file: null,
+    rows: [],
+    search: '',
+    lastStats: { totalLines: 0, captured: 0, ignored: 0, totalPallets: null, extraInfo: null }
   };
-}
 
-function openEditor(){
-  const { ref, wh, bin } = normaliseInputs();
+  const supplierConfig = {
+    "Saca": { title:"SACA", accept:".xlsx,.xls", hint:"Drop SACA Excel file here or click to browse.", processor:processSacaExcel },
+    "Decorative Panels": { title:"Decorative Panels", accept:".pdf", hint:"Drop Decorative Panels PDF here or click to browse.", processor:processDecorativePanelsPdf },
+    "Pieffe Union": { title:"Pieffe Union", accept:".xlsx,.xls", hint:"Drop Pieffe Union Excel file here or click to browse.", processor:processPieffeUnionExcelAutoHeaderOrOverride },
+    "__MANUAL__": { title:"Manual Entry", accept:"", hint:"No file needed. Add rows manually below.", processor:null }
+  };
 
-  // In manual mode, if no rows yet, seed a few blanks
-  if (selectedSupplier === "__MANUAL__" && (!lastRows || lastRows.length === 0)){
-    lastRows = [makeEmptyRow({ ref, wh, bin }), makeEmptyRow({ ref, wh, bin }), makeEmptyRow({ ref, wh, bin })];
+  const el = id => document.getElementById(id);
+  const tableBody = el('tableBody');
+  const message = el('message');
+  const fileInput = el('fileInput');
+  const dropZone = el('dropZone');
+
+  function escapeHtml(value){return String(value ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+  function escapeAttr(value){return escapeHtml(value).replace(/`/g,'&#096;');}
+  function showMessage(text,type='info'){message.textContent=text;message.className='message show'+(type==='err'?' err':type==='ok'?' ok':'');}
+  function clearMessage(){message.className='message';message.textContent='';}
+  function normaliseInputs(){
+    const ref=(el('refInput').value||'').trim().toUpperCase();
+    const wh=(el('whInput').value||'').trim().toUpperCase();
+    const bin=(el('binInput').value||'').trim().toUpperCase();
+    el('refInput').value=ref; el('whInput').value=wh; el('binInput').value=bin;
+    return {ref,wh,bin};
+  }
+  function makeEmptyRow(){const {ref,wh,bin}=normaliseInputs();return {id:crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`,PONum:'',Ref:ref,Part:'',Qty:'',WH:wh,Bin:bin};}
+  function sanitiseRow(r){return {id:r?.id||crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`,PONum:r?.PONum??'',Ref:r?.Ref??'',Part:r?.Part??'',Qty:r?.Qty??'',WH:r?.WH??'',Bin:r?.Bin??''};}
+  function validRow(r){return String(r.PONum).trim()!==''&&String(r.Part).trim()!==''&&String(r.Qty).trim()!=='';}
+
+  function updateSupplierUI(){
+    document.querySelectorAll('.supplierBtn').forEach(btn=>btn.classList.toggle('active',btn.dataset.supplier===state.supplier));
+    const cfg = state.supplier ? supplierConfig[state.supplier] : null;
+    el('dropTitle').textContent = cfg ? (state.supplier==='__MANUAL__'?'Manual Entry selected':'Drop file here') : 'Select a supplier first';
+    el('dropSub').textContent = cfg ? cfg.hint : 'Accepted file type will show here.';
+    fileInput.accept = cfg?.accept || '';
+    el('pieffeBox').classList.toggle('show',state.supplier==='Pieffe Union');
+    dropZone.classList.toggle('disabled',state.supplier==='__MANUAL__' || !state.supplier);
+    el('fileName').textContent = state.supplier==='__MANUAL__' ? 'No file needed.' : (state.file?.name || 'No file uploaded yet.');
+    el('reviewTitle').textContent = state.supplier ? `${cfg.title} CSV Line Review` : 'CSV Line Review';
   }
 
-  // Always refresh WH/Bin/Ref defaults into blanks (don’t overwrite if user typed something)
-  lastRows = (lastRows || []).map(r => {
-    const rr = sanitiseRow(r);
-    if (!rr.Ref) rr.Ref = ref;
-    if (!rr.WH) rr.WH = wh;
-    if (!rr.Bin) rr.Bin = bin;
-    return rr;
+  function requiredReady(){
+    const {ref,wh,bin}=normaliseInputs();
+    if(!state.supplier||!ref||!wh||!bin) return false;
+    if(state.supplier==='__MANUAL__') return true;
+    return Boolean(state.file);
+  }
+
+  function getVisibleRows(){
+    const q=state.search.toLowerCase();
+    return state.rows.filter(r=>!q || [r.PONum,r.Ref,r.Part,r.Qty,r.WH,r.Bin].some(v=>String(v??'').toLowerCase().includes(q)));
+  }
+
+  function updateStats(){
+    const total=state.rows.length;
+    const captured=state.rows.filter(validRow).length;
+    const ignored = Math.max(0,(state.lastStats.ignored ?? 0) + (total - captured));
+    el('statTotal').textContent = total;
+    el('statCaptured').textContent = captured;
+    el('statIgnored').textContent = ignored;
+    el('statPallets').textContent = state.lastStats.totalPallets ?? '—';
+    el('downloadBtn').disabled = captured===0;
+    el('clearRowsBtn').disabled = total===0;
+    el('processBtn').disabled = !requiredReady() || state.supplier==='__MANUAL__';
+  }
+
+  function renderTable(){
+    const rows=getVisibleRows();
+    tableBody.innerHTML='';
+    const frag=document.createDocumentFragment();
+    rows.forEach((row,index)=>{
+      const tr=document.createElement('tr');
+      tr.dataset.id=row.id;
+      tr.innerHTML=`
+        <td class="rowNo">${index+1}</td>
+        <td><input class="cell po" data-field="PONum" value="${escapeAttr(row.PONum)}"></td>
+        <td><input class="cell ref" data-field="Ref" value="${escapeAttr(row.Ref)}"></td>
+        <td><input class="cell part" data-field="Part" value="${escapeAttr(row.Part)}"></td>
+        <td><input class="cell qty num" data-field="Qty" value="${escapeAttr(row.Qty)}"></td>
+        <td><input class="cell wh centre" data-field="WH" value="${escapeAttr(row.WH)}"></td>
+        <td><input class="cell bin centre" data-field="Bin" value="${escapeAttr(row.Bin)}"></td>
+        <td class="centre"><button class="rowBtn danger" type="button" data-action="delete">Delete</button></td>`;
+      frag.appendChild(tr);
+    });
+    tableBody.appendChild(frag);
+    el('emptyState').classList.toggle('hidden',state.rows.length>0);
+    updateStats();
+  }
+
+  function setRows(rows, stats={}){
+    state.rows=(rows||[]).map(r=>sanitiseRow(r));
+    state.lastStats={totalLines:stats.totalLines??state.rows.length,captured:stats.captured??state.rows.filter(validRow).length,ignored:stats.ignored??0,totalPallets:stats.totalPallets??null,extraInfo:stats.extraInfo??null};
+    renderTable();
+  }
+
+  function addRows(count=1){
+    if(!state.supplier) state.supplier='__MANUAL__';
+    for(let i=0;i<count;i++) state.rows.push(makeEmptyRow());
+    updateSupplierUI();
+    renderTable();
+    showMessage(`${count} blank row${count===1?'':'s'} added.`, 'ok');
+  }
+
+  function resetAll(skipConfirm=false){
+    const hasWork=state.supplier||state.file||state.rows.length||el('refInput').value||el('whInput').value||el('binInput').value;
+    if(hasWork && !skipConfirm && !confirm('Reset everything on screen?')) return;
+    state.supplier=null; state.file=null; state.rows=[]; state.search=''; state.lastStats={totalLines:0,captured:0,ignored:0,totalPallets:null,extraInfo:null};
+    fileInput.value=''; el('refInput').value=''; el('whInput').value=''; el('binInput').value=''; el('pieffeHeaderOverride').value=''; el('searchInput').value='';
+    updateSupplierUI(); renderTable(); clearMessage();
+  }
+
+  function toCsv(rows){
+    const headers=['PONum','Ref','Part','Qty','WH','Bin'];
+    const esc=v=>{const s=String(v??'');return /[",\n\r]/.test(s)?`"${s.replace(/"/g,'""')}"`:s;};
+    return [headers.join(','),...rows.map(r=>headers.map(h=>esc(r[h])).join(','))].join('\r\n');
+  }
+
+  function safeFileName(text){return String(text||'REF').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim();}
+  function downloadCsv(){
+    const rows=state.rows.map(sanitiseRow).filter(validRow);
+    if(!rows.length){showMessage('There are no complete rows to download. PO, Part and Qty are required.', 'err');return;}
+    const {ref}=normaliseInputs();
+    const blob=new Blob(['\uFEFF'+toCsv(rows)],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`${safeFileName(ref)}.csv`; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+    showMessage(`Downloaded ${rows.length} rows to ${safeFileName(ref)}.csv`, 'ok');
+  }
+
+  function readFileAsArrayBuffer(file){return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=()=>reject(fr.error);fr.readAsArrayBuffer(file);});}
+
+  async function pdfToTextLines(file){
+    const buf=await readFileAsArrayBuffer(file);
+    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+    const allLines=[];
+    for(let p=1;p<=pdf.numPages;p++){
+      const page=await pdf.getPage(p);
+      const content=await page.getTextContent();
+      const items=content.items.filter(it=>it.str&&it.str.trim()!=='').map(it=>({str:it.str.trim(),x:it.transform[4],y:it.transform[5]}));
+      const byY=new Map();
+      for(const it of items){const key=Math.round(it.y);if(!byY.has(key))byY.set(key,[]);byY.get(key).push(it);}
+      const ys=Array.from(byY.keys()).sort((a,b)=>b-a);
+      for(const y of ys){allLines.push(byY.get(y).sort((a,b)=>a.x-b.x).map(it=>it.str).join(' '));}
+    }
+    return allLines;
+  }
+
+  function excelToJsonRows(arrayBuffer,sheetIndex=0,opts={}){const wb=XLSX.read(arrayBuffer,{type:'array'});const ws=wb.Sheets[wb.SheetNames[sheetIndex]];return XLSX.utils.sheet_to_json(ws,opts);}
+  function excelToMatrix(arrayBuffer,sheetIndex=0){const wb=XLSX.read(arrayBuffer,{type:'array'});const ws=wb.Sheets[wb.SheetNames[sheetIndex]];return XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});}
+
+  async function processDecorativePanelsPdf(ref,wh,bin,file){
+    const lines=await pdfToTextLines(file);
+    const data=[]; let totalProductLines=0,captured=0,ignored=0,totalPallets=0;
+    for(const line of lines){
+      const parts=line.split(/\s+/);
+      if(parts.length>=5 && /^\d+$/.test(parts[0]) && parts[0].length>=5){
+        totalProductLines++;
+        try{
+          const po_ref=parts[0]; const product_code=parts[1];
+          let qPerPallet=null,numPallets=null,qty=null;
+          for(let i=2;i<parts.length-2;i++){
+            if(/^\d+$/.test(parts[i]) && /^\d+$/.test(parts[i+1]) && /^\d+$/.test(parts[i+2])){
+              qPerPallet=parseInt(parts[i],10); numPallets=parseInt(parts[i+1],10); qty=parseInt(parts[i+2],10); totalPallets+=numPallets; break;
+            }
+          }
+          if(qPerPallet===null||numPallets===null||qty===null){ignored++;continue;}
+          for(let i=0;i<numPallets;i++){
+            const finalQty=(i===numPallets-1)?(qty-(qPerPallet*(numPallets-1))):qPerPallet;
+            data.push({PONum:po_ref,Ref:ref,Part:product_code,Qty:finalQty,WH:wh,Bin:bin});
+          }
+          captured++;
+        }catch{ignored++;}
+      }
+    }
+    return {rows:data,totalLines:totalProductLines,captured,ignored,totalPallets,extraInfo:null};
+  }
+
+  async function processSacaExcel(ref,wh,bin,file){
+    const buf=await readFileAsArrayBuffer(file);
+    const rows=excelToJsonRows(buf,0,{defval:null});
+    const data=[]; let captured=0,ignored=0;
+    for(const r of rows){
+      try{
+        const po_ref=r['Numero conferma']; const product_code=r['Articolo esterno']; const qty=r['Quantità spuntata'];
+        if(po_ref==null||product_code==null||qty==null) throw new Error('Missing');
+        data.push({PONum:po_ref,Ref:ref,Part:product_code,Qty:qty,WH:wh,Bin:bin}); captured++;
+      }catch{ignored++;}
+    }
+    return {rows:data,totalLines:rows.length,captured,ignored,totalPallets:null,extraInfo:null};
+  }
+
+  function normaliseHeaderCell(v){return String(v??'').trim().replace(/\s+/g,' ').toLowerCase();}
+  function findHeaderRowIndex(matrix,requiredHeaders,maxScanRows=120){
+    const target=requiredHeaders.map(h=>h.toLowerCase()); const scanLimit=Math.min(matrix.length,maxScanRows);
+    for(let r=0;r<scanLimit;r++){const norm=(matrix[r]||[]).map(normaliseHeaderCell); if(target.every(t=>norm.includes(t))) return r;}
+    return -1;
+  }
+
+  async function processPieffeUnionExcelAutoHeaderOrOverride(ref,wh,bin,file){
+    const buf=await readFileAsArrayBuffer(file);
+    const matrix=excelToMatrix(buf,0);
+    const required=['Your PO','Item Code','Qty'];
+    const overrideText=(el('pieffeHeaderOverride').value||'').trim();
+    let headerRowIndex=-1; let extraInfo=null;
+    if(overrideText){
+      const override=parseInt(overrideText,10);
+      if(!Number.isFinite(override)||override<1) throw new Error('Pieffe header override must be a positive Excel row number, e.g. 22.');
+      headerRowIndex=override-1;
+      if(headerRowIndex>=matrix.length) throw new Error(`Pieffe header override row ${override} is beyond the end of the sheet.`);
+      extraInfo=`Header override used: row ${override}`;
+    }else{
+      headerRowIndex=findHeaderRowIndex(matrix,required,120);
+      if(headerRowIndex===-1) throw new Error("Could not auto-detect Pieffe header row containing 'Your PO', 'Item Code' and 'Qty'. Use the override box and try again.");
+      extraInfo=`Header detected on row ${headerRowIndex+1}`;
+    }
+    const header=(matrix[headerRowIndex]||[]).map(h=>String(h??'').trim());
+    const headerNorm=header.map(normaliseHeaderCell);
+    const idxYourPO=headerNorm.indexOf('your po'); const idxItemCode=headerNorm.indexOf('item code'); const idxQty=headerNorm.indexOf('qty');
+    if(idxYourPO===-1||idxItemCode===-1||idxQty===-1) throw new Error(`Pieffe header row ${headerRowIndex+1} does not contain 'Your PO', 'Item Code' and 'Qty'.`);
+    const dataRows=matrix.slice(headerRowIndex+1).filter(r=>(r||[]).some(v=>v!=null&&String(v).trim()!==''));
+    const out=[]; let captured=0,ignored=0;
+    for(const row of dataRows){
+      try{
+        const po_ref=row[idxYourPO]; const product_code=row[idxItemCode]; const qty=row[idxQty];
+        if(po_ref==null||product_code==null||qty==null) throw new Error('Missing');
+        out.push({PONum:po_ref,Ref:ref,Part:product_code,Qty:qty,WH:wh,Bin:bin}); captured++;
+      }catch{ignored++;}
+    }
+    return {rows:out,totalLines:dataRows.length,captured,ignored,totalPallets:null,extraInfo};
+  }
+
+  async function processCurrentFile(){
+    try{
+      const {ref,wh,bin}=normaliseInputs();
+      if(!state.supplier) throw new Error('Please select a supplier first.');
+      if(!ref||!wh||!bin) throw new Error('Delivery Ref, WH and Bin are required.');
+      if(state.supplier==='__MANUAL__'){addRows(state.rows.length?0:3);return;}
+      if(!state.file) throw new Error('Please choose a file first.');
+      showMessage('Processing file...', 'info');
+      el('processBtn').disabled=true;
+      const result=await supplierConfig[state.supplier].processor(ref,wh,bin,state.file);
+      setRows(result.rows,result);
+      const extra=result.extraInfo?` ${result.extraInfo}.`:'';
+      showMessage(`Processed ${result.rows.length} CSV rows.${extra}`, 'ok');
+    }catch(err){console.error(err);showMessage(err.message||'Unable to process this file. Please check the file and try again.','err');}
+    updateStats();
+  }
+
+  document.querySelectorAll('.supplierBtn').forEach(btn=>btn.addEventListener('click',()=>{
+    state.supplier=btn.dataset.supplier;
+    state.file=null; fileInput.value=''; state.rows=[]; state.search=''; state.lastStats={totalLines:0,captured:0,ignored:0,totalPallets:null,extraInfo:null};
+    el('searchInput').value=''; updateSupplierUI(); renderTable(); clearMessage();
+    if(state.supplier==='__MANUAL__') showMessage('Manual Entry selected. Add rows below, then download the CSV.', 'ok');
+  }));
+
+  ['refInput','whInput','binInput'].forEach(id=>el(id).addEventListener('input',()=>updateStats()));
+
+  fileInput.addEventListener('change',e=>{
+    const file=e.target.files?.[0]; if(!file) return;
+    state.file=file; state.rows=[]; state.lastStats={totalLines:0,captured:0,ignored:0,totalPallets:null,extraInfo:null};
+    updateSupplierUI(); renderTable(); showMessage(`${file.name} selected. Click Process file to continue.`, 'ok');
   });
 
-  overlaySub.textContent = (selectedSupplier === "__MANUAL__")
-    ? "Manual Entry: add rows, type values, drag to reorder"
-    : "Edit parsed data: drag rows to reorder, fix anything that looks off";
-
-  renderEditorTable();
-  editOverlay.classList.remove("hidden");
-  document.body.style.overflow = "hidden";
-}
-
-function closeEditor(){
-  // Pull latest edits from DOM into lastRows before closing
-  syncEditorToRows();
-  editOverlay.classList.add("hidden");
-  document.body.style.overflow = "";
-  // Update preview + KPI with edited result
-  refreshPreviewAndKpisFromLastRows();
-  updateButtons();
-}
-
-function refreshPreviewAndKpisFromLastRows(){
-  const rows = (lastRows || []).map(sanitiseRow);
-
-  // total/captured/ignored become simple counts in this version
-  const total = rows.length;
-  const captured = rows.filter(r =>
-    String(r.PONum || "").trim() !== "" &&
-    String(r.Part || "").trim() !== "" &&
-    String(r.Qty || "").trim() !== ""
-  ).length;
-  const ignored = total - captured;
-
-  kpiTotal.textContent = String(total);
-  kpiCaptured.textContent = String(captured);
-  kpiIgnored.textContent = String(ignored);
-
-  // Pallets can remain as previously set by processor (e.g. Decorative Panels),
-  // so we do NOT overwrite kpiPallets here.
-  renderPreview(rows);
-}
-
-function syncEditorToRows(){
-  const trs = Array.from(editTbody.querySelectorAll("tr"));
-  const rows = [];
-  for (const tr of trs){
-    const get = (sel) => tr.querySelector(sel)?.value ?? "";
-    rows.push({
-      PONum: get('input[data-col="PONum"]').trim(),
-      Ref: get('input[data-col="Ref"]').trim(),
-      Part: get('input[data-col="Part"]').trim(),
-      Qty: get('input[data-col="Qty"]').trim(),
-      WH: get('input[data-col="WH"]').trim(),
-      Bin: get('input[data-col="Bin"]').trim()
-    });
-  }
-  lastRows = rows;
-}
-
-function renderEditorTable(){
-  editTbody.innerHTML = "";
-  const rows = (lastRows || []).map(sanitiseRow);
-
-  rows.forEach((r, idx) => {
-    const tr = document.createElement("tr");
-    tr.draggable = true;
-    tr.dataset.index = String(idx);
-
-    tr.innerHTML = `
-      <td title="Drag to reorder"><span class="rowGrip" aria-label="Drag handle">⠿</span></td>
-
-      <td><input class="cellInput" data-col="PONum" value="${escapeHtml(r.PONum)}" /></td>
-      <td><input class="cellInput" data-col="Part" value="${escapeHtml(r.Part)}" /></td>
-      <td><input class="cellInput" data-col="Qty" value="${escapeHtml(r.Qty)}" /></td>
-
-      <td><input class="cellInput" data-col="WH" value="${escapeHtml(r.WH)}" /></td>
-      <td><input class="cellInput" data-col="Bin" value="${escapeHtml(r.Bin)}" /></td>
-
-      <td>
-        <div class="rowBtns">
-          <button class="rowBtn" type="button" data-action="addAfter">Add after</button>
-          <button class="rowBtn danger" type="button" data-action="delete">Delete</button>
-        </div>
-      </td>
-    `;
-
-    // Hidden Ref field stored in DOM (not displayed as a column to keep it tidy)
-    // but still editable via per-row WH/Bin etc; we keep Ref synced in generation.
-    const refInputEl = document.createElement("input");
-    refInputEl.type = "hidden";
-    refInputEl.className = "cellInput";
-    refInputEl.dataset.col = "Ref";
-    refInputEl.value = r.Ref ?? "";
-    tr.appendChild(refInputEl);
-
-    // Row actions
-    tr.querySelector('[data-action="addAfter"]').addEventListener("click", () => {
-      syncEditorToRows();
-      const { ref, wh, bin } = normaliseInputs();
-      lastRows.splice(idx + 1, 0, makeEmptyRow({ ref, wh, bin }));
-      renderEditorTable();
-    });
-
-    tr.querySelector('[data-action="delete"]').addEventListener("click", () => {
-      syncEditorToRows();
-      lastRows.splice(idx, 1);
-      renderEditorTable();
-    });
-
-    // Drag reorder
-    tr.addEventListener("dragstart", () => {
-      tr.classList.add("dragging");
-    });
-    tr.addEventListener("dragend", () => {
-      tr.classList.remove("dragging");
-      Array.from(editTbody.querySelectorAll("tr")).forEach(x => x.classList.remove("dragOver"));
-      syncEditorToRows();
-    });
-
-    tr.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      const dragging = editTbody.querySelector("tr.dragging");
-      if (!dragging || dragging === tr) return;
-
-      tr.classList.add("dragOver");
-
-      const rect = tr.getBoundingClientRect();
-      const after = (e.clientY - rect.top) > rect.height / 2;
-      if (after){
-        tr.after(dragging);
-      } else {
-        tr.before(dragging);
-      }
-    });
-    tr.addEventListener("dragleave", () => tr.classList.remove("dragOver"));
-    tr.addEventListener("drop", () => tr.classList.remove("dragOver"));
-
-    editTbody.appendChild(tr);
+  ['dragenter','dragover'].forEach(evt=>dropZone.addEventListener(evt,e=>{e.preventDefault(); if(state.supplier && state.supplier!=='__MANUAL__') dropZone.classList.add('drag');}));
+  ['dragleave','drop'].forEach(evt=>dropZone.addEventListener(evt,e=>{e.preventDefault(); dropZone.classList.remove('drag');}));
+  dropZone.addEventListener('drop',e=>{
+    if(!state.supplier || state.supplier==='__MANUAL__') return;
+    const file=e.dataTransfer.files?.[0]; if(!file) return;
+    state.file=file; fileInput.value=''; state.rows=[]; state.lastStats={totalLines:0,captured:0,ignored:0,totalPallets:null,extraInfo:null};
+    updateSupplierUI(); renderTable(); showMessage(`${file.name} selected. Click Process file to continue.`, 'ok');
   });
-}
 
-
-    // -----------------------------
-    // CSV helpers (UTF-8 with BOM)
-    // -----------------------------
-    function toCsv(rows){
-      const headers = ["PONum","Ref","Part","Qty","WH","Bin"];
-      const escapeCsv = (v) => {
-        const s = String(v ?? "");
-        if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
-        return s;
-      };
-      const lines = [];
-      lines.push(headers.join(","));
-      for (const r of rows){
-        lines.push(headers.map(h => escapeCsv(r[h])).join(","));
-      }
-      return lines.join("\r\n");
-    }
-
-    function makeCsvBlobUrl(text){
-      const bom = "\uFEFF";
-      const blob = new Blob([bom + text], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      blobUrlsToRevoke.add(url);
-      return url;
-    }
-
-    function downloadCsv(text, filename){
-      const url = makeCsvBlobUrl(text);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      // Keep URL for history actions; revoke is handled on clear history/reset page close
-      // (Still safe - URLs are local to this session)
-      setTimeout(() => URL.revokeObjectURL(url), 30_000);
-    }
-
-    // -----------------------------
-    // File readers
-    // -----------------------------
-    function readFileAsArrayBuffer(file){
-      return new Promise((resolve, reject) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(fr.result);
-        fr.onerror = () => reject(fr.error);
-        fr.readAsArrayBuffer(file);
-      });
-    }
-
-    async function pdfToTextLines(file){
-      const buf = await readFileAsArrayBuffer(file);
-      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-
-      let allLines = [];
-      for (let p = 1; p <= pdf.numPages; p++){
-        const page = await pdf.getPage(p);
-        const content = await page.getTextContent();
-
-        const items = content.items
-          .filter(it => it.str && it.str.trim() !== "")
-          .map(it => ({ str: it.str.trim(), x: it.transform[4], y: it.transform[5] }));
-
-        const byY = new Map();
-        for (const it of items){
-          const key = Math.round(it.y);
-          if (!byY.has(key)) byY.set(key, []);
-          byY.get(key).push(it);
-        }
-
-        const ys = Array.from(byY.keys()).sort((a,b) => b - a);
-        for (const y of ys){
-          const row = byY.get(y)
-            .sort((a,b) => a.x - b.x)
-            .map(it => it.str)
-            .join(" ");
-          allLines.push(row);
-        }
-      }
-      return allLines;
-    }
-
-    function excelToJsonRows(arrayBuffer, sheetIndex=0, opts={}){
-      const wb = XLSX.read(arrayBuffer, { type: "array" });
-      const sheetName = wb.SheetNames[sheetIndex];
-      const ws = wb.Sheets[sheetName];
-      return XLSX.utils.sheet_to_json(ws, opts);
-    }
-
-    function excelToMatrix(arrayBuffer, sheetIndex=0){
-      const wb = XLSX.read(arrayBuffer, { type: "array" });
-      const sheetName = wb.SheetNames[sheetIndex];
-      const ws = wb.Sheets[sheetName];
-      return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
-    }
-
-    // -----------------------------
-    // Processors (mirror Python logic)
-    // -----------------------------
-    async function processMacfarlanePdf(ref, wh, bin, file){
-      const lines = await pdfToTextLines(file);
-      const data = [];
-      let totalLines = 0;
-      let captured = 0;
-      let ignored = 0;
-      let stopReading = false;
-
-      for (const line of lines){
-        if (line.includes("Outstanding goods")) stopReading = true;
-
-        if (stopReading){
-          ignored++;
-          totalLines++;
-          continue;
-        }
-
-        const parts = line.split(/\s+/);
-        if (parts.length >= 4 && /^\d+$/.test(parts[1]) && parts[1].length > 4){
-          try{
-            const po_ref = parts[1];
-            const product_code = parts[2];
-            const qty = parts[3];
-
-            if (!/^\d+$/.test(po_ref) || !/^[A-Za-z0-9]+$/.test(product_code) || !/^\d+$/.test(qty)){
-              throw new Error("Invalid");
-            }
-
-            data.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: qty, WH: wh, Bin: bin });
-            captured++;
-          }catch{
-            ignored++;
-          }
-        }else{
-          ignored++;
-        }
-        totalLines++;
-      }
-
-      return { rows: data, totalLines, captured, ignored, totalPallets: null, extraInfo: null };
-    }
-
-    async function processDecorativePanelsPdf(ref, wh, bin, file){
-      const lines = await pdfToTextLines(file);
-      const data = [];
-      let totalProductLines = 0;
-      let captured = 0;
-      let ignored = 0;
-      let totalPallets = 0;
-
-      for (const line of lines){
-        const parts = line.split(/\s+/);
-        if (parts.length >= 5 && /^\d+$/.test(parts[0]) && parts[0].length >= 5){
-          totalProductLines++;
-          try{
-            const po_ref = parts[0];
-            const product_code = parts[1];
-
-            let qPerPallet = null;
-            let numPallets = null;
-            let qty = null;
-
-            for (let i = 2; i < parts.length - 2; i++){
-              if (/^\d+$/.test(parts[i]) && /^\d+$/.test(parts[i+1]) && /^\d+$/.test(parts[i+2])){
-                qPerPallet = parseInt(parts[i], 10);
-                numPallets = parseInt(parts[i+1], 10);
-                qty = parseInt(parts[i+2], 10);
-                totalPallets += numPallets;
-                break;
-              }
-            }
-
-            if (qPerPallet === null || numPallets === null || qty === null){
-              ignored++;
-              continue;
-            }
-
-            for (let i = 0; i < numPallets; i++){
-              const finalQty = (i === numPallets - 1)
-                ? (qty - (qPerPallet * (numPallets - 1)))
-                : qPerPallet;
-
-              data.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: finalQty, WH: wh, Bin: bin });
-            }
-
-            captured++;
-          }catch{
-            ignored++;
-          }
-        }
-      }
-
-      return { rows: data, totalLines: totalProductLines, captured, ignored, totalPallets, extraInfo: null };
-    }
-
-    async function processSacaExcel(ref, wh, bin, file){
-      const buf = await readFileAsArrayBuffer(file);
-      const rows = excelToJsonRows(buf, 0, { defval: null });
-
-      const data = [];
-      const totalLines = rows.length;
-      let captured = 0;
-      let ignored = 0;
-
-      for (const r of rows){
-        try{
-          const po_ref = r["Numero conferma"];
-          const product_code = r["Articolo esterno"];
-          const qty = r["Quantità spuntata"];
-          if (po_ref == null || product_code == null || qty == null) throw new Error("Missing");
-          data.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: qty, WH: wh, Bin: bin });
-          captured++;
-        }catch{
-          ignored++;
-        }
-      }
-
-      return { rows: data, totalLines, captured, ignored, totalPallets: null, extraInfo: null };
-    }
-
-    // Pieffe header detection + manual override
-    function normaliseHeaderCell(v){
-      return String(v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
-    }
-
-    function findHeaderRowIndex(matrix, requiredHeaders, maxScanRows=120){
-      const target = requiredHeaders.map(h => h.toLowerCase());
-      const scanLimit = Math.min(matrix.length, maxScanRows);
-
-      for (let r = 0; r < scanLimit; r++){
-        const row = matrix[r] || [];
-        const norm = row.map(normaliseHeaderCell);
-        const hasAll = target.every(t => norm.includes(t));
-        if (hasAll) return r;
-      }
-      return -1;
-    }
-
-    async function processPieffeUnionExcelAutoHeaderOrOverride(ref, wh, bin, file){
-      const buf = await readFileAsArrayBuffer(file);
-      const matrix = excelToMatrix(buf, 0);
-
-      const required = ["Your PO", "Item Code", "Qty"];
-
-      // Manual override: user enters Excel row number (1-based)
-      const overrideText = (pieffeHeaderOverride.value || "").trim();
-      let headerRowIndex = -1;
-      let extraInfo = null;
-
-      if (overrideText){
-        const override = parseInt(overrideText, 10);
-        if (!Number.isFinite(override) || override < 1) {
-          throw new Error("Pieffe header override must be a positive Excel row number (e.g. 22).");
-        }
-        headerRowIndex = override - 1;
-        if (headerRowIndex >= matrix.length){
-          throw new Error(`Pieffe header override row ${override} is beyond the end of the sheet.`);
-        }
-        extraInfo = `Header override used (row ${override})`;
-      } else {
-        headerRowIndex = findHeaderRowIndex(matrix, required, 120);
-        if (headerRowIndex === -1){
-          throw new Error("Could not auto-detect Pieffe header row containing: 'Your PO', 'Item Code', 'Qty'. Use the header row override box and try again.");
-        }
-        extraInfo = `Header detected on row ${headerRowIndex + 1}`;
-      }
-
-      const header = (matrix[headerRowIndex] || []).map(h => String(h ?? "").trim());
-      const headerNorm = header.map(h => normaliseHeaderCell(h));
-
-      const idxYourPO = headerNorm.indexOf("your po");
-      const idxItemCode = headerNorm.indexOf("item code");
-      const idxQty = headerNorm.indexOf("qty");
-
-      if (idxYourPO === -1 || idxItemCode === -1 || idxQty === -1){
-        // If override row is wrong, message should be explicit
-        throw new Error(`Pieffe header row (row ${headerRowIndex + 1}) does not contain the required columns: 'Your PO', 'Item Code', 'Qty'.`);
-      }
-
-      const dataRows = matrix.slice(headerRowIndex + 1).filter(r => (r || []).some(v => v != null && String(v).trim() !== ""));
-      const totalLines = dataRows.length;
-
-      const out = [];
-      let captured = 0;
-      let ignored = 0;
-
-      for (const row of dataRows){
-        try{
-          const po_ref = row[idxYourPO];
-          const product_code = row[idxItemCode];
-          const qty = row[idxQty];
-          if (po_ref == null || product_code == null || qty == null) throw new Error("Missing");
-          out.push({ PONum: po_ref, Ref: ref, Part: product_code, Qty: qty, WH: wh, Bin: bin });
-          captured++;
-        }catch{
-          ignored++;
-        }
-      }
-
-      return { rows: out, totalLines, captured, ignored, totalPallets: null, extraInfo };
-    }
-
-    // -----------------------------
-    // History
-    // -----------------------------
-    function loadHistory(){
-      try{
-        const raw = localStorage.getItem(HISTORY_KEY);
-        if (!raw) return [];
-        const arr = JSON.parse(raw);
-        if (!Array.isArray(arr)) return [];
-        return arr;
-      }catch{
-        return [];
-      }
-    }
-
-    function saveHistory(arr){
-      try{
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
-      }catch{
-        // Ignore storage failures (private mode etc.)
-      }
-    }
-
-    function addHistoryItem(item){
-      const history = loadHistory();
-      history.unshift(item);
-      if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
-      saveHistory(history);
-      renderHistory();
-    }
-
-    function renderHistory(){
-      const history = loadHistory();
-      historyCount.textContent = `${history.length} run${history.length === 1 ? "" : "s"}`;
-
-      exportHistoryBtn.disabled = history.length === 0;
-      clearHistoryBtn.disabled = history.length === 0;
-
-      if (history.length === 0){
-        historyEmpty.classList.remove("hidden");
-        historyTable.classList.add("hidden");
-        historyBody.innerHTML = "";
-        return;
-      }
-
-      historyEmpty.classList.add("hidden");
-      historyTable.classList.remove("hidden");
-      historyBody.innerHTML = "";
-
-      for (const h of history){
-        const tr = document.createElement("tr");
-        const pallets = (h.totalPallets == null ? "—" : String(h.totalPallets));
-        const outName = escapeHtml(h.outputName || "");
-        const canRedownload = Boolean(h.csvText);
-
-        tr.innerHTML = `
-          <td class="mono">${escapeHtml(h.when)}</td>
-          <td>${escapeHtml(h.supplier)}</td>
-          <td>${escapeHtml(h.inputFile)}</td>
-          <td class="mono">${outName}</td>
-          <td>${escapeHtml(h.totalLines)}</td>
-          <td>${escapeHtml(h.captured)}</td>
-          <td>${escapeHtml(h.ignored)}</td>
-          <td>${escapeHtml(pallets)}</td>
-          <td>
-            <button class="linkBtn ${canRedownload ? "" : "danger"}" type="button" data-action="download" ${canRedownload ? "" : "disabled"}>
-              Download
-            </button>
-          </td>
-        `;
-
-        const btn = tr.querySelector('button[data-action="download"]');
-        if (btn && canRedownload){
-          btn.addEventListener("click", () => {
-            downloadCsv(h.csvText, h.outputName);
-          });
-        }
-
-        historyBody.appendChild(tr);
-      }
-    }
-
-    function exportHistoryCsv(){
-      const history = loadHistory();
-      if (!history.length) return;
-
-      const headers = ["When","Supplier","InputFile","OutputName","TotalLines","Captured","Ignored","TotalPallets","ExtraInfo"];
-      const escapeCsv = (v) => {
-        const s = String(v ?? "");
-        if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
-        return s;
-      };
-      const lines = [];
-      lines.push(headers.join(","));
-      for (const h of history){
-        lines.push(headers.map(k => escapeCsv(h[toCamel(k)] ?? h[k] ?? "")).join(","));
-      }
-
-      const text = lines.join("\r\n");
-      downloadCsv(text, `GoodsIn_History_${new Date().toISOString().slice(0,10)}.csv`);
-    }
-
-    function toCamel(s){
-      // "Total Lines" style not used; keep for safety
-      return s.replace(/\s+(.)/g, (_,c)=>c.toUpperCase()).replace(/^(.)/, (_,c)=>c.toLowerCase());
-    }
-
-    function clearHistory(){
-      const ok = confirm("Clear history log on this device/browser?");
-      if (!ok) return;
-      saveHistory([]);
-      renderHistory();
-    }
-
-    // -----------------------------
-    // Drag & Drop + file selection
-    // -----------------------------
-    function setSelectedFile(file){
-      // Validate extension against accept list (staff-proof)
-      if (!selectedSupplier){
-        throw new Error("Choose a supplier first, then select the file.");
-      }
-
-      const accept = supplierConfig[selectedSupplier].accept.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
-      const name = (file?.name || "").toLowerCase();
-
-      const ok = accept.some(ext => name.endsWith(ext));
-      if (!ok){
-        throw new Error(`Wrong file type for ${selectedSupplier}. Expected: ${supplierConfig[selectedSupplier].accept}`);
-      }
-
-      selectedFile = file;
-      updateFileUI();
-      updateButtons();
-      clearResults(); // new file -> clear old results
-      setStatus("File selected", "Ready to process (if fields are filled).", false, null, "Idle");
-    }
-
-    function handleFilesFromEvent(files){
-      if (!files || !files.length) return;
-      try{
-        setSelectedFile(files[0]);
-      }catch(err){
-        setStatus("Error", err?.message || "Could not select file.", false, "bad", "Error");
-      }
-    }
-
-    // -----------------------------
-    // Wiring
-    // -----------------------------
-    supplierButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        const supplier = btn.getAttribute("data-supplier");
-        if (!supplierConfig[supplier]) return;
-
-        selectedSupplier = supplier;
-        supplierButtons.forEach(b => b.classList.remove("primary"));
-        btn.classList.add("primary");
-
-        if (selectedSupplier === "__MANUAL__") return;
-
-        selectedSupplierPill.textContent = supplier;
-        rightTitle.textContent = `2) ${supplierConfig[supplier].title}`;
-
-        // Clear file/results when changing supplier (staff-proof)
-        selectedFile = null;
-        fileInput.value = "";
-        clearResults();
-
-        lastRows = [];
-        kpiPallets.textContent = "—";
-
-
-        updatePieffeOverrideUI();
-        updateFileUI();
-        updateOutputNameHint();
-        updateButtons();
-
-        setStatus("Supplier selected", "Fill Ref/WH/Bin, then choose the correct file type for this supplier.", false, null, "Idle");
-      });
-    });
-
-
-    editBtn.addEventListener("click", () => {
-  try{
-    const { ref, wh, bin } = validateBasics();
-
-    // If there are no rows (non-manual), stop
-    if (selectedSupplier !== "__MANUAL__" && (!lastRows || !lastRows.length)){
-      setStatus("Nothing to edit", "Process a file first, then edit.", false, "warn", "Waiting");
-      return;
-    }
-
-    // Ensure defaults exist for editor
-    lastRows = (lastRows || []).map(r => {
-      const rr = sanitiseRow(r);
-      if (!rr.Ref) rr.Ref = ref;
-      if (!rr.WH) rr.WH = wh;
-      if (!rr.Bin) rr.Bin = bin;
-      return rr;
-    });
-
-    openEditor();
-  }catch(err){
-    setStatus("Error", err?.message || "Cannot open editor.", false, "bad", "Error");
-  }
-});
-
-closeEditorBtn.addEventListener("click", closeEditor);
-
-addRowTopBtn.addEventListener("click", () => {
-  syncEditorToRows();
-  const { ref, wh, bin } = normaliseInputs();
-  lastRows.push(makeEmptyRow({ ref, wh, bin }));
-  renderEditorTable();
-});
-
-add5RowsBtn.addEventListener("click", () => {
-  syncEditorToRows();
-  const { ref, wh, bin } = normaliseInputs();
-  for (let i = 0; i < 5; i++) lastRows.push(makeEmptyRow({ ref, wh, bin }));
-  renderEditorTable();
-});
-
-clearAllRowsBtn.addEventListener("click", () => {
-  const ok = confirm("Clear all rows in the editor?");
-  if (!ok) return;
-  lastRows = [];
-  renderEditorTable();
-});
-
-// Click outside card closes overlay (staff-friendly)
-editOverlay.addEventListener("click", (e) => {
-  if (e.target === editOverlay) closeEditor();
-});
-
-// Escape closes overlay
-window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !editOverlay.classList.contains("hidden")){
-    closeEditor();
-  }
-});
-
-
-    manualEntryBtn.addEventListener("click", () => {
-  // Select Manual Entry pseudo-supplier
-  selectedSupplier = "__MANUAL__";
-
-  supplierButtons.forEach(b => b.classList.remove("primary"));
-  selectedSupplierPill.textContent = "Manual Entry";
-  rightTitle.textContent = "2) Manual Entry — no file";
-
-  selectedFile = null;
-  fileInput.value = "";
-
-  clearResults();
-  lastRows = [];
-  kpiPallets.textContent = "—";
-
-  updatePieffeOverrideUI(); // hides Pieffe override
-  updateFileUI();
-  updateOutputNameHint();
-  updateButtons();
-
-  setStatus("Manual Entry selected", "Fill Ref/WH/Bin, then click Edit Table to add rows.", false, "ok", "Ready");
-});
-
-    
-
-    // Uppercase + button gating
-    [refInput, whInput, binInput].forEach(inp => {
-      inp.addEventListener("input", () => {
-        normaliseInputs();
-        updateOutputNameHint();
-        updateButtons();
-      });
-      inp.addEventListener("blur", () => {
-        normaliseInputs();
-        updateButtons();
-      });
-    });
-
-    pieffeHeaderOverride.addEventListener("input", () => {
-      updatePieffeOverrideUI();
-    });
-
-    chooseFileBtn.addEventListener("click", () => {
-      if (!selectedSupplier){
-        setStatus("Select supplier first", "Choose the supplier on the left before selecting a file.", false, "warn", "Waiting");
-        return;
-      }
-      fileInput.click();
-    });
-
-    fileInput.addEventListener("change", (e) => {
-      handleFilesFromEvent(e.target.files);
-    });
-
-    // Drop zone events
-    ["dragenter","dragover"].forEach(ev => {
-      dropZone.addEventListener(ev, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.add("isDrag");
-      });
-    });
-    ["dragleave","drop"].forEach(ev => {
-      dropZone.addEventListener(ev, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.remove("isDrag");
-      });
-    });
-    dropZone.addEventListener("drop", (e) => {
-      handleFilesFromEvent(e.dataTransfer?.files);
-    });
-
-    // Accessibility: click/enter on drop zone triggers choose file
-    dropZone.addEventListener("click", (e) => {
-      // Avoid double triggering when clicking the button
-      if (e.target === chooseFileBtn) return;
-      chooseFileBtn.click();
-    });
-    dropZone.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " "){
-        e.preventDefault();
-        chooseFileBtn.click();
-      }
-    });
-
-    clearFileBtn.addEventListener("click", clearFile);
-    resetBtn.addEventListener("click", resetAll);
-
-    exportHistoryBtn.addEventListener("click", exportHistoryCsv);
-    clearHistoryBtn.addEventListener("click", clearHistory);
-
-    downloadBtn.addEventListener("click", () => {
-  try{
-    const { ref, wh, bin } = validateBasics();
-
-    // Ensure editor changes are included if overlay is open
-    if (!editOverlay.classList.contains("hidden")){
-      syncEditorToRows();
-    }
-
-    // Finalise rows: enforce Ref/WH/Bin defaults if blank
-    const rows = (lastRows || []).map(r => {
-      const rr = sanitiseRow(r);
-      if (!rr.Ref) rr.Ref = ref;
-      if (!rr.WH) rr.WH = wh;
-      if (!rr.Bin) rr.Bin = bin;
-      return rr;
-    });
-
-    // Filter out completely empty rows (staff-proof)
-    const finalRows = rows.filter(r =>
-      String(r.PONum || "").trim() !== "" ||
-      String(r.Part || "").trim() !== "" ||
-      String(r.Qty || "").trim() !== ""
-    );
-
-    if (!finalRows.length){
-      setStatus("No data", "There are no rows to export. Add rows or fix blanks, then try again.", false, "bad", "No Data");
-      return;
-    }
-
-    const csvText = toCsv(finalRows);
-    const outputName = `${ref}.csv`;
-
-    // Store for history redownload
-    lastCsvText = csvText;
-    lastOutputName = outputName;
-
-    downloadCsv(csvText, outputName);
-
-    setStatus("Downloaded", `CSV generated from ${finalRows.length} row(s).`, false, "ok", "Done");
-
-    // Add to history NOW (at generation stage)
-    addHistoryItem({
-      when: new Date().toLocaleString("en-GB"),
-      supplier: (selectedSupplier === "__MANUAL__" ? "Manual Entry" : selectedSupplier),
-      inputFile: (selectedSupplier === "__MANUAL__" ? "—" : (selectedFile?.name || "—")),
-      outputName,
-      totalLines: finalRows.length,
-      captured: finalRows.length,
-      ignored: 0,
-      totalPallets: (kpiPallets.textContent === "—" ? null : Number(kpiPallets.textContent) || null),
-      extraInfo: (selectedSupplier === "__MANUAL__" ? "Manual entry" : ""),
-      csvText
-    });
-
-    updateButtons();
-
-  }catch(err){
-    setStatus("Error", err?.message || "Could not generate CSV.", false, "bad", "Error");
-  }
-});
-
-    // Main processing
-    processBtn.addEventListener("click", async () => {
-  try{
-    const { ref, wh, bin, file } = validateBasics();
-
-    // Manual entry: no parsing, just open editor
-    if (selectedSupplier === "__MANUAL__"){
-      clearResults();
-      lastRows = []; // editor will seed rows
-      kpiPallets.textContent = "—";
-      setStatus("Manual Entry", "Use Edit Table to add rows, then Generate & Download CSV.", false, "ok", "Ready");
-      openEditor();
-      updateButtons();
-      return;
-    }
-
-    setStatus("Processing…", "Reading file and building editable rows.", true, "warn", "Processing");
-
-    updatePieffeOverrideUI();
-
-    const cfg = supplierConfig[selectedSupplier];
-    const result = await cfg.processor(ref, wh, bin, file);
-
-    // Store rows only (no CSV yet)
-    lastRows = (result.rows || []).map(sanitiseRow);
-    lastCsvText = "";
-    lastOutputName = `${ref}.csv`;
-
-    // KPIs based on processor output
-    kpiTotal.textContent = String(result.totalLines ?? lastRows.length ?? 0);
-    kpiCaptured.textContent = String(result.captured ?? lastRows.length ?? 0);
-    kpiIgnored.textContent = String(result.ignored ?? 0);
-    kpiPallets.textContent = (result.totalPallets == null ? "—" : String(result.totalPallets));
-
-    renderPreview(lastRows);
-
-    if (!lastRows.length){
-      setStatus(
-        "Done — no rows captured",
-        "Nothing matched the expected pattern. Double-check supplier + file selection.",
-        false,
-        "bad",
-        "No Data"
-      );
-    } else {
-      const extra = result.extraInfo ? ` (${result.extraInfo})` : "";
-      setStatus(
-        "Ready to edit",
-        `Loaded ${lastRows.length} rows. Click “Edit Table” if you need changes, then “Generate & Download CSV”.${extra}`,
-        false,
-        "ok",
-        "Ready"
-      );
-    }
-
-    updateButtons();
-
-  }catch(err){
-    setStatus("Error", err?.message || "Something went wrong.", false, "bad", "Error");
-  }finally{
-    spinner.classList.add("hidden");
-    updateButtons();
-  }
-});
-
-
-    // -----------------------------
-    // Init
-    // -----------------------------
-    function init(){
-      setBadge(null, "Idle");
-      setStatus("Waiting", "Select supplier → fill Ref/WH/Bin → choose file → process.", false, null, "Idle");
-      updateOutputNameHint();
-      updatePieffeOverrideUI();
-      updateFileUI();
-      updateButtons();
-      renderHistory();
-    }
-
-    // Clean up blob urls on page unload (best effort)
-    window.addEventListener("beforeunload", () => {
-      for (const url of blobUrlsToRevoke){
-        try{ URL.revokeObjectURL(url); } catch {}
-      }
-    });
-
-    init();
-  </script>
+  tableBody.addEventListener('input',e=>{
+    const input=e.target.closest('input.cell'); if(!input) return;
+    const tr=input.closest('tr'); const row=state.rows.find(r=>r.id===tr.dataset.id); if(!row) return;
+    row[input.dataset.field]=input.value; updateStats();
+  });
+  tableBody.addEventListener('click',e=>{
+    const btn=e.target.closest('[data-action="delete"]'); if(!btn) return;
+    const tr=btn.closest('tr'); state.rows=state.rows.filter(r=>r.id!==tr.dataset.id); renderTable();
+  });
+
+  el('processBtn').addEventListener('click',processCurrentFile);
+  el('downloadBtn').addEventListener('click',downloadCsv);
+  el('addRowBtn').addEventListener('click',()=>addRows(1));
+  el('add5RowsBtn').addEventListener('click',()=>addRows(5));
+  el('clearRowsBtn').addEventListener('click',()=>{if(confirm('Clear all rows in the review table?')){setRows([],{ignored:0,totalPallets:null});showMessage('Rows cleared.','ok');}});
+  el('resetBtn').addEventListener('click',()=>resetAll(false));
+  el('searchInput').addEventListener('input',e=>{state.search=e.target.value||'';renderTable();});
+  el('resetSearchBtn').addEventListener('click',()=>{state.search='';el('searchInput').value='';renderTable();});
+
+  resetAll(true);
+})();
+</script>
 </body>
 </html>
