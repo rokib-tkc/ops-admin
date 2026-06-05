@@ -150,6 +150,7 @@
           <button class="supplierBtn" data-supplier="Saca"><strong>SACA</strong><span>Excel upload</span></button>
           <button class="supplierBtn" data-supplier="Decorative Panels"><strong>Decorative Panels</strong><span>PDF upload, split by pallet</span></button>
           <button class="supplierBtn" data-supplier="Pieffe Union"><strong>Pieffe Union</strong><span>Excel upload, header auto-detect</span></button>
+          <button class="supplierBtn" data-supplier="Drewpol"><strong>Drewpol</strong><span>Excel upload</span></button>
           <button class="supplierBtn manual" data-supplier="__MANUAL__"><strong>Manual Entry</strong><span>No file needed</span></button>
         </div>
 
@@ -249,6 +250,7 @@
     "Saca": { title:"SACA", accept:".xlsx,.xls", hint:"Drop SACA Excel file here or click to browse.", processor:processSacaExcel },
     "Decorative Panels": { title:"Decorative Panels", accept:".pdf", hint:"Drop Decorative Panels PDF here or click to browse.", processor:processDecorativePanelsPdf },
     "Pieffe Union": { title:"Pieffe Union", accept:".xlsx,.xls", hint:"Drop Pieffe Union Excel file here or click to browse.", processor:processPieffeUnionExcelAutoHeaderOrOverride },
+    "Drewpol": { title:"Drewpol", accept:".xlsx,.xls", hint:"Drop Drewpol packing list Excel file here or click to browse.", processor:processDrewpolExcel },
     "__MANUAL__": { title:"Manual Entry", accept:"", hint:"No file needed. Add rows manually below.", processor:null }
   };
 
@@ -476,6 +478,76 @@
     return {rows:out,totalLines:dataRows.length,captured,ignored,totalPallets:null,extraInfo};
   }
 
+
+  async function processDrewpolExcel(ref, wh, bin, file){
+    const buf = await readFileAsArrayBuffer(file);
+    const matrix = excelToMatrix(buf, 0);
+
+    const out = [];
+    let captured = 0;
+    let ignored = 0;
+    let totalLines = 0;
+    let ignoredTotalRows = 0;
+
+    // Drewpol layout:
+    // Sheet: first tab
+    // Header: row 1
+    // Data starts: row 2
+    // Column B = Qty
+    // Column C = Part
+    // Column D = PO Ref
+    for (let i = 1; i < matrix.length; i++){
+      const row = matrix[i] || [];
+
+      const qtyRaw = row[1];  // Column B
+      const partRaw = row[2]; // Column C
+      const poRaw = row[3];   // Column D
+
+      const qtyText = String(qtyRaw ?? '').replace(/,/g, '').trim();
+      const part = String(partRaw ?? '').trim();
+      const po = String(poRaw ?? '').trim();
+      const qty = Number(qtyText);
+
+      const hasAnyValue = row.some(v => v !== null && v !== undefined && String(v).trim() !== '');
+      if (!hasAnyValue) continue;
+
+      // Final total row usually has qty in B but no part/PO in C/D.
+      if (!part && !po){
+        ignored++;
+        ignoredTotalRows++;
+        continue;
+      }
+
+      totalLines++;
+
+      if (!part || !po || !Number.isFinite(qty)){
+        ignored++;
+        continue;
+      }
+
+      out.push({
+        PONum: po,
+        Ref: ref,
+        Part: part,
+        Qty: qty,
+        WH: wh,
+        Bin: bin
+      });
+
+      captured++;
+    }
+
+    return {
+      rows: out,
+      totalLines,
+      captured,
+      ignored,
+      totalPallets: null,
+      extraInfo: `Drewpol first sheet processed. Ignored total rows: ${ignoredTotalRows}`
+    };
+  }
+
+  
   async function processCurrentFile(){
     try{
       const {ref,wh,bin}=normaliseInputs();
