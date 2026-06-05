@@ -118,6 +118,18 @@
     thead th{position:sticky;top:0;background:#f1f5fb;color:#344054;text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);z-index:3;white-space:nowrap}
     tbody td{padding:8px 10px;border-bottom:1px solid #edf1f7;vertical-align:middle}
     tbody tr:hover{background:#f8fbff}
+    tbody tr.excluded{
+      background:#fff1f0;
+      color:#7a271a;
+    }
+    tbody tr.excluded input.cell{
+      background:#fff7f6;
+      color:#7a271a;
+      text-decoration:line-through;
+    }
+    .excludeCol{
+      width:92px;
+    }
     .rowNo{width:58px;color:var(--muted)}.actionsCol{width:95px}.num{text-align:right}.centre{text-align:center}
     input.cell{width:100%;border:1px solid transparent;border-radius:8px;padding:8px 9px;background:transparent;font:inherit;color:inherit}
     input.cell:focus{outline:2px solid rgba(23,92,211,.18);border-color:#84adff;background:#fff}
@@ -139,7 +151,7 @@
         <h1>Goods In CSV Generator</h1>
         <p>Choose a supplier, upload the delivery document, review or edit the captured lines on screen, then download a clean UTF-8 CSV ready for goods-in processing.</p>
         <div class="steps">
-          <div class="step"><b>1. Select supplier</b><span>SACA, Decorative Panels, Pieffe Union or Manual Entry.</span></div>
+          <div class="step"><b>1. Select supplier</b><span>SACA, Decorative Panels, Pieffe Union, Drewpol or Manual Entry.</span></div>
           <div class="step"><b>2. Upload and process</b><span>Enter Ref, WH and Bin, then import the supplier file.</span></div>
           <div class="step"><b>3. Review and export</b><span>Edit, add, delete or reorder lines before downloading the CSV.</span></div>
         </div>
@@ -213,6 +225,7 @@
             <thead>
               <tr>
                 <th class="rowNo">#</th>
+                <th class="excludeCol centre">Exclude</th>
                 <th class="po">PONum</th>
                 <th class="ref">Ref</th>
                 <th class="part">Part</th>
@@ -271,9 +284,37 @@
     el('refInput').value=ref; el('whInput').value=wh; el('binInput').value=bin;
     return {ref,wh,bin};
   }
-  function makeEmptyRow(){const {ref,wh,bin}=normaliseInputs();return {id:crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`,PONum:'',Ref:ref,Part:'',Qty:'',WH:wh,Bin:bin};}
-  function sanitiseRow(r){return {id:r?.id||crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`,PONum:r?.PONum??'',Ref:r?.Ref??'',Part:r?.Part??'',Qty:r?.Qty??'',WH:r?.WH??'',Bin:r?.Bin??''};}
-  function validRow(r){return String(r.PONum).trim()!==''&&String(r.Part).trim()!==''&&String(r.Qty).trim()!=='';}
+  function makeEmptyRow(){
+    const {ref,wh,bin}=normaliseInputs();
+    return {
+      id:crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`,
+      excluded:false,
+      PONum:'',
+      Ref:ref,
+      Part:'',
+      Qty:'',
+      WH:wh,
+      Bin:bin
+    };
+  }
+  function sanitiseRow(r){
+    return {
+      id:r?.id||crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`,
+      excluded:Boolean(r?.excluded),
+      PONum:r?.PONum??'',
+      Ref:r?.Ref??'',
+      Part:r?.Part??'',
+      Qty:r?.Qty??'',
+      WH:r?.WH??'',
+      Bin:r?.Bin??''
+    };
+  }
+  function validRow(r){
+  return !r.excluded &&
+    String(r.PONum).trim()!=='' &&
+    String(r.Part).trim()!=='' &&
+    String(r.Qty).trim()!=='';
+}
 
   function updateSupplierUI(){
     document.querySelectorAll('.supplierBtn').forEach(btn=>btn.classList.toggle('active',btn.dataset.supplier===state.supplier));
@@ -319,8 +360,12 @@
     rows.forEach((row,index)=>{
       const tr=document.createElement('tr');
       tr.dataset.id=row.id;
+      if(row.excluded) tr.classList.add('excluded');
       tr.innerHTML=`
         <td class="rowNo">${index+1}</td>
+        <td class="centre">
+          <input type="checkbox" class="excludeCheck" ${row.excluded ? 'checked' : ''}>
+        </td>
         <td><input class="cell po" data-field="PONum" value="${escapeAttr(row.PONum)}"></td>
         <td><input class="cell ref" data-field="Ref" value="${escapeAttr(row.Ref)}"></td>
         <td><input class="cell part" data-field="Part" value="${escapeAttr(row.Part)}"></td>
@@ -598,6 +643,18 @@
     const btn=e.target.closest('[data-action="delete"]'); if(!btn) return;
     const tr=btn.closest('tr'); state.rows=state.rows.filter(r=>r.id!==tr.dataset.id); renderTable();
   });
+  tableBody.addEventListener('change',e=>{
+  const checkbox=e.target.closest('.excludeCheck');
+  if(!checkbox) return;
+
+  const tr=checkbox.closest('tr');
+  const row=state.rows.find(r=>r.id===tr.dataset.id);
+  if(!row) return;
+
+  row.excluded=checkbox.checked;
+  tr.classList.toggle('excluded',row.excluded);
+  updateStats();
+});
 
   el('processBtn').addEventListener('click',processCurrentFile);
   el('downloadBtn').addEventListener('click',downloadCsv);
