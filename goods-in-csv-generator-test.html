@@ -70,6 +70,7 @@
 
     .form{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
     label{display:block;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+    .requiredStar{color:var(--red);font-weight:900;margin-left:3px;}
     input[type="text"],input[type="number"],input[type="search"]{
       width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;background:#fff;color:var(--ink);outline:none;
     }
@@ -167,9 +168,9 @@
         </div>
 
         <div class="form">
-          <div><label for="refInput">Delivery Ref</label><input id="refInput" type="text" placeholder="e.g. SACA010226DTN" autocomplete="off"></div>
-          <div><label for="whInput">WH</label><input id="whInput" type="text" placeholder="e.g. GI" autocomplete="off"></div>
-          <div><label for="binInput">Bin</label><input id="binInput" type="text" placeholder="e.g. 999" autocomplete="off"></div>
+          <div><label for="refInput">Delivery Ref <span class="requiredStar">*</span></label><input id="refInput" type="text" placeholder="e.g. SACA010226DTN" autocomplete="off"></div>
+          <div><label for="whInput">WH <span class="requiredStar">*</span></label><input id="whInput" type="text" placeholder="e.g. GI" autocomplete="off"></div>
+          <div><label for="binInput">Bin <span class="requiredStar">*</span></label><input id="binInput" type="text" placeholder="e.g. 999" autocomplete="off"></div>
         </div>
 
         <div class="pieffeBox" id="pieffeBox">
@@ -348,9 +349,12 @@
     el('statCaptured').textContent = captured;
     el('statIgnored').textContent = ignored;
     el('statPallets').textContent = state.lastStats.totalPallets ?? '—';
+    const basicsReady = Boolean(normaliseInputs().ref && normaliseInputs().wh && normaliseInputs().bin);
     el('downloadBtn').disabled = captured===0;
     el('clearRowsBtn').disabled = total===0;
     el('processBtn').disabled = !requiredReady() || state.supplier==='__MANUAL__';
+    el('addRowBtn').disabled = !basicsReady;
+    el('add5RowsBtn').disabled = !basicsReady;
   }
 
   function renderTable(){
