@@ -468,7 +468,7 @@
 <style>
   @page{
     size:A4 portrait;
-    margin:10mm;
+    margin:12mm;
   }
 
   *{
@@ -477,7 +477,8 @@
   }
 
   body{
-    margin:0;
+    margin:0 auto;
+    max-width:180mm;
     color:#111827;
     background:#fff;
     font-size:12px;
@@ -491,6 +492,8 @@
 
   .meta{
     width:100%;
+    max-width:100%;
+    table-layout:fixed;
     border-collapse:collapse;
     margin-bottom:10px;
   }
@@ -508,6 +511,8 @@
 
   table.lines{
     width:100%;
+    max-width:100%;
+    table-layout:fixed;
     border-collapse:collapse;
   }
 
@@ -527,20 +532,25 @@
     height:26px;
   }
 
+  .lines th{
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
   .centre{
     text-align:center;
   }
 
   .checkCol{
-    width:90px;
+    width:75px;
   }
 
   .qtyCol{
-    width:65px;
+    width:55px;
   }
 
   .smallCol{
-    width:60px;
+    width:50px;
   }
 
   .footer{
