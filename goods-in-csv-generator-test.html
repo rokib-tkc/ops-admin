@@ -471,11 +471,12 @@
 <style>
   @page{
     size:A4 portrait;
-    margin:14mm 12mm 16mm 12mm;
+    margin:0;
   }
 
   *{
     box-sizing:border-box;
+    font-family:Arial, sans-serif;
   }
 
   html,
@@ -484,16 +485,17 @@
     padding:0;
     background:#fff;
     color:#111827;
-    font-family:Arial, sans-serif;
     font-size:11px;
   }
 
   .printPage{
-    width:100%;
+    width:178mm;
+    margin:0 auto;
+    padding-top:10mm;
   }
 
   h1{
-    margin:0 0 8px;
+    margin:0 0 7px;
     font-size:18px;
     line-height:1.2;
     text-align:center;
@@ -501,10 +503,9 @@
 
   .meta{
     width:100%;
-    border-collapse:collapse;
     table-layout:fixed;
-    margin-bottom:10px;
-    page-break-inside:avoid;
+    border-collapse:collapse;
+    margin-bottom:8px;
   }
 
   .meta td{
@@ -521,8 +522,8 @@
 
   .lines{
     width:100%;
-    border-collapse:collapse;
     table-layout:fixed;
+    border-collapse:collapse;
   }
 
   .lines thead{
@@ -534,15 +535,15 @@
   }
 
   .lines tr{
-    page-break-inside:avoid;
     break-inside:avoid;
+    page-break-inside:avoid;
   }
 
   .lines th{
     background:#102a56;
     color:#fff;
     border:1px solid #102a56;
-    padding:6px 5px;
+    padding:7mm 5px 5px 5px;
     text-align:left;
     font-size:10.5px;
     line-height:1.15;
@@ -551,7 +552,7 @@
   .lines td{
     border:1px solid #cbd5e1;
     padding:5px;
-    min-height:22px;
+    height:22px;
     line-height:1.2;
     vertical-align:middle;
     overflow-wrap:anywhere;
@@ -579,15 +580,17 @@
 
   .footerSpace td{
     border:0;
-    height:8mm;
+    height:12mm;
     padding:0;
   }
 
   .signOff{
-    margin-top:12mm;
+    width:178mm;
+    margin:10mm auto 12mm auto;
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:18mm;
+    break-inside:avoid;
     page-break-inside:avoid;
   }
 
