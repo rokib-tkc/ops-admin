@@ -470,29 +470,26 @@
 <title>Goods In Check Sheet</title>
 <style>
   @page{
-    size:A4 portrait;
-    margin:0;
-  }
+  size:A4 portrait;
+  margin:12mm 12mm 14mm 12mm;
+}
 
-  *{
-    box-sizing:border-box;
-    font-family:Arial, sans-serif;
-  }
+html,
+body{
+  margin:0;
+  padding:0;
+  background:#fff;
+  color:#111827;
+  font-family:Arial, sans-serif;
+  font-size:11px;
+}
 
-  html,
-  body{
-    margin:0;
-    padding:0;
-    background:#fff;
-    color:#111827;
-    font-size:11px;
-  }
-
-  .printPage{
-    width:178mm;
-    margin:0 auto;
-    padding-top:10mm;
-  }
+.printPage{
+  width:100%;
+  max-width:180mm;
+  margin:0 auto;
+  padding:0;
+}
 
   h1{
     margin:0 0 7px;
@@ -540,14 +537,14 @@
   }
 
   .lines th{
-    background:#102a56;
-    color:#fff;
-    border:1px solid #102a56;
-    padding:7mm 5px 5px 5px;
-    text-align:left;
-    font-size:10.5px;
-    line-height:1.15;
-  }
+  background:#102a56;
+  color:#fff;
+  border:1px solid #102a56;
+  padding:6px 5px;
+  text-align:left;
+  font-size:10.5px;
+  line-height:1.15;
+}
 
   .lines td{
     border:1px solid #cbd5e1;
