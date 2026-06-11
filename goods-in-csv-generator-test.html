@@ -426,6 +426,7 @@
     setTimeout(()=>URL.revokeObjectURL(url),30000);
     showMessage(`Downloaded ${rows.length} rows to ${safeFileName(ref)}.csv`, 'ok');
   }
+
   function printVisibleList(){
   const rows = getVisibleRows()
     .map(sanitiseRow)
@@ -437,11 +438,13 @@
   }
 
   const {ref, wh, bin} = normaliseInputs();
+
   const supplierName = state.supplier && supplierConfig[state.supplier]
     ? supplierConfig[state.supplier].title
     : 'Manual Entry';
 
   const today = new Date().toLocaleDateString('en-GB');
+
   const totalQty = rows.reduce((sum, r) => {
     const n = Number(String(r.Qty ?? '').replace(/,/g,''));
     return sum + (Number.isFinite(n) ? n : 0);
@@ -449,13 +452,13 @@
 
   const tableRows = rows.map((r, i) => `
     <tr>
-      <td class="centre">${i + 1}</td>
+      <td class="rowNo">${i + 1}</td>
       <td>${escapeHtml(r.PONum)}</td>
       <td>${escapeHtml(r.Part)}</td>
-      <td class="centre">${escapeHtml(r.Qty)}</td>
-      <td class="centre">${escapeHtml(r.WH)}</td>
-      <td class="centre">${escapeHtml(r.Bin)}</td>
-      <td></td>
+      <td class="qty">${escapeHtml(r.Qty)}</td>
+      <td class="small">${escapeHtml(r.WH)}</td>
+      <td class="small">${escapeHtml(r.Bin)}</td>
+      <td class="checked"></td>
     </tr>
   `).join('');
 
@@ -468,175 +471,215 @@
 <style>
   @page{
     size:A4 portrait;
-    margin:12mm;
+    margin:14mm 12mm 16mm 12mm;
   }
 
   *{
     box-sizing:border-box;
-    font-family:Arial, sans-serif;
   }
 
+  html,
   body{
-    margin:0 auto;
-    padding:8mm 0 10mm 0;
-    max-width:180mm;
-    color:#111827;
+    margin:0;
+    padding:0;
     background:#fff;
-    font-size:12px;
+    color:#111827;
+    font-family:Arial, sans-serif;
+    font-size:11px;
+  }
+
+  .printPage{
+    width:100%;
   }
 
   h1{
-    margin:0 0 6px;
+    margin:0 0 8px;
     font-size:18px;
+    line-height:1.2;
     text-align:center;
   }
 
   .meta{
     width:100%;
-    max-width:100%;
-    table-layout:fixed;
     border-collapse:collapse;
+    table-layout:fixed;
     margin-bottom:10px;
+    page-break-inside:avoid;
   }
 
   .meta td{
-    border:1px solid #d0d5dd;
-    padding:6px 8px;
+    border:1px solid #cbd5e1;
+    padding:5px 6px;
+    vertical-align:middle;
   }
 
   .meta .label{
     background:#f1f5f9;
-    font-weight:bold;
-    width:16%;
+    font-weight:700;
+    width:18%;
   }
 
-  table.lines{
+  .lines{
     width:100%;
-    max-width:100%;
-    table-layout:fixed;
     border-collapse:collapse;
+    table-layout:fixed;
+  }
+
+  .lines thead{
+    display:table-header-group;
+  }
+
+  .lines tfoot{
+    display:table-footer-group;
+  }
+
+  .lines tr{
+    page-break-inside:avoid;
+    break-inside:avoid;
   }
 
   .lines th{
     background:#102a56;
     color:#fff;
     border:1px solid #102a56;
-    padding:7px 6px;
+    padding:6px 5px;
     text-align:left;
-    font-size:11px;
+    font-size:10.5px;
+    line-height:1.15;
   }
 
   .lines td{
-    border:1px solid #d0d5dd;
-    padding:5px 6px;
+    border:1px solid #cbd5e1;
+    padding:5px;
+    min-height:22px;
+    line-height:1.2;
     vertical-align:middle;
-    min-height:24px;
-  }
-
-  .lines th{
     overflow-wrap:anywhere;
     word-break:break-word;
   }
 
-  .centre{
+  .rowNo{
+    width:8mm;
     text-align:center;
   }
 
-  .checkCol{
-    width:75px;
+  .qty{
+    width:14mm;
+    text-align:center;
   }
 
-  .qtyCol{
-    width:55px;
+  .small{
+    width:13mm;
+    text-align:center;
   }
 
-  .smallCol{
-    width:50px;
+  .checked{
+    width:20mm;
   }
 
-  .footer{
-    margin-top:14px;
-    display:flex;
-    justify-content:space-between;
-    gap:20px;
-    font-size:12px;
+  .footerSpace td{
+    border:0;
+    height:8mm;
+    padding:0;
+  }
+
+  .signOff{
+    margin-top:12mm;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18mm;
+    page-break-inside:avoid;
   }
 
   .sig{
-    flex:1;
     border-top:1px solid #111827;
-    padding-top:5px;
+    padding-top:4px;
+    font-size:11px;
   }
 </style>
 </head>
 <body>
-  <h1>Goods In Physical Check Sheet</h1>
+  <div class="printPage">
+    <h1>Goods In Physical Check Sheet</h1>
 
-  <table class="meta">
-    <tr>
-      <td class="label">Supplier</td>
-      <td>${escapeHtml(supplierName)}</td>
-      <td class="label">Delivery Ref</td>
-      <td>${escapeHtml(ref)}</td>
-    </tr>
-    <tr>
-      <td class="label">WH</td>
-      <td>${escapeHtml(wh)}</td>
-      <td class="label">Bin</td>
-      <td>${escapeHtml(bin)}</td>
-    </tr>
-    <tr>
-      <td class="label">Print Date</td>
-      <td>${escapeHtml(today)}</td>
-      <td class="label">Lines / Total Qty</td>
-      <td>${rows.length} lines / ${totalQty}</td>
-    </tr>
-  </table>
-
-  <table class="lines">
-    <thead>
+    <table class="meta">
       <tr>
-        <th class="smallCol centre">#</th>
-        <th>PO Num</th>
-        <th>Part</th>
-        <th class="qtyCol centre">Qty</th>
-        <th class="smallCol centre">WH</th>
-        <th class="smallCol centre">Bin</th>
-        <th class="checkCol centre">Checked</th>
+        <td class="label">Supplier</td>
+        <td>${escapeHtml(supplierName)}</td>
+        <td class="label">Delivery Ref</td>
+        <td>${escapeHtml(ref)}</td>
       </tr>
-    </thead>
-    <tbody>
-      ${tableRows}
-    </tbody>
-  </table>
+      <tr>
+        <td class="label">WH</td>
+        <td>${escapeHtml(wh)}</td>
+        <td class="label">Bin</td>
+        <td>${escapeHtml(bin)}</td>
+      </tr>
+      <tr>
+        <td class="label">Print Date</td>
+        <td>${escapeHtml(today)}</td>
+        <td class="label">Lines / Qty</td>
+        <td>${rows.length} lines / ${totalQty}</td>
+      </tr>
+    </table>
 
-  <div class="footer">
-    <div class="sig">Checked by</div>
-    <div class="sig">Date checked</div>
+    <table class="lines">
+      <thead>
+        <tr>
+          <th class="rowNo">#</th>
+          <th>PO Num</th>
+          <th>Part</th>
+          <th class="qty">Qty</th>
+          <th class="small">WH</th>
+          <th class="small">Bin</th>
+          <th class="checked">Checked</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tableRows}
+      </tbody>
+      <tfoot>
+        <tr class="footerSpace">
+          <td colspan="7"></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="signOff">
+      <div class="sig">Checked by</div>
+      <div class="sig">Date checked</div>
+    </div>
   </div>
 </body>
 </html>`;
 
+  const oldFrame = document.getElementById('printFrame');
+  if(oldFrame) oldFrame.remove();
+
   const iframe = document.createElement('iframe');
+  iframe.id = 'printFrame';
   iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
+  iframe.style.left = '-9999px';
+  iframe.style.top = '0';
+  iframe.style.width = '1px';
+  iframe.style.height = '1px';
   iframe.style.border = '0';
 
   document.body.appendChild(iframe);
 
-  const doc = iframe.contentWindow.document;
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
   doc.open();
   doc.write(printHtml);
   doc.close();
 
-  iframe.onload = () => {
+  setTimeout(() => {
     iframe.contentWindow.focus();
     iframe.contentWindow.print();
-    setTimeout(() => iframe.remove(), 1000);
-  };
+
+    setTimeout(() => {
+      iframe.remove();
+    }, 1500);
+  }, 250);
 }
 
   function readFileAsArrayBuffer(file){return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=()=>reject(fr.error);fr.readAsArrayBuffer(file);});}
