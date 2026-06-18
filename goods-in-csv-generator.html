@@ -201,6 +201,7 @@
         <div class="leftTools">
           <button class="primary" id="processBtn" disabled>Process file</button>
           <button class="good" id="downloadBtn" disabled>Generate & Download CSV</button>
+          <button class="good" id="printBtn" disabled>Print list</button>
           <button id="addRowBtn">Add row</button>
           <button id="add5RowsBtn">Add 5 rows</button>
         </div>
@@ -351,6 +352,7 @@
     el('statPallets').textContent = state.lastStats.totalPallets ?? '—';
     const basicsReady = Boolean(normaliseInputs().ref && normaliseInputs().wh && normaliseInputs().bin);
     el('downloadBtn').disabled = captured===0;
+    el('printBtn').disabled = captured===0;
     el('clearRowsBtn').disabled = total===0;
     el('processBtn').disabled = !requiredReady() || state.supplier==='__MANUAL__';
     el('addRowBtn').disabled = !basicsReady;
@@ -424,6 +426,222 @@
     setTimeout(()=>URL.revokeObjectURL(url),30000);
     showMessage(`Downloaded ${rows.length} rows to ${safeFileName(ref)}.csv`, 'ok');
   }
+
+  function printVisibleList(){
+  const rows = getVisibleRows()
+    .map(sanitiseRow)
+    .filter(validRow);
+
+  if(!rows.length){
+    showMessage('There are no visible, non-excluded rows to print.', 'err');
+    return;
+  }
+
+  const {ref, wh, bin} = normaliseInputs();
+
+  const supplierName = state.supplier && supplierConfig[state.supplier]
+    ? supplierConfig[state.supplier].title
+    : 'Manual Entry';
+
+  const today = new Date().toLocaleDateString('en-GB');
+
+  const totalQty = rows.reduce((sum, r) => {
+    const n = Number(String(r.Qty ?? '').replace(/,/g,''));
+    return sum + (Number.isFinite(n) ? n : 0);
+  }, 0);
+
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  iframe.style.visibility = 'hidden';
+
+  document.body.appendChild(iframe);
+
+  const html = `
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Goods In Physical Check Sheet</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 8mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      color: #172033;
+      font-size: 12px;
+    }
+
+    .title {
+      background: #102A56;
+      color: #fff;
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+      padding: 8px;
+      margin-bottom: 14px;
+    }
+
+    .meta {
+      width: 99%;
+      margin: 0 auto 14px auto;
+      border-collapse: collapse;
+      font-size: 12px;
+      table-layout: fixed;
+    }
+
+    .meta td {
+      border: 1px solid #D9E1EC;
+      padding: 7px;
+    }
+
+    .meta .label {
+      font-weight: bold;
+      background: #EFF4FF;
+      width: 18%;
+    }
+
+    .meta .value {
+      background: #F8FAFC;
+      width: 32%;
+    }
+
+    table.count {
+      width: 99%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 12px;
+      margin: 0 auto;
+    }
+
+    table.count th {
+      background: #175CD3;
+      color: #fff;
+      font-weight: bold;
+      text-align: center;
+      border: 1px solid #000;
+      padding: 7px;
+    }
+
+    table.count td {
+      border: 1px solid #D9E1EC;
+      padding: 6px;
+      vertical-align: middle;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+      font-size: 11px;
+    }
+
+    table.count tr:nth-child(even) td {
+      background: #F8FAFC;
+    }
+
+    .rownum { width: 7%; text-align: center; }
+    .po { width: 23%; }
+    .part { width: 31%; }
+    .qty { width: 10%; text-align: center; }
+    .wh { width: 9%; text-align: center; }
+    .bin { width: 9%; text-align: center; }
+    .checked { width: 11%; text-align: center; }
+
+    .signoff {
+      margin: 18px auto 0 auto;
+      width: 99%;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    @media print {
+      button { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="title">Goods In Physical Check Sheet</div>
+
+  <table class="meta">
+    <tr>
+      <td class="label">Supplier</td>
+      <td class="value">${escapeHtml(supplierName)}</td>
+      <td class="label">Delivery Ref</td>
+      <td class="value">${escapeHtml(ref)}</td>
+    </tr>
+    <tr>
+      <td class="label">WH</td>
+      <td class="value">${escapeHtml(wh)}</td>
+      <td class="label">Bin</td>
+      <td class="value">${escapeHtml(bin)}</td>
+    </tr>
+    <tr>
+      <td class="label">Print Date</td>
+      <td class="value">${escapeHtml(today)}</td>
+      <td class="label">Lines / Qty</td>
+      <td class="value">${rows.length} lines / ${totalQty}</td>
+    </tr>
+  </table>
+
+  <table class="count">
+    <thead>
+      <tr>
+        <th class="rownum">#</th>
+        <th class="po">PO Num</th>
+        <th class="part">Part</th>
+        <th class="qty">Qty</th>
+        <th class="wh">WH</th>
+        <th class="bin">Bin</th>
+        <th class="checked">Checked</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.map((r, i) => `
+        <tr>
+          <td class="rownum">${i + 1}</td>
+          <td class="po">${escapeHtml(r.PONum)}</td>
+          <td class="part">${escapeHtml(r.Part)}</td>
+          <td class="qty">${escapeHtml(r.Qty)}</td>
+          <td class="wh">${escapeHtml(r.WH)}</td>
+          <td class="bin">${escapeHtml(r.Bin)}</td>
+          <td class="checked"></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <div class="signoff">
+    <div>Checked By: __________________________</div>
+    <div>Date Checked: __________________________</div>
+  </div>
+</body>
+</html>`;
+
+  iframe.contentDocument.open();
+  iframe.contentDocument.write(html);
+  iframe.contentDocument.close();
+
+  iframe.onload = () => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 1000);
+  };
+}
 
   function readFileAsArrayBuffer(file){return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=()=>reject(fr.error);fr.readAsArrayBuffer(file);});}
 
@@ -662,6 +880,7 @@
 
   el('processBtn').addEventListener('click',processCurrentFile);
   el('downloadBtn').addEventListener('click',downloadCsv);
+  el('printBtn').addEventListener('click',printVisibleList);
   el('addRowBtn').addEventListener('click',()=>addRows(1));
   el('add5RowsBtn').addEventListener('click',()=>addRows(5));
   el('clearRowsBtn').addEventListener('click',()=>{if(confirm('Clear all rows in the review table?')){setRows([],{ignored:0,totalPallets:null});showMessage('Rows cleared.','ok');}});
